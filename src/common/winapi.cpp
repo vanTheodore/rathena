@@ -41,9 +41,7 @@ bool IsCurrentUserLocalAdministrator(void){
 	const DWORD ACCESS_WRITE = 2;
 
 
-	__try
 	{
-
 		/*
 		AccessCheck() requires an impersonation token.  We first get a
 		primary	token and then create a duplicate impersonation token.  The
@@ -58,18 +56,18 @@ bool IsCurrentUserLocalAdministrator(void){
 			TRUE, &hToken))
 		{
 			if (GetLastError() != ERROR_NO_TOKEN)
-				__leave;
+				goto cleanup;
 
 			if (!OpenProcessToken(GetCurrentProcess(),
 
 				TOKEN_DUPLICATE | TOKEN_QUERY, &hToken))
-				__leave;
+				goto cleanup;
 		}
 
 		if (!DuplicateToken(hToken, SecurityImpersonation,
 
 			&hImpersonationToken))
-			__leave;
+			goto cleanup;
 
 
 		/*
@@ -87,16 +85,16 @@ bool IsCurrentUserLocalAdministrator(void){
 			SECURITY_BUILTIN_DOMAIN_RID,
 			DOMAIN_ALIAS_RID_ADMINS,
 			0, 0, 0, 0, 0, 0, &psidAdmin))
-			__leave;
+			goto cleanup;
 
 		psdAdmin = LocalAlloc(LPTR, SECURITY_DESCRIPTOR_MIN_LENGTH);
 		if (psdAdmin == nullptr)
-			__leave;
+			goto cleanup;
 
 		if (!InitializeSecurityDescriptor(psdAdmin,
 
 			SECURITY_DESCRIPTOR_REVISION))
-			__leave;
+			goto cleanup;
 
 		// Compute size needed for the ACL.
 		dwACLSize = sizeof(ACL) + sizeof(ACCESS_ALLOWED_ACE) +
@@ -104,20 +102,20 @@ bool IsCurrentUserLocalAdministrator(void){
 
 		pACL = (PACL)LocalAlloc(LPTR, dwACLSize);
 		if (pACL == nullptr)
-			__leave;
+			goto cleanup;
 
 		if (!InitializeAcl(pACL, dwACLSize, ACL_REVISION2))
-			__leave;
+			goto cleanup;
 
 		dwAccessMask = ACCESS_READ | ACCESS_WRITE;
 
 		if (!AddAccessAllowedAce(pACL, ACL_REVISION2, dwAccessMask,
 
 			psidAdmin))
-			__leave;
+			goto cleanup;
 
 		if (!SetSecurityDescriptorDacl(psdAdmin, TRUE, pACL, FALSE))
-			__leave;
+			goto cleanup;
 
 		/*
 		AccessCheck validates a security descriptor somewhat;
@@ -128,7 +126,7 @@ bool IsCurrentUserLocalAdministrator(void){
 		SetSecurityDescriptorOwner(psdAdmin, psidAdmin, FALSE);
 
 		if (!IsValidSecurityDescriptor(psdAdmin))
-			__leave;
+			goto cleanup;
 
 		dwAccessDesired = ACCESS_READ;
 
@@ -146,18 +144,17 @@ bool IsCurrentUserLocalAdministrator(void){
 			&fReturn))
 		{
 			fReturn = FALSE;
-			__leave;
+			goto cleanup;
 		}
 	}
-	__finally
-	{
-		// Clean up.
-		if (pACL) LocalFree(pACL);
-		if (psdAdmin) LocalFree(psdAdmin);
-		if (psidAdmin) FreeSid(psidAdmin);
-		if (hImpersonationToken) CloseHandle(hImpersonationToken);
-		if (hToken) CloseHandle(hToken);
-	}
+
+cleanup:
+	// Clean up.
+	if (pACL) LocalFree(pACL);
+	if (psdAdmin) LocalFree(psdAdmin);
+	if (psidAdmin) FreeSid(psidAdmin);
+	if (hImpersonationToken) CloseHandle(hImpersonationToken);
+	if (hToken) CloseHandle(hToken);
 
 	return fReturn == TRUE;
 #else
