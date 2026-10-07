@@ -16,9 +16,19 @@ target_sources(tools INTERFACE
 	"${COMMON_SOURCE_DIR}/database.cpp"
 )
 
-target_compile_definitions(tools INTERFACE
-	"MINICORE"
-)
+target_compile_definitions(tools INTERFACE "MINICORE")
+string(REPLACE " " ";" _GLOBAL_DEFS "${GLOBAL_DEFINITIONS}")
+foreach(_d IN LISTS _GLOBAL_DEFS)
+	if(_d MATCHES "^-D(.+)")
+		target_compile_definitions(tools INTERFACE "${CMAKE_MATCH_1}")
+	endif()
+endforeach()
+# Non-definition flags from GLOBAL_DEFINITIONS (e.g. -fno-strict-aliasing)
+foreach(_f IN LISTS _GLOBAL_DEFS)
+	if(NOT _f MATCHES "^-D" AND NOT _f STREQUAL "")
+		target_compile_options(tools INTERFACE ${_f})
+	endif()
+endforeach()
 
 target_link_libraries(tools INTERFACE
 	${GLOBAL_LIBRARIES}

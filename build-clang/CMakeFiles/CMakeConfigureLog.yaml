@@ -8346,8 +8346,8 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-3jrgej"
-      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-3jrgej"
+      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-b4u7h1"
+      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-b4u7h1"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "C:/msys64/ucrt64/bin/clang-scan-deps.exe"
       CMAKE_CXX_STDLIB_MODULES_JSON: ""
@@ -8358,16 +8358,16 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: false
       stdout: |
-        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-3jrgej'
+        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-b4u7h1'
         
-        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_48707
-        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe   -v -MD -MT CMakeFiles/cmTC_48707.dir/CMakeCCompilerABI.c.obj -MF CMakeFiles\\cmTC_48707.dir\\CMakeCCompilerABI.c.obj.d -o CMakeFiles/cmTC_48707.dir/CMakeCCompilerABI.c.obj -c C:/Users/LEGEN/AppData/Local/Programs/Python/Python314/Lib/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerABI.c
+        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_b5147
+        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe   -v -MD -MT CMakeFiles/cmTC_b5147.dir/CMakeCCompilerABI.c.obj -MF CMakeFiles\\cmTC_b5147.dir\\CMakeCCompilerABI.c.obj.d -o CMakeFiles/cmTC_b5147.dir/CMakeCCompilerABI.c.obj -c C:/Users/LEGEN/AppData/Local/Programs/Python/Python314/Lib/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerABI.c
         clang version 22.1.8 (https://github.com/msys2/MINGW-packages d34feaaa1d0aff624c870910b6f2589aa40d20de)
         Target: x86_64-w64-windows-gnu
         Thread model: posix
         InstalledDir: C:/msys64/ucrt64/bin
          (in-process)
-         "C:/msys64/ucrt64/bin/clang.exe" -cc1 -triple x86_64-w64-windows-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -fno-sized-deallocation -fno-use-init-array -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-3jrgej -v -fcoverage-compilation-dir=C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-3jrgej -resource-dir C:/msys64/ucrt64/lib/clang/22 -dependency-file "CMakeFiles\\\\cmTC_48707.dir\\\\CMakeCCompilerABI.c.obj.d" -MT CMakeFiles/cmTC_48707.dir/CMakeCCompilerABI.c.obj -sys-header-deps -internal-isystem C:/msys64/ucrt64/lib/clang/22/include -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/usr/include -internal-isystem C:/msys64/ucrt64/include -ferror-limit 19 -fno-use-cxa-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -exception-model=seh -faddrsig -o CMakeFiles/cmTC_48707.dir/CMakeCCompilerABI.c.obj -x c C:/Users/LEGEN/AppData/Local/Programs/Python/Python314/Lib/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerABI.c
+         "C:/msys64/ucrt64/bin/clang.exe" -cc1 -triple x86_64-w64-windows-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -fno-sized-deallocation -fno-use-init-array -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-b4u7h1 -v -fcoverage-compilation-dir=C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-b4u7h1 -resource-dir C:/msys64/ucrt64/lib/clang/22 -dependency-file "CMakeFiles\\\\cmTC_b5147.dir\\\\CMakeCCompilerABI.c.obj.d" -MT CMakeFiles/cmTC_b5147.dir/CMakeCCompilerABI.c.obj -sys-header-deps -internal-isystem C:/msys64/ucrt64/lib/clang/22/include -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/usr/include -internal-isystem C:/msys64/ucrt64/include -ferror-limit 19 -fno-use-cxa-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -exception-model=seh -faddrsig -o CMakeFiles/cmTC_b5147.dir/CMakeCCompilerABI.c.obj -x c C:/Users/LEGEN/AppData/Local/Programs/Python/Python314/Lib/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerABI.c
         clang -cc1 version 22.1.8 based upon LLVM 22.1.8 default target x86_64-w64-windows-gnu
         ignoring nonexistent directory "C:/msys64/ucrt64/x86_64-w64-mingw32/include"
         ignoring nonexistent directory "C:/msys64/ucrt64/x86_64-w64-mingw32/usr/include"
@@ -8376,12 +8376,12 @@ events:
          C:/msys64/ucrt64/lib/clang/22/include
          C:/msys64/ucrt64/include
         End of search list.
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe  -v -Wl,-v CMakeFiles/cmTC_48707.dir/CMakeCCompilerABI.c.obj -o cmTC_48707.exe -Wl,--out-implib,libcmTC_48707.dll.a -Wl,--major-image-version,0,--minor-image-version,0   && cd ."
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe  -v -Wl,-v CMakeFiles/cmTC_b5147.dir/CMakeCCompilerABI.c.obj -o cmTC_b5147.exe -Wl,--out-implib,libcmTC_b5147.dll.a -Wl,--major-image-version,0,--minor-image-version,0   && cd ."
         clang version 22.1.8 (https://github.com/msys2/MINGW-packages d34feaaa1d0aff624c870910b6f2589aa40d20de)
         Target: x86_64-w64-windows-gnu
         Thread model: posix
         InstalledDir: C:/msys64/ucrt64/bin
-         "C:/msys64/ucrt64/bin/ld" -m i386pep -Bdynamic -o cmTC_48707.exe C:/msys64/ucrt64/lib/crt2.o C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o -LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0 -LC:/msys64/ucrt64/x86_64-w64-mingw32/lib -LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib -LC:/msys64/ucrt64/lib -v CMakeFiles/cmTC_48707.dir/CMakeCCompilerABI.c.obj --out-implib libcmTC_48707.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtend.o
+         "C:/msys64/ucrt64/bin/ld" -m i386pep -Bdynamic -o cmTC_b5147.exe C:/msys64/ucrt64/lib/crt2.o C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o -LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0 -LC:/msys64/ucrt64/x86_64-w64-mingw32/lib -LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib -LC:/msys64/ucrt64/lib -v CMakeFiles/cmTC_b5147.dir/CMakeCCompilerABI.c.obj --out-implib libcmTC_b5147.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtend.o
         GNU ld (GNU Binutils) 2.47.20260726
         
       exitCode: 0
@@ -8413,16 +8413,16 @@ events:
       Parsed C implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|wild|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|wild))("|,| |$)]
-        ignore line: [Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-3jrgej']
+        ignore line: [Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-b4u7h1']
         ignore line: []
-        ignore line: [Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_48707]
-        ignore line: [[1/2] C:\\msys64\\ucrt64\\bin\\clang.exe   -v -MD -MT CMakeFiles/cmTC_48707.dir/CMakeCCompilerABI.c.obj -MF CMakeFiles\\cmTC_48707.dir\\CMakeCCompilerABI.c.obj.d -o CMakeFiles/cmTC_48707.dir/CMakeCCompilerABI.c.obj -c C:/Users/LEGEN/AppData/Local/Programs/Python/Python314/Lib/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerABI.c]
+        ignore line: [Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_b5147]
+        ignore line: [[1/2] C:\\msys64\\ucrt64\\bin\\clang.exe   -v -MD -MT CMakeFiles/cmTC_b5147.dir/CMakeCCompilerABI.c.obj -MF CMakeFiles\\cmTC_b5147.dir\\CMakeCCompilerABI.c.obj.d -o CMakeFiles/cmTC_b5147.dir/CMakeCCompilerABI.c.obj -c C:/Users/LEGEN/AppData/Local/Programs/Python/Python314/Lib/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerABI.c]
         ignore line: [clang version 22.1.8 (https://github.com/msys2/MINGW-packages d34feaaa1d0aff624c870910b6f2589aa40d20de)]
         ignore line: [Target: x86_64-w64-windows-gnu]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: C:/msys64/ucrt64/bin]
         ignore line: [ (in-process)]
-        ignore line: [ "C:/msys64/ucrt64/bin/clang.exe" -cc1 -triple x86_64-w64-windows-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -fno-sized-deallocation -fno-use-init-array -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-3jrgej -v -fcoverage-compilation-dir=C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-3jrgej -resource-dir C:/msys64/ucrt64/lib/clang/22 -dependency-file "CMakeFiles\\\\cmTC_48707.dir\\\\CMakeCCompilerABI.c.obj.d" -MT CMakeFiles/cmTC_48707.dir/CMakeCCompilerABI.c.obj -sys-header-deps -internal-isystem C:/msys64/ucrt64/lib/clang/22/include -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/usr/include -internal-isystem C:/msys64/ucrt64/include -ferror-limit 19 -fno-use-cxa-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -exception-model=seh -faddrsig -o CMakeFiles/cmTC_48707.dir/CMakeCCompilerABI.c.obj -x c C:/Users/LEGEN/AppData/Local/Programs/Python/Python314/Lib/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerABI.c]
+        ignore line: [ "C:/msys64/ucrt64/bin/clang.exe" -cc1 -triple x86_64-w64-windows-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -fno-sized-deallocation -fno-use-init-array -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-b4u7h1 -v -fcoverage-compilation-dir=C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-b4u7h1 -resource-dir C:/msys64/ucrt64/lib/clang/22 -dependency-file "CMakeFiles\\\\cmTC_b5147.dir\\\\CMakeCCompilerABI.c.obj.d" -MT CMakeFiles/cmTC_b5147.dir/CMakeCCompilerABI.c.obj -sys-header-deps -internal-isystem C:/msys64/ucrt64/lib/clang/22/include -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/usr/include -internal-isystem C:/msys64/ucrt64/include -ferror-limit 19 -fno-use-cxa-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -exception-model=seh -faddrsig -o CMakeFiles/cmTC_b5147.dir/CMakeCCompilerABI.c.obj -x c C:/Users/LEGEN/AppData/Local/Programs/Python/Python314/Lib/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCCompilerABI.c]
         ignore line: [clang -cc1 version 22.1.8 based upon LLVM 22.1.8 default target x86_64-w64-windows-gnu]
         ignore line: [ignoring nonexistent directory "C:/msys64/ucrt64/x86_64-w64-mingw32/include"]
         ignore line: [ignoring nonexistent directory "C:/msys64/ucrt64/x86_64-w64-mingw32/usr/include"]
@@ -8431,20 +8431,20 @@ events:
         ignore line: [ C:/msys64/ucrt64/lib/clang/22/include]
         ignore line: [ C:/msys64/ucrt64/include]
         ignore line: [End of search list.]
-        ignore line: [[2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe  -v -Wl -v CMakeFiles/cmTC_48707.dir/CMakeCCompilerABI.c.obj -o cmTC_48707.exe -Wl --out-implib libcmTC_48707.dll.a -Wl --major-image-version 0 --minor-image-version 0   && cd ."]
+        ignore line: [[2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe  -v -Wl -v CMakeFiles/cmTC_b5147.dir/CMakeCCompilerABI.c.obj -o cmTC_b5147.exe -Wl --out-implib libcmTC_b5147.dll.a -Wl --major-image-version 0 --minor-image-version 0   && cd ."]
         ignore line: [clang version 22.1.8 (https://github.com/msys2/MINGW-packages d34feaaa1d0aff624c870910b6f2589aa40d20de)]
         ignore line: [Target: x86_64-w64-windows-gnu]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: C:/msys64/ucrt64/bin]
-        link line: [ "C:/msys64/ucrt64/bin/ld" -m i386pep -Bdynamic -o cmTC_48707.exe C:/msys64/ucrt64/lib/crt2.o C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o -LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0 -LC:/msys64/ucrt64/x86_64-w64-mingw32/lib -LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib -LC:/msys64/ucrt64/lib -v CMakeFiles/cmTC_48707.dir/CMakeCCompilerABI.c.obj --out-implib libcmTC_48707.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtend.o] ==> linker [C:/msys64/ucrt64/bin/ld]
-        link line: [ "C:/msys64/ucrt64/bin/ld" -m i386pep -Bdynamic -o cmTC_48707.exe C:/msys64/ucrt64/lib/crt2.o C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o -LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0 -LC:/msys64/ucrt64/x86_64-w64-mingw32/lib -LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib -LC:/msys64/ucrt64/lib -v CMakeFiles/cmTC_48707.dir/CMakeCCompilerABI.c.obj --out-implib libcmTC_48707.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtend.o] ==> linker architecture flags [-m;i386pep]
-        link line: [ "C:/msys64/ucrt64/bin/ld" -m i386pep -Bdynamic -o cmTC_48707.exe C:/msys64/ucrt64/lib/crt2.o C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o -LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0 -LC:/msys64/ucrt64/x86_64-w64-mingw32/lib -LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib -LC:/msys64/ucrt64/lib -v CMakeFiles/cmTC_48707.dir/CMakeCCompilerABI.c.obj --out-implib libcmTC_48707.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtend.o]
+        link line: [ "C:/msys64/ucrt64/bin/ld" -m i386pep -Bdynamic -o cmTC_b5147.exe C:/msys64/ucrt64/lib/crt2.o C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o -LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0 -LC:/msys64/ucrt64/x86_64-w64-mingw32/lib -LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib -LC:/msys64/ucrt64/lib -v CMakeFiles/cmTC_b5147.dir/CMakeCCompilerABI.c.obj --out-implib libcmTC_b5147.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtend.o] ==> linker [C:/msys64/ucrt64/bin/ld]
+        link line: [ "C:/msys64/ucrt64/bin/ld" -m i386pep -Bdynamic -o cmTC_b5147.exe C:/msys64/ucrt64/lib/crt2.o C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o -LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0 -LC:/msys64/ucrt64/x86_64-w64-mingw32/lib -LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib -LC:/msys64/ucrt64/lib -v CMakeFiles/cmTC_b5147.dir/CMakeCCompilerABI.c.obj --out-implib libcmTC_b5147.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtend.o] ==> linker architecture flags [-m;i386pep]
+        link line: [ "C:/msys64/ucrt64/bin/ld" -m i386pep -Bdynamic -o cmTC_b5147.exe C:/msys64/ucrt64/lib/crt2.o C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o -LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0 -LC:/msys64/ucrt64/x86_64-w64-mingw32/lib -LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib -LC:/msys64/ucrt64/lib -v CMakeFiles/cmTC_b5147.dir/CMakeCCompilerABI.c.obj --out-implib libcmTC_b5147.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtend.o]
           arg [C:/msys64/ucrt64/bin/ld] ==> ignore
           arg [-m] ==> ignore
           arg [i386pep] ==> ignore
           arg [-Bdynamic] ==> search dynamic
           arg [-o] ==> ignore
-          arg [cmTC_48707.exe] ==> ignore
+          arg [cmTC_b5147.exe] ==> ignore
           arg [C:/msys64/ucrt64/lib/crt2.o] ==> obj [C:/msys64/ucrt64/lib/crt2.o]
           arg [C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o] ==> obj [C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o]
           arg [-LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0] ==> dir [C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0]
@@ -8452,9 +8452,9 @@ events:
           arg [-LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib] ==> dir [C:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib]
           arg [-LC:/msys64/ucrt64/lib] ==> dir [C:/msys64/ucrt64/lib]
           arg [-v] ==> ignore
-          arg [CMakeFiles/cmTC_48707.dir/CMakeCCompilerABI.c.obj] ==> ignore
+          arg [CMakeFiles/cmTC_b5147.dir/CMakeCCompilerABI.c.obj] ==> ignore
           arg [--out-implib] ==> ignore
-          arg [libcmTC_48707.dll.a] ==> ignore
+          arg [libcmTC_b5147.dll.a] ==> ignore
           arg [--major-image-version] ==> ignore
           arg [0] ==> ignore
           arg [--minor-image-version] ==> ignore
@@ -8512,8 +8512,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-meehvy"
-      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-meehvy"
+      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-7i3inx"
+      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-7i3inx"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "C:/msys64/ucrt64/bin/clang-scan-deps.exe"
       CMAKE_CXX_FLAGS: ""
@@ -8525,16 +8525,16 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: false
       stdout: |
-        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-meehvy'
+        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-7i3inx'
         
-        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_39e44
-        [1/2] C:\\msys64\\ucrt64\\bin\\clang++.exe   -v -MD -MT CMakeFiles/cmTC_39e44.dir/CMakeCXXCompilerABI.cpp.obj -MF CMakeFiles\\cmTC_39e44.dir\\CMakeCXXCompilerABI.cpp.obj.d -o CMakeFiles/cmTC_39e44.dir/CMakeCXXCompilerABI.cpp.obj -c C:/Users/LEGEN/AppData/Local/Programs/Python/Python314/Lib/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerABI.cpp
+        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_e5b83
+        [1/2] C:\\msys64\\ucrt64\\bin\\clang++.exe   -v -MD -MT CMakeFiles/cmTC_e5b83.dir/CMakeCXXCompilerABI.cpp.obj -MF CMakeFiles\\cmTC_e5b83.dir\\CMakeCXXCompilerABI.cpp.obj.d -o CMakeFiles/cmTC_e5b83.dir/CMakeCXXCompilerABI.cpp.obj -c C:/Users/LEGEN/AppData/Local/Programs/Python/Python314/Lib/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerABI.cpp
         clang version 22.1.8 (https://github.com/msys2/MINGW-packages d34feaaa1d0aff624c870910b6f2589aa40d20de)
         Target: x86_64-w64-windows-gnu
         Thread model: posix
         InstalledDir: C:/msys64/ucrt64/bin
          (in-process)
-         "C:/msys64/ucrt64/bin/clang++.exe" -cc1 -triple x86_64-w64-windows-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -fno-sized-deallocation -fno-use-init-array -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-meehvy -v -fcoverage-compilation-dir=C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-meehvy -resource-dir C:/msys64/ucrt64/lib/clang/22 -dependency-file "CMakeFiles\\\\cmTC_39e44.dir\\\\CMakeCXXCompilerABI.cpp.obj.d" -MT CMakeFiles/cmTC_39e44.dir/CMakeCXXCompilerABI.cpp.obj -sys-header-deps -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++ -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/backward -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/16.2.0 -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/16.2.0/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/16.2.0/backward -internal-isystem C:/msys64/ucrt64/include/c++/16.2.0 -internal-isystem C:/msys64/ucrt64/include/c++/16.2.0/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/include/c++/16.2.0/backward -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++ -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/backward -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2.0 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2.0/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2.0/backward -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2/backward -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16/backward -internal-isystem C:/msys64/ucrt64/lib/clang/22/include -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/usr/include -internal-isystem C:/msys64/ucrt64/include -fdeprecated-macro -ferror-limit 19 -fno-use-cxa-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -exception-model=seh -faddrsig -o CMakeFiles/cmTC_39e44.dir/CMakeCXXCompilerABI.cpp.obj -x c++ C:/Users/LEGEN/AppData/Local/Programs/Python/Python314/Lib/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerABI.cpp
+         "C:/msys64/ucrt64/bin/clang++.exe" -cc1 -triple x86_64-w64-windows-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -fno-sized-deallocation -fno-use-init-array -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-7i3inx -v -fcoverage-compilation-dir=C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-7i3inx -resource-dir C:/msys64/ucrt64/lib/clang/22 -dependency-file "CMakeFiles\\\\cmTC_e5b83.dir\\\\CMakeCXXCompilerABI.cpp.obj.d" -MT CMakeFiles/cmTC_e5b83.dir/CMakeCXXCompilerABI.cpp.obj -sys-header-deps -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++ -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/backward -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/16.2.0 -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/16.2.0/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/16.2.0/backward -internal-isystem C:/msys64/ucrt64/include/c++/16.2.0 -internal-isystem C:/msys64/ucrt64/include/c++/16.2.0/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/include/c++/16.2.0/backward -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++ -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/backward -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2.0 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2.0/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2.0/backward -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2/backward -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16/backward -internal-isystem C:/msys64/ucrt64/lib/clang/22/include -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/usr/include -internal-isystem C:/msys64/ucrt64/include -fdeprecated-macro -ferror-limit 19 -fno-use-cxa-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -exception-model=seh -faddrsig -o CMakeFiles/cmTC_e5b83.dir/CMakeCXXCompilerABI.cpp.obj -x c++ C:/Users/LEGEN/AppData/Local/Programs/Python/Python314/Lib/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerABI.cpp
         clang -cc1 version 22.1.8 based upon LLVM 22.1.8 default target x86_64-w64-windows-gnu
         ignoring nonexistent directory "C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++"
         ignoring nonexistent directory "C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/x86_64-w64-mingw32"
@@ -8564,12 +8564,12 @@ events:
          C:/msys64/ucrt64/lib/clang/22/include
          C:/msys64/ucrt64/include
         End of search list.
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang++.exe  -v -Wl,-v CMakeFiles/cmTC_39e44.dir/CMakeCXXCompilerABI.cpp.obj -o cmTC_39e44.exe -Wl,--out-implib,libcmTC_39e44.dll.a -Wl,--major-image-version,0,--minor-image-version,0   && cd ."
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang++.exe  -v -Wl,-v CMakeFiles/cmTC_e5b83.dir/CMakeCXXCompilerABI.cpp.obj -o cmTC_e5b83.exe -Wl,--out-implib,libcmTC_e5b83.dll.a -Wl,--major-image-version,0,--minor-image-version,0   && cd ."
         clang version 22.1.8 (https://github.com/msys2/MINGW-packages d34feaaa1d0aff624c870910b6f2589aa40d20de)
         Target: x86_64-w64-windows-gnu
         Thread model: posix
         InstalledDir: C:/msys64/ucrt64/bin
-         "C:/msys64/ucrt64/bin/ld" -m i386pep -Bdynamic -o cmTC_39e44.exe C:/msys64/ucrt64/lib/crt2.o C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o -LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0 -LC:/msys64/ucrt64/x86_64-w64-mingw32/lib -LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib -LC:/msys64/ucrt64/lib -v CMakeFiles/cmTC_39e44.dir/CMakeCXXCompilerABI.cpp.obj --out-implib libcmTC_39e44.dll.a --major-image-version 0 --minor-image-version 0 -lstdc++ -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtend.o
+         "C:/msys64/ucrt64/bin/ld" -m i386pep -Bdynamic -o cmTC_e5b83.exe C:/msys64/ucrt64/lib/crt2.o C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o -LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0 -LC:/msys64/ucrt64/x86_64-w64-mingw32/lib -LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib -LC:/msys64/ucrt64/lib -v CMakeFiles/cmTC_e5b83.dir/CMakeCXXCompilerABI.cpp.obj --out-implib libcmTC_e5b83.dll.a --major-image-version 0 --minor-image-version 0 -lstdc++ -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtend.o
         GNU ld (GNU Binutils) 2.47.20260726
         
       exitCode: 0
@@ -8607,16 +8607,16 @@ events:
       Parsed CXX implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|wild|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|wild))("|,| |$)]
-        ignore line: [Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-meehvy']
+        ignore line: [Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-7i3inx']
         ignore line: []
-        ignore line: [Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_39e44]
-        ignore line: [[1/2] C:\\msys64\\ucrt64\\bin\\clang++.exe   -v -MD -MT CMakeFiles/cmTC_39e44.dir/CMakeCXXCompilerABI.cpp.obj -MF CMakeFiles\\cmTC_39e44.dir\\CMakeCXXCompilerABI.cpp.obj.d -o CMakeFiles/cmTC_39e44.dir/CMakeCXXCompilerABI.cpp.obj -c C:/Users/LEGEN/AppData/Local/Programs/Python/Python314/Lib/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_e5b83]
+        ignore line: [[1/2] C:\\msys64\\ucrt64\\bin\\clang++.exe   -v -MD -MT CMakeFiles/cmTC_e5b83.dir/CMakeCXXCompilerABI.cpp.obj -MF CMakeFiles\\cmTC_e5b83.dir\\CMakeCXXCompilerABI.cpp.obj.d -o CMakeFiles/cmTC_e5b83.dir/CMakeCXXCompilerABI.cpp.obj -c C:/Users/LEGEN/AppData/Local/Programs/Python/Python314/Lib/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [clang version 22.1.8 (https://github.com/msys2/MINGW-packages d34feaaa1d0aff624c870910b6f2589aa40d20de)]
         ignore line: [Target: x86_64-w64-windows-gnu]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: C:/msys64/ucrt64/bin]
         ignore line: [ (in-process)]
-        ignore line: [ "C:/msys64/ucrt64/bin/clang++.exe" -cc1 -triple x86_64-w64-windows-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -fno-sized-deallocation -fno-use-init-array -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-meehvy -v -fcoverage-compilation-dir=C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-meehvy -resource-dir C:/msys64/ucrt64/lib/clang/22 -dependency-file "CMakeFiles\\\\cmTC_39e44.dir\\\\CMakeCXXCompilerABI.cpp.obj.d" -MT CMakeFiles/cmTC_39e44.dir/CMakeCXXCompilerABI.cpp.obj -sys-header-deps -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++ -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/backward -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/16.2.0 -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/16.2.0/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/16.2.0/backward -internal-isystem C:/msys64/ucrt64/include/c++/16.2.0 -internal-isystem C:/msys64/ucrt64/include/c++/16.2.0/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/include/c++/16.2.0/backward -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++ -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/backward -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2.0 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2.0/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2.0/backward -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2/backward -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16/backward -internal-isystem C:/msys64/ucrt64/lib/clang/22/include -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/usr/include -internal-isystem C:/msys64/ucrt64/include -fdeprecated-macro -ferror-limit 19 -fno-use-cxa-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -exception-model=seh -faddrsig -o CMakeFiles/cmTC_39e44.dir/CMakeCXXCompilerABI.cpp.obj -x c++ C:/Users/LEGEN/AppData/Local/Programs/Python/Python314/Lib/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [ "C:/msys64/ucrt64/bin/clang++.exe" -cc1 -triple x86_64-w64-windows-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -fno-sized-deallocation -fno-use-init-array -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-7i3inx -v -fcoverage-compilation-dir=C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-7i3inx -resource-dir C:/msys64/ucrt64/lib/clang/22 -dependency-file "CMakeFiles\\\\cmTC_e5b83.dir\\\\CMakeCXXCompilerABI.cpp.obj.d" -MT CMakeFiles/cmTC_e5b83.dir/CMakeCXXCompilerABI.cpp.obj -sys-header-deps -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++ -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/backward -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/16.2.0 -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/16.2.0/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/16.2.0/backward -internal-isystem C:/msys64/ucrt64/include/c++/16.2.0 -internal-isystem C:/msys64/ucrt64/include/c++/16.2.0/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/include/c++/16.2.0/backward -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++ -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/c++/backward -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2.0 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2.0/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2.0/backward -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16.2/backward -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16/x86_64-w64-mingw32 -internal-isystem C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/include/g++-v16/backward -internal-isystem C:/msys64/ucrt64/lib/clang/22/include -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/include -internal-isystem C:/msys64/ucrt64/x86_64-w64-mingw32/usr/include -internal-isystem C:/msys64/ucrt64/include -fdeprecated-macro -ferror-limit 19 -fno-use-cxa-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -exception-model=seh -faddrsig -o CMakeFiles/cmTC_e5b83.dir/CMakeCXXCompilerABI.cpp.obj -x c++ C:/Users/LEGEN/AppData/Local/Programs/Python/Python314/Lib/site-packages/cmake/data/share/cmake-4.4/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [clang -cc1 version 22.1.8 based upon LLVM 22.1.8 default target x86_64-w64-windows-gnu]
         ignore line: [ignoring nonexistent directory "C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++"]
         ignore line: [ignoring nonexistent directory "C:/msys64/ucrt64/x86_64-w64-mingw32/include/c++/x86_64-w64-mingw32"]
@@ -8646,20 +8646,20 @@ events:
         ignore line: [ C:/msys64/ucrt64/lib/clang/22/include]
         ignore line: [ C:/msys64/ucrt64/include]
         ignore line: [End of search list.]
-        ignore line: [[2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang++.exe  -v -Wl -v CMakeFiles/cmTC_39e44.dir/CMakeCXXCompilerABI.cpp.obj -o cmTC_39e44.exe -Wl --out-implib libcmTC_39e44.dll.a -Wl --major-image-version 0 --minor-image-version 0   && cd ."]
+        ignore line: [[2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang++.exe  -v -Wl -v CMakeFiles/cmTC_e5b83.dir/CMakeCXXCompilerABI.cpp.obj -o cmTC_e5b83.exe -Wl --out-implib libcmTC_e5b83.dll.a -Wl --major-image-version 0 --minor-image-version 0   && cd ."]
         ignore line: [clang version 22.1.8 (https://github.com/msys2/MINGW-packages d34feaaa1d0aff624c870910b6f2589aa40d20de)]
         ignore line: [Target: x86_64-w64-windows-gnu]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: C:/msys64/ucrt64/bin]
-        link line: [ "C:/msys64/ucrt64/bin/ld" -m i386pep -Bdynamic -o cmTC_39e44.exe C:/msys64/ucrt64/lib/crt2.o C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o -LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0 -LC:/msys64/ucrt64/x86_64-w64-mingw32/lib -LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib -LC:/msys64/ucrt64/lib -v CMakeFiles/cmTC_39e44.dir/CMakeCXXCompilerABI.cpp.obj --out-implib libcmTC_39e44.dll.a --major-image-version 0 --minor-image-version 0 -lstdc++ -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtend.o] ==> linker [C:/msys64/ucrt64/bin/ld]
-        link line: [ "C:/msys64/ucrt64/bin/ld" -m i386pep -Bdynamic -o cmTC_39e44.exe C:/msys64/ucrt64/lib/crt2.o C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o -LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0 -LC:/msys64/ucrt64/x86_64-w64-mingw32/lib -LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib -LC:/msys64/ucrt64/lib -v CMakeFiles/cmTC_39e44.dir/CMakeCXXCompilerABI.cpp.obj --out-implib libcmTC_39e44.dll.a --major-image-version 0 --minor-image-version 0 -lstdc++ -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtend.o] ==> linker architecture flags [-m;i386pep]
-        link line: [ "C:/msys64/ucrt64/bin/ld" -m i386pep -Bdynamic -o cmTC_39e44.exe C:/msys64/ucrt64/lib/crt2.o C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o -LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0 -LC:/msys64/ucrt64/x86_64-w64-mingw32/lib -LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib -LC:/msys64/ucrt64/lib -v CMakeFiles/cmTC_39e44.dir/CMakeCXXCompilerABI.cpp.obj --out-implib libcmTC_39e44.dll.a --major-image-version 0 --minor-image-version 0 -lstdc++ -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtend.o]
+        link line: [ "C:/msys64/ucrt64/bin/ld" -m i386pep -Bdynamic -o cmTC_e5b83.exe C:/msys64/ucrt64/lib/crt2.o C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o -LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0 -LC:/msys64/ucrt64/x86_64-w64-mingw32/lib -LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib -LC:/msys64/ucrt64/lib -v CMakeFiles/cmTC_e5b83.dir/CMakeCXXCompilerABI.cpp.obj --out-implib libcmTC_e5b83.dll.a --major-image-version 0 --minor-image-version 0 -lstdc++ -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtend.o] ==> linker [C:/msys64/ucrt64/bin/ld]
+        link line: [ "C:/msys64/ucrt64/bin/ld" -m i386pep -Bdynamic -o cmTC_e5b83.exe C:/msys64/ucrt64/lib/crt2.o C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o -LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0 -LC:/msys64/ucrt64/x86_64-w64-mingw32/lib -LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib -LC:/msys64/ucrt64/lib -v CMakeFiles/cmTC_e5b83.dir/CMakeCXXCompilerABI.cpp.obj --out-implib libcmTC_e5b83.dll.a --major-image-version 0 --minor-image-version 0 -lstdc++ -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtend.o] ==> linker architecture flags [-m;i386pep]
+        link line: [ "C:/msys64/ucrt64/bin/ld" -m i386pep -Bdynamic -o cmTC_e5b83.exe C:/msys64/ucrt64/lib/crt2.o C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o -LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0 -LC:/msys64/ucrt64/x86_64-w64-mingw32/lib -LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib -LC:/msys64/ucrt64/lib -v CMakeFiles/cmTC_e5b83.dir/CMakeCXXCompilerABI.cpp.obj --out-implib libcmTC_e5b83.dll.a --major-image-version 0 --minor-image-version 0 -lstdc++ -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtend.o]
           arg [C:/msys64/ucrt64/bin/ld] ==> ignore
           arg [-m] ==> ignore
           arg [i386pep] ==> ignore
           arg [-Bdynamic] ==> search dynamic
           arg [-o] ==> ignore
-          arg [cmTC_39e44.exe] ==> ignore
+          arg [cmTC_e5b83.exe] ==> ignore
           arg [C:/msys64/ucrt64/lib/crt2.o] ==> obj [C:/msys64/ucrt64/lib/crt2.o]
           arg [C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o] ==> obj [C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0/crtbegin.o]
           arg [-LC:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0] ==> dir [C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/16.2.0]
@@ -8667,9 +8667,9 @@ events:
           arg [-LC:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib] ==> dir [C:/msys64/ucrt64/x86_64-w64-mingw32/mingw/lib]
           arg [-LC:/msys64/ucrt64/lib] ==> dir [C:/msys64/ucrt64/lib]
           arg [-v] ==> ignore
-          arg [CMakeFiles/cmTC_39e44.dir/CMakeCXXCompilerABI.cpp.obj] ==> ignore
+          arg [CMakeFiles/cmTC_e5b83.dir/CMakeCXXCompilerABI.cpp.obj] ==> ignore
           arg [--out-implib] ==> ignore
-          arg [libcmTC_39e44.dll.a] ==> ignore
+          arg [libcmTC_e5b83.dll.a] ==> ignore
           arg [--major-image-version] ==> ignore
           arg [0] ==> ignore
           arg [--minor-image-version] ==> ignore
@@ -9151,8 +9151,8 @@ events:
     checks:
       - "Performing Test CMAKE_HAVE_LIBC_PTHREAD"
     directories:
-      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-mcygj3"
-      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-mcygj3"
+      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-83pzvx"
+      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-83pzvx"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "C:/msys64/ucrt64/bin/clang-scan-deps.exe"
       CMAKE_CXX_STDLIB_MODULES_JSON: ""
@@ -9164,11 +9164,11 @@ events:
       variable: "CMAKE_HAVE_LIBC_PTHREAD"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-mcygj3'
+        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-83pzvx'
         
-        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_dc42c
-        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe -DCMAKE_HAVE_LIBC_PTHREAD   -MD -MT CMakeFiles/cmTC_dc42c.dir/src.c.obj -MF CMakeFiles\\cmTC_dc42c.dir\\src.c.obj.d -o CMakeFiles/cmTC_dc42c.dir/src.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-mcygj3/src.c
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_dc42c.dir/src.c.obj -o cmTC_dc42c.exe -Wl,--out-implib,libcmTC_dc42c.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
+        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_ef88b
+        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe -DCMAKE_HAVE_LIBC_PTHREAD   -MD -MT CMakeFiles/cmTC_ef88b.dir/src.c.obj -MF CMakeFiles\\cmTC_ef88b.dir\\src.c.obj.d -o CMakeFiles/cmTC_ef88b.dir/src.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-83pzvx/src.c
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_ef88b.dir/src.c.obj -o cmTC_ef88b.exe -Wl,--out-implib,libcmTC_ef88b.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
         
       exitCode: 0
   -
@@ -9180,8 +9180,8 @@ events:
     checks:
       - "Performing Test HAVE_TLS"
     directories:
-      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-l7mmyz"
-      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-l7mmyz"
+      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-g9k1kv"
+      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-g9k1kv"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "C:/msys64/ucrt64/bin/clang-scan-deps.exe"
       CMAKE_CXX_STDLIB_MODULES_JSON: ""
@@ -9193,11 +9193,11 @@ events:
       variable: "HAVE_TLS_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-l7mmyz'
+        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-g9k1kv'
         
-        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_595d0
-        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe -DHAVE_TLS   -MD -MT CMakeFiles/cmTC_595d0.dir/src.c.obj -MF CMakeFiles\\cmTC_595d0.dir\\src.c.obj.d -o CMakeFiles/cmTC_595d0.dir/src.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-l7mmyz/src.c
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_595d0.dir/src.c.obj -o cmTC_595d0.exe -Wl,--out-implib,libcmTC_595d0.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
+        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_441f5
+        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe -DHAVE_TLS   -MD -MT CMakeFiles/cmTC_441f5.dir/src.c.obj -MF CMakeFiles\\cmTC_441f5.dir\\src.c.obj.d -o CMakeFiles/cmTC_441f5.dir/src.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-g9k1kv/src.c
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_441f5.dir/src.c.obj -o cmTC_441f5.exe -Wl,--out-implib,libcmTC_441f5.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
         
       exitCode: 0
     runResult:
@@ -9215,8 +9215,8 @@ events:
     checks:
       - "Performing Test HAVE_MONOTONIC_CLOCK"
     directories:
-      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-9vrceq"
-      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-9vrceq"
+      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-jo40vm"
+      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-jo40vm"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "C:/msys64/ucrt64/bin/clang-scan-deps.exe"
       CMAKE_CXX_STDLIB_MODULES_JSON: ""
@@ -9228,11 +9228,11 @@ events:
       variable: "HAVE_MONOTONIC_CLOCK_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-9vrceq'
+        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-jo40vm'
         
-        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_1e684
-        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe -DHAVE_MONOTONIC_CLOCK   -MD -MT CMakeFiles/cmTC_1e684.dir/src.c.obj -MF CMakeFiles\\cmTC_1e684.dir\\src.c.obj.d -o CMakeFiles/cmTC_1e684.dir/src.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-9vrceq/src.c
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_1e684.dir/src.c.obj -o cmTC_1e684.exe -Wl,--out-implib,libcmTC_1e684.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lws2_32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
+        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_315fa
+        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe -DHAVE_MONOTONIC_CLOCK   -MD -MT CMakeFiles/cmTC_315fa.dir/src.c.obj -MF CMakeFiles\\cmTC_315fa.dir\\src.c.obj.d -o CMakeFiles/cmTC_315fa.dir/src.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-jo40vm/src.c
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_315fa.dir/src.c.obj -o cmTC_315fa.exe -Wl,--out-implib,libcmTC_315fa.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lws2_32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
         
       exitCode: 0
     runResult:
@@ -9249,8 +9249,8 @@ events:
     checks:
       - "Looking for setrlimit"
     directories:
-      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-o8dzgm"
-      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-o8dzgm"
+      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-nogbnl"
+      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-nogbnl"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "C:/msys64/ucrt64/bin/clang-scan-deps.exe"
       CMAKE_CXX_STDLIB_MODULES_JSON: ""
@@ -9262,14 +9262,14 @@ events:
       variable: "HAVE_SETRLIMIT"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-o8dzgm'
+        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-nogbnl'
         
-        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_29dc8
-        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe -DCHECK_FUNCTION_EXISTS=setrlimit   -MD -MT CMakeFiles/cmTC_29dc8.dir/CheckFunctionExists.c.obj -MF CMakeFiles\\cmTC_29dc8.dir\\CheckFunctionExists.c.obj.d -o CMakeFiles/cmTC_29dc8.dir/CheckFunctionExists.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-o8dzgm/CheckFunctionExists.c
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_29dc8.dir/CheckFunctionExists.c.obj -o cmTC_29dc8.exe -Wl,--out-implib,libcmTC_29dc8.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lws2_32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
-        FAILED: [code=1] cmTC_29dc8.exe 
-        C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_29dc8.dir/CheckFunctionExists.c.obj -o cmTC_29dc8.exe -Wl,--out-implib,libcmTC_29dc8.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lws2_32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
-        C:/msys64/ucrt64/bin/ld: CMakeFiles/cmTC_29dc8.dir/CheckFunctionExists.c.obj:CheckFunctionExists.c:(.text+0x2c): undefined reference to `setrlimit'
+        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_65ef0
+        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe -DCHECK_FUNCTION_EXISTS=setrlimit   -MD -MT CMakeFiles/cmTC_65ef0.dir/CheckFunctionExists.c.obj -MF CMakeFiles\\cmTC_65ef0.dir\\CheckFunctionExists.c.obj.d -o CMakeFiles/cmTC_65ef0.dir/CheckFunctionExists.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-nogbnl/CheckFunctionExists.c
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_65ef0.dir/CheckFunctionExists.c.obj -o cmTC_65ef0.exe -Wl,--out-implib,libcmTC_65ef0.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lws2_32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
+        FAILED: [code=1] cmTC_65ef0.exe 
+        C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_65ef0.dir/CheckFunctionExists.c.obj -o cmTC_65ef0.exe -Wl,--out-implib,libcmTC_65ef0.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lws2_32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
+        C:/msys64/ucrt64/bin/ld: CMakeFiles/cmTC_65ef0.dir/CheckFunctionExists.c.obj:CheckFunctionExists.c:(.text+0x2c): undefined reference to `setrlimit'
         clang: error: linker command failed with exit code 1 (use -v to see invocation)
         ninja: build stopped: subcommand failed.
         
@@ -9282,8 +9282,8 @@ events:
     checks:
       - "Looking for strnlen"
     directories:
-      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-u4g3qn"
-      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-u4g3qn"
+      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-vkipau"
+      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-vkipau"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "C:/msys64/ucrt64/bin/clang-scan-deps.exe"
       CMAKE_CXX_STDLIB_MODULES_JSON: ""
@@ -9295,11 +9295,11 @@ events:
       variable: "HAVE_STRNLEN"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-u4g3qn'
+        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-vkipau'
         
-        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_7e655
-        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe -DCHECK_FUNCTION_EXISTS=strnlen   -MD -MT CMakeFiles/cmTC_7e655.dir/CheckFunctionExists.c.obj -MF CMakeFiles\\cmTC_7e655.dir\\CheckFunctionExists.c.obj.d -o CMakeFiles/cmTC_7e655.dir/CheckFunctionExists.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-u4g3qn/CheckFunctionExists.c
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_7e655.dir/CheckFunctionExists.c.obj -o cmTC_7e655.exe -Wl,--out-implib,libcmTC_7e655.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lws2_32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
+        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_7a659
+        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe -DCHECK_FUNCTION_EXISTS=strnlen   -MD -MT CMakeFiles/cmTC_7a659.dir/CheckFunctionExists.c.obj -MF CMakeFiles\\cmTC_7a659.dir\\CheckFunctionExists.c.obj.d -o CMakeFiles/cmTC_7a659.dir/CheckFunctionExists.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-vkipau/CheckFunctionExists.c
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_7a659.dir/CheckFunctionExists.c.obj -o cmTC_7a659.exe -Wl,--out-implib,libcmTC_7a659.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lws2_32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
         
       exitCode: 0
   -
@@ -9310,8 +9310,8 @@ events:
     checks:
       - "Looking for getpid"
     directories:
-      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-mfyw3x"
-      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-mfyw3x"
+      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-2uih7q"
+      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-2uih7q"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "C:/msys64/ucrt64/bin/clang-scan-deps.exe"
       CMAKE_CXX_STDLIB_MODULES_JSON: ""
@@ -9323,11 +9323,11 @@ events:
       variable: "HAVE_GETPID"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-mfyw3x'
+        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-2uih7q'
         
-        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_f9cf7
-        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe -DCHECK_FUNCTION_EXISTS=getpid   -MD -MT CMakeFiles/cmTC_f9cf7.dir/CheckFunctionExists.c.obj -MF CMakeFiles\\cmTC_f9cf7.dir\\CheckFunctionExists.c.obj.d -o CMakeFiles/cmTC_f9cf7.dir/CheckFunctionExists.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-mfyw3x/CheckFunctionExists.c
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_f9cf7.dir/CheckFunctionExists.c.obj -o cmTC_f9cf7.exe -Wl,--out-implib,libcmTC_f9cf7.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lws2_32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
+        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_633f4
+        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe -DCHECK_FUNCTION_EXISTS=getpid   -MD -MT CMakeFiles/cmTC_633f4.dir/CheckFunctionExists.c.obj -MF CMakeFiles\\cmTC_633f4.dir\\CheckFunctionExists.c.obj.d -o CMakeFiles/cmTC_633f4.dir/CheckFunctionExists.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-2uih7q/CheckFunctionExists.c
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_633f4.dir/CheckFunctionExists.c.obj -o cmTC_633f4.exe -Wl,--out-implib,libcmTC_633f4.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lws2_32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
         
       exitCode: 0
   -
@@ -9338,8 +9338,8 @@ events:
     checks:
       - "Looking for gettid"
     directories:
-      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-twq1g9"
-      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-twq1g9"
+      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-sf517w"
+      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-sf517w"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "C:/msys64/ucrt64/bin/clang-scan-deps.exe"
       CMAKE_CXX_STDLIB_MODULES_JSON: ""
@@ -9351,14 +9351,14 @@ events:
       variable: "HAVE_GETTID"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-twq1g9'
+        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-sf517w'
         
-        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_0a992
-        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe -DCHECK_FUNCTION_EXISTS=gettid   -MD -MT CMakeFiles/cmTC_0a992.dir/CheckFunctionExists.c.obj -MF CMakeFiles\\cmTC_0a992.dir\\CheckFunctionExists.c.obj.d -o CMakeFiles/cmTC_0a992.dir/CheckFunctionExists.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-twq1g9/CheckFunctionExists.c
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_0a992.dir/CheckFunctionExists.c.obj -o cmTC_0a992.exe -Wl,--out-implib,libcmTC_0a992.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lws2_32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
-        FAILED: [code=1] cmTC_0a992.exe 
-        C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_0a992.dir/CheckFunctionExists.c.obj -o cmTC_0a992.exe -Wl,--out-implib,libcmTC_0a992.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lws2_32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
-        C:/msys64/ucrt64/bin/ld: CMakeFiles/cmTC_0a992.dir/CheckFunctionExists.c.obj:CheckFunctionExists.c:(.text+0x2c): undefined reference to `gettid'
+        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_0b75d
+        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe -DCHECK_FUNCTION_EXISTS=gettid   -MD -MT CMakeFiles/cmTC_0b75d.dir/CheckFunctionExists.c.obj -MF CMakeFiles\\cmTC_0b75d.dir\\CheckFunctionExists.c.obj.d -o CMakeFiles/cmTC_0b75d.dir/CheckFunctionExists.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-sf517w/CheckFunctionExists.c
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_0b75d.dir/CheckFunctionExists.c.obj -o cmTC_0b75d.exe -Wl,--out-implib,libcmTC_0b75d.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lws2_32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
+        FAILED: [code=1] cmTC_0b75d.exe 
+        C:\\WINDOWS\\system32\\cmd.exe /C "cd . && C:\\msys64\\ucrt64\\bin\\clang.exe   CMakeFiles/cmTC_0b75d.dir/CheckFunctionExists.c.obj -o cmTC_0b75d.exe -Wl,--out-implib,libcmTC_0b75d.dll.a -Wl,--major-image-version,0,--minor-image-version,0  -lws2_32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 && cd ."
+        C:/msys64/ucrt64/bin/ld: CMakeFiles/cmTC_0b75d.dir/CheckFunctionExists.c.obj:CheckFunctionExists.c:(.text+0x2c): undefined reference to `gettid'
         clang: error: linker command failed with exit code 1 (use -v to see invocation)
         ninja: build stopped: subcommand failed.
         
@@ -9707,8 +9707,8 @@ events:
     checks:
       - "Looking for xlocale.h"
     directories:
-      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-lcr35r"
-      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-lcr35r"
+      source: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-o7kcl6"
+      binary: "C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-o7kcl6"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "C:/msys64/ucrt64/bin/clang-scan-deps.exe"
       CMAKE_CXX_STDLIB_MODULES_JSON: ""
@@ -9720,13 +9720,13 @@ events:
       variable: "HAVE_LOCALE_H"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-lcr35r'
+        Change Dir: 'C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-o7kcl6'
         
-        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_47814
-        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe    -MD -MT CMakeFiles/cmTC_47814.dir/CheckIncludeFile.c.obj -MF CMakeFiles\\cmTC_47814.dir\\CheckIncludeFile.c.obj.d -o CMakeFiles/cmTC_47814.dir/CheckIncludeFile.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-lcr35r/CheckIncludeFile.c
-        FAILED: [code=1] CMakeFiles/cmTC_47814.dir/CheckIncludeFile.c.obj 
-        C:\\msys64\\ucrt64\\bin\\clang.exe    -MD -MT CMakeFiles/cmTC_47814.dir/CheckIncludeFile.c.obj -MF CMakeFiles\\cmTC_47814.dir\\CheckIncludeFile.c.obj.d -o CMakeFiles/cmTC_47814.dir/CheckIncludeFile.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-lcr35r/CheckIncludeFile.c
-        C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-lcr35r/CheckIncludeFile.c:1:10: fatal error: 'xlocale.h' file not found
+        Run Build Command(s): C:/msys64/ucrt64/bin/ninja.exe -v cmTC_051ea
+        [1/2] C:\\msys64\\ucrt64\\bin\\clang.exe    -MD -MT CMakeFiles/cmTC_051ea.dir/CheckIncludeFile.c.obj -MF CMakeFiles\\cmTC_051ea.dir\\CheckIncludeFile.c.obj.d -o CMakeFiles/cmTC_051ea.dir/CheckIncludeFile.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-o7kcl6/CheckIncludeFile.c
+        FAILED: [code=1] CMakeFiles/cmTC_051ea.dir/CheckIncludeFile.c.obj 
+        C:\\msys64\\ucrt64\\bin\\clang.exe    -MD -MT CMakeFiles/cmTC_051ea.dir/CheckIncludeFile.c.obj -MF CMakeFiles\\cmTC_051ea.dir\\CheckIncludeFile.c.obj.d -o CMakeFiles/cmTC_051ea.dir/CheckIncludeFile.c.obj -c C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-o7kcl6/CheckIncludeFile.c
+        C:/Users/LEGEN/Documents/rathena/build-clang/CMakeFiles/CMakeScratch/TryCompile-o7kcl6/CheckIncludeFile.c:1:10: fatal error: 'xlocale.h' file not found
             1 | #include <xlocale.h>
               |          ^~~~~~~~~~~
         1 error generated.

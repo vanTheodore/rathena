@@ -50,7 +50,7 @@ unset(_cmake_expected_targets)
 add_library(ryml::ryml STATIC IMPORTED)
 
 set_target_properties(ryml::ryml PROPERTIES
-  INTERFACE_COMPILE_FEATURES "cxx_std_17"
+  INTERFACE_COMPILE_FEATURES "cxx_std_23"
   INTERFACE_INCLUDE_DIRECTORIES "C:/Users/LEGEN/Documents/rathena/3rdparty/rapidyaml/src;C:/Users/LEGEN/Documents/rathena/3rdparty/rapidyaml/ext/c4core/src;C:/Users/LEGEN/Documents/rathena/3rdparty/rapidyaml/ext/c4core/src"
 )
 

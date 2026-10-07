@@ -57,7 +57,7 @@ endif()
 add_library(c4core::c4core STATIC IMPORTED)
 
 set_target_properties(c4core::c4core PROPERTIES
-  INTERFACE_COMPILE_FEATURES "cxx_std_17"
+  INTERFACE_COMPILE_FEATURES "cxx_std_23"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include;${_IMPORT_PREFIX}/include"
 )
 
