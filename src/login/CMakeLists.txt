@@ -22,7 +22,7 @@ include_directories( ${INCLUDE_DIRS} )
 
 add_executable( login-server ${SOURCE_FILES} )
 add_dependencies( login-server ${DEPENDENCIES} )
-target_link_libraries( login-server ${LIBRARIES} ${DEPENDENCIES} )
+target_link_libraries( login-server ${LIBRARIES} ${DEPENDENCIES} rathena_cxx23 )
 set_target_properties( login-server PROPERTIES COMPILE_FLAGS "${DEFINITIONS}" )
 if( INSTALL_COMPONENT_RUNTIME )
 	cpack_add_component( Runtime_loginserver DESCRIPTION "login-server" DISPLAY_NAME "login-server" GROUP Runtime )

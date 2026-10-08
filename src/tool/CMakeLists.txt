@@ -36,6 +36,7 @@ target_link_libraries(tools INTERFACE
 	yaml-cpp
 	ryml
 	minicore
+	rathena_cxx23
 )
 
 # mapcache

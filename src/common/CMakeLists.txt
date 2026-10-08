@@ -73,6 +73,7 @@ target_include_directories(minicore PUBLIC
 
 set_target_properties( minicore PROPERTIES COMPILE_FLAGS "${GLOBAL_DEFINITIONS}" )
 target_compile_definitions(minicore PRIVATE "-DMINICORE" ${LIBCONFIG_DEFINITIONS})
+target_link_libraries( minicore PRIVATE rathena_cxx23 )
 
 #
 # common_base
@@ -143,7 +144,7 @@ source_group( common FILES ${COMMON_BASE_HEADERS} ${COMMON_BASE_SOURCES} )
 
 add_library( common_base ${SOURCE_FILES} )
 #message( STATUS "common_base LIBRARIES=${LIBRARIES}, DEFINITIONS=${DEFINITIONS}")
-target_link_libraries( common_base ${LIBRARIES} )
+target_link_libraries( common_base ${LIBRARIES} rathena_cxx23 )
 set_target_properties( common_base PROPERTIES COMPILE_FLAGS "${DEFINITIONS}" )
 include_directories( ${INCLUDE_DIRS} )
 
@@ -178,7 +179,7 @@ source_group( common FILES ${COMMON_HEADERS} ${COMMON_SOURCES} )
 add_library( common ${SOURCE_FILES} )
 #message( STATUS "common LIBRARIES=${LIBRARIES}, DEPENDENCIES=${DEPENDENCIES} DEFINITIONS=${DEFINITIONS}")
 add_dependencies( common ${DEPENDENCIES} )
-target_link_libraries( common ${LIBRARIES} ${DEPENDENCIES} )
+target_link_libraries( common ${LIBRARIES} ${DEPENDENCIES} rathena_cxx23 )
 set_target_properties( common PROPERTIES COMPILE_FLAGS "${DEFINITIONS}" )
 include_directories( ${INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} )
 

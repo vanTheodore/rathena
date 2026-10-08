@@ -26,7 +26,7 @@ include_directories( ${INCLUDE_DIRS} )
 add_executable( char-server ${SOURCE_FILES} )
 #message( STATUS "char-server LIBRARIES=${LIBRARIES}, DEPENDENCIES=${DEPENDENCIES} DEFINITIONS=${DEFINITIONS}")
 add_dependencies( char-server ${DEPENDENCIES} )
-target_link_libraries( char-server ${LIBRARIES} ${DEPENDENCIES} )
+target_link_libraries( char-server ${LIBRARIES} ${DEPENDENCIES} rathena_cxx23 )
 set_target_properties( char-server PROPERTIES COMPILE_FLAGS "${DEFINITIONS}" )
 
 if( INSTALL_COMPONENT_RUNTIME )
