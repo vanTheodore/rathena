@@ -68,6 +68,17 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   Además `ip_dnsbl` sprintf → snprintf (token de conf hasta 1023 chars en buffer
   de 256 B). Verificados seguros: `r_ip` (exacto: uint8 máx 15+1=16), `smd5`
   (exacto: loop i<16 en [33]), `message[256]`
+- ✅ `char` (auditoría, refute-first): **premisa refutada — sin hallazgos**.
+  Buffers seguros: `save_status[128]` (máx 53 acumulado), `t_info[256]` (máx 89,
+  en funciones separadas), PIN (`buf[5]` exacto con PINCODE_LENGTH=4),
+  nombres de posición/alliance de guild (literales < `NAME_LENGTH`=24). Sin
+  expresiones new/delete reales (los "DELETE" son SQL); pairing limpio: flag
+  aCalloc sin returns intermedios, fields ×2 con null-check, PIN buf, broadcast
+  buf, geoip_cache → final; `int_achievement`/`int_quest` devuelven arrays
+  aCalloc'd con ownership documentado («caller to aFree») y los callers lo
+  respetan (los paths de break llegan al aFree); el strtok de
+  `char_config_split_startpoint` destruye una copia local de la línea de conf,
+  no el almacenamiento
 - ✅ Ownership en `common` (auditoría, refute-first): **premisa refutada — no hay
   bugs**. Cero expresiones `new`/`delete` reales fuera de `utilities.cpp`
   (`unique_ptr` RAII + `levenshtein` new[]/delete[] emparejado); `malloc/free`
@@ -143,11 +154,10 @@ autorización). La validación real queda explícitamente pendiente hasta que
 exista entorno; sin BD, S5 no es ejecutable más allá de la documentación.
 
 **Fase 2 — auditoría C++20/23: en curso.** `common` cerrado (buffer safety ✅,
-ownership ✅ refutado, macros ✅ — TRUE/FALSE excluido por cosmético masivo) y
-`login` cerrado (ownership limpio, **bug DNSBL de strtok corregido** — solo se
-consultaba el primer servidor DNSBL tras el primer login — e `ip_dnsbl`
-acotado). Sigue: `char`, `map` y tools, una tarea a la vez; `StringBuf`
-(refactor transversal — requiere diseño).
+ownership ✅ refutado, macros ✅), `login` cerrado (**bug DNSBL de strtok
+corregido** — solo se consultaba el primer servidor DNSBL tras el primer login)
+y `char` cerrado (**premisa refutada — sin hallazgos**). Sigue: `map` y tools,
+una tarea a la vez; `StringBuf` (refactor transversal — requiere diseño).
 
 ## Reglas permanentes
 
