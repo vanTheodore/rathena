@@ -3,7 +3,7 @@ This folder contains everything related to 3rdparty code or tools.
 cmake - scripts for the cmake build system (http://www.cmake.org)
 httplib - library for http web service, header-only (https://github.com/yhirose/cpp-httplib/tree/v0.60.0)
 libconfig - library for processing structured configuration files, 1.8.2 (http://www.hyperrealm.com/libconfig/)
-mysql - library for MySQL Community Server, 6.1.9 headers (http://www.mysql.com)
+mysql - not vendored anymore: the MSVC projects locate the MariaDB Connector/C installed with the official MSI (see 3rdparty/mysql/mariadb-connector.props), and CMake finds the system client (doc/MYSQL_MODERNIZATION.md)
 pcre2 - PCRE2 10.49 regular expressions, built from vendored source (https://github.com/PCRE2Project/pcre2/tree/pcre2-10.49)
 zlib - library for DEFLATE lossless compression algorithm, 1.3.2 built from vendored source (https://github.com/madler/zlib/tree/v1.3.2)
 json - library for nlohmann json, single-header (https://github.com/nlohmann/json/tree/v3.12.0)

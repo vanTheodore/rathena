@@ -152,8 +152,6 @@ failure, ordinary match, ovector-too-small, execution limit).
 - [ ] Windows MSVC C++23 build (vcxproj updated, needs VS 2022 17.8+ host)
 - [ ] AArch64 compile coverage (CI)
 - [ ] Sanitizer build + startup smoke (login/char/map start, YAML parse, scripts load)
-- [ ] Windows MSVC C++23 build (vcxproj updated, needs VS 2022 17.8+ host)
-- [ ] AArch64 compile coverage (CI)
 
 ## CI matrix (intended)
 

@@ -639,7 +639,7 @@ if (WIN32)
 	set (RUNTIME_FILES 
 		${RUNTIME_FILES}
 		"${CMAKE_CURRENT_SOURCE_DIR}/dbghelp.dll"
-		"${CMAKE_CURRENT_SOURCE_DIR}/libmysql.dll"
+		"${CMAKE_CURRENT_SOURCE_DIR}/libmariadb.dll" # copied next to the binaries by the MSVC projects
 		"${CMAKE_CURRENT_SOURCE_DIR}/pcre3.dll"
 		"${CMAKE_CURRENT_SOURCE_DIR}/zlib1.dll"
 		"${CMAKE_CURRENT_SOURCE_DIR}/tools/charserv.bat"

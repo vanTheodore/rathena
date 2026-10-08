@@ -23,10 +23,29 @@ if( PKG_CONFIG_FOUND )
 	endif()
 endif()
 
+# Prefixed installs keep the headers in <prefix>/include/mariadb: MSYS2/MinGW
+# toolchains install the connector inside their own prefix, and any install can
+# be pointed at with -DCMAKE_PREFIX_PATH=<MariaDB Connector C dir>.
+set( MYSQL_PREFIX_INCLUDE_HINTS )
+set( MYSQL_PREFIX_LIBRARY_HINTS )
+set( _mysql_prefixes ${CMAKE_PREFIX_PATH} ${CMAKE_SYSTEM_PREFIX_PATH} )
+if( CMAKE_CXX_COMPILER )
+	get_filename_component( _mysql_compiler_dir "${CMAKE_CXX_COMPILER}" DIRECTORY )
+	get_filename_component( _mysql_toolchain_prefix "${_mysql_compiler_dir}" DIRECTORY )
+	list( APPEND _mysql_prefixes "${_mysql_toolchain_prefix}" )
+endif()
+foreach( _mysql_prefix ${_mysql_prefixes} )
+	if( _mysql_prefix )
+		list( APPEND MYSQL_PREFIX_INCLUDE_HINTS "${_mysql_prefix}/include/mariadb" )
+		list( APPEND MYSQL_PREFIX_LIBRARY_HINTS "${_mysql_prefix}/lib" )
+	endif()
+endforeach()
+
 find_path( MYSQL_INCLUDE_DIRS "mysql.h"
 	HINTS
 		${MYSQL_PC_MARIADB_INCLUDE_DIRS}
 		${MYSQL_PC_MYSQL_INCLUDE_DIRS}
+		${MYSQL_PREFIX_INCLUDE_HINTS}
 	PATHS
 		"/usr/include/mysql"
 		"/usr/include/mariadb" # Debian/Ubuntu libmariadb-dev
@@ -40,9 +59,14 @@ find_path( MYSQL_INCLUDE_DIRS "mysql.h"
 		"/usr/local/include/mariadb"
 		"/usr/local/opt/mariadb-connector-c/include/mariadb" # brew formula (Intel)
 		"$ENV{PROGRAMFILES}/MySQL/*/include"
+		"$ENV{PROGRAMW6432}/MySQL/*/include"
 		"$ENV{SYSTEMDRIVE}/MySQL/*/include"
 		"$ENV{PROGRAMFILES}/MariaDB/*/include"
-		"$ENV{SYSTEMDRIVE}/MariaDB/*/include" )
+		"$ENV{PROGRAMFILES}/MariaDB/*/include/mariadb" # MariaDB Connector C MSI
+		"$ENV{PROGRAMW6432}/MariaDB/*/include"
+		"$ENV{PROGRAMW6432}/MariaDB/*/include/mariadb" # 64-bit MSI, 32-bit CMake
+		"$ENV{SYSTEMDRIVE}/MariaDB/*/include"
+		"$ENV{SYSTEMDRIVE}/MariaDB/*/include/mariadb" )
 
 find_library( MYSQL_LIBRARIES
 	NAMES "libmysql" "mysqlclient" "mysqlclient_r"
@@ -50,6 +74,7 @@ find_library( MYSQL_LIBRARIES
 	HINTS
 		${MYSQL_PC_MARIADB_LIBRARY_DIRS}
 		${MYSQL_PC_MYSQL_LIBRARY_DIRS}
+		${MYSQL_PREFIX_LIBRARY_HINTS}
 	PATHS
 		"/usr/lib/mysql"
 		"/usr/local/lib/mysql"
@@ -61,8 +86,10 @@ find_library( MYSQL_LIBRARIES
 		"/usr/local/opt/mariadb/lib"
 		"/usr/local/opt/mariadb-connector-c/lib" # brew formula (Intel)
 		"$ENV{PROGRAMFILES}/MySQL/*/lib"
+		"$ENV{PROGRAMW6432}/MySQL/*/lib"
 		"$ENV{SYSTEMDRIVE}/MySQL/*/lib"
 		"$ENV{PROGRAMFILES}/MariaDB/*/lib"
+		"$ENV{PROGRAMW6432}/MariaDB/*/lib"
 		"$ENV{SYSTEMDRIVE}/MariaDB/*/lib" )
 mark_as_advanced( MYSQL_LIBRARIES  MYSQL_INCLUDE_DIRS )
 

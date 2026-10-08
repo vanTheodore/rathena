@@ -363,6 +363,20 @@ itself is not installed on this Windows host, so the real `pkg_check_modules` ca
 is exercised only in CI; the hint wiring was verified by supplying the same
 variables it sets.
 
+S3 verification (this checkout, working tree): clean configure (MinGW-w64
+ucrt64, CMake 4.4.4 + Ninja, GCC 16.2) with the rewritten
+`3rdparty/mysql/CMakeLists.txt` and the `FindMYSQL.cmake` prefix hints detects
+the MSYS2-installed MariaDB Connector/C 3.4.9 (`Found MYSQL:
+C:/msys64/ucrt64/lib/libmysqlclient.dll.a`, `Using MYSQL: ... (MariaDB
+Connector/C 3.4.9)`, floor 3.0.8 not triggered). `common` + `char-server`
+compile and link against the 3.4.9 headers (161/161 Ninja steps, baseline
+warnings only) and the boot smoke loads `libmariadb.dll`, logs `MySQL client
+library: 3.4.9` and exits 1 at absent-DB connect. Clang 22.1.8 parses
+`sql.cpp` clean against the 3.4.9 headers (`-fsyntax-only`, no errors). Not
+executed: no MSVC host (the `.props` wiring is untested), no real-DB
+validation; the MSYS2 host has no `pkg-config`, so the `pkg_check_modules`
+path stays CI-only as with S2.
+
 Not executed / not claimed: no Linux host, so F1 is documentary + source-code
 evidence, not a reproduced failure; no `mariadb_config`/`mysql_config` binary on
 this host, so the Autotools floor warning was run from the generated block rather

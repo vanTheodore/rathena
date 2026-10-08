@@ -45,6 +45,7 @@ Windows | [MS Visual Studio 2017 or newer](https://www.visualstudio.com/download
 Application | Name
 ------|------
 Database | [MySQL 5 or newer](https://www.mysql.com/downloads/) / [MariaDB 5 or newer](https://downloads.mariadb.org/)
+Database client | [MariaDB Connector/C 3.4.x](https://mariadb.com/downloads/connectors/) (recommended; `libmariadb-dev` on Debian/Ubuntu, `mariadb-connector-c-devel` on Fedora/RHEL, MSI on Windows) or [MySQL Connector/C 8.0+](https://dev.mysql.com/downloads/connector/c/). MariaDB Connector/C >= 3.0.8 is required to log in to MySQL 8.4+/MariaDB 11+ servers
 Git | [Windows](https://gitforwindows.org/) / [Linux](https://git-scm.com/download/linux)
 
 ### Optional Applications

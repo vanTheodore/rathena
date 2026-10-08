@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Locates the system-installed MariaDB Connector/C for the MSVC projects.
+
+  The official MSI (mariadb.com/downloads, "MariaDB Connector/C") installs into
+    %ProgramFiles%\MariaDB\MariaDB Connector C 64-bit    (x64)
+    %ProgramFiles%\MariaDB\MariaDB Connector C 32-bit    (Win32)
+  with include\mariadb\mysql.h, lib\libmariadb.lib and lib\libmariadb.dll.
+
+  Override MariaDBConnectorDir when the connector lives elsewhere, e.g. an
+  extracted ZIP or a non-default install directory:
+    msbuild rAthena.sln /p:MariaDBConnectorDir="D:\mariadb-connector-c"
+  or set the MariaDBConnectorDir environment variable (MSBuild picks up
+  environment variables as properties).
+
+  See doc/MYSQL_MODERNIZATION.md for the supported client versions.
+-->
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="MariaDBConnector">
+    <!-- $(ProgramFiles) is the 32-bit directory when a 32-bit MSBuild drives
+         the build, so prefer $(ProgramW6432) for x64. -->
+    <MariaDBConnectorProgramFiles Condition="'$(Platform)' == 'x64' AND '$(ProgramW6432)' != ''">$(ProgramW6432)</MariaDBConnectorProgramFiles>
+    <MariaDBConnectorProgramFiles Condition="'$(MariaDBConnectorProgramFiles)' == ''">$(ProgramFiles)</MariaDBConnectorProgramFiles>
+    <MariaDBConnectorDir Condition="'$(MariaDBConnectorDir)' == '' AND '$(Platform)' == 'x64'">$(MariaDBConnectorProgramFiles)\MariaDB\MariaDB Connector C 64-bit</MariaDBConnectorDir>
+    <MariaDBConnectorDir Condition="'$(MariaDBConnectorDir)' == '' AND '$(Platform)' != 'x64'">$(MariaDBConnectorProgramFiles)\MariaDB\MariaDB Connector C 32-bit</MariaDBConnectorDir>
+    <MariaDBConnectorIncludeDir>$(MariaDBConnectorDir)\include\mariadb</MariaDBConnectorIncludeDir>
+    <MariaDBConnectorLibDir>$(MariaDBConnectorDir)\lib</MariaDBConnectorLibDir>
+  </PropertyGroup>
+</Project>
