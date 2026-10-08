@@ -1,8 +1,6 @@
-#pragma once
-
 /* ----------------------------------------------------------------------------
    libconfig - A library for processing structured configuration files
-   Copyright (C) 2005-2010  Mark A Lindner
+   Copyright (C) 2005-2025  Mark A Lindner
 
    This file is part of libconfig.
 
@@ -27,6 +25,7 @@
 
 #include "libconfig.h"
 #include "strbuf.h"
+#include "util.h"
 
 struct parse_context
 {
@@ -37,14 +36,14 @@ struct parse_context
   strbuf_t string;
 };
 
-#define parsectx_init(C)                        \
-  memset((C), 0, sizeof(struct parse_context))
-#define parsectx_cleanup(C)                             \
-  free((void *)(strbuf_release(&((C)->string))))
+#define libconfig_parsectx_init(C) \
+  __zero(C)
+#define libconfig_parsectx_cleanup(C) \
+  __delete(libconfig_strbuf_release(&((C)->string)))
 
-#define parsectx_append_string(C, S)            \
-  strbuf_append(&((C)->string), (S))
-#define parsectx_take_string(C)                 \
-  strbuf_release(&((C)->string))
+#define libconfig_parsectx_append_string(C, S) \
+  libconfig_strbuf_append_string(&((C)->string), (S))
+#define libconfig_parsectx_take_string(C) \
+  libconfig_strbuf_release(&((C)->string))
 
 #endif /* __libconfig_parsectx_h */

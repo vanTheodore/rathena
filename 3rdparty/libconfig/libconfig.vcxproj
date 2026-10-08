@@ -25,6 +25,8 @@
     <ClInclude Include="scanctx.h" />
     <ClInclude Include="scanner.h" />
     <ClInclude Include="strbuf.h" />
+    <ClInclude Include="strvec.h" />
+    <ClInclude Include="util.h" />
     <ClInclude Include="wincompat.h" />
   </ItemGroup>
   <ItemGroup>
@@ -33,6 +35,9 @@
     <ClCompile Include="scanctx.c" />
     <ClCompile Include="scanner.c" />
     <ClCompile Include="strbuf.c" />
+    <ClCompile Include="strvec.c" />
+    <ClCompile Include="util.c" />
+    <ClCompile Include="wincompat.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F6CC5F60-BD13-41B1-81D3-822A45EC0DBD}</ProjectGuid>
