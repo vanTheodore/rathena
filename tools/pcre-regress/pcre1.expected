@@ -1,0 +1,43 @@
+0|compile_ok|1|0|16|well hello there
+1|compile_ok|NOMATCH
+2|compile_ok|1|0|16|WELL HELLO THERE
+3|compile_ok|2|7|14|11|14|heal me| me
+4|compile_ok|2|0|7|4|7|healing|ing
+5|compile_ok|2|0|16|8|16|warp to prontera|prontera
+6|compile_ok|2|0|16|8|16|WARP TO PRONTERA|PRONTERA
+7|compile_ok|2|0|16|6|11|price 15000 zeny|15000
+8|compile_ok|NOMATCH
+9|compile_ok|1|3|6|job
+10|compile_ok|NOMATCH
+11|compile_ok|2|0|5|0|5|hello|hello
+12|compile_ok|NOMATCH
+13|compile_ok|2|0|2|0|1|aa|a
+14|compile_ok|NOMATCH
+15|compile_ok|1|0|3|foo
+16|compile_ok|NOMATCH
+17|compile_ok|1|0|5|color
+18|compile_ok|1|0|6|colour
+19|compile_ok|1|5|13|555-1234
+20|compile_ok|2|0|18|6|11|<item>Sword</item>|Sword
+21|compile_ok|1|0|0|
+22|compile_ok|1|0|3|aaa
+23|compile_ok|1|0|0|
+24|compile_ok|NOMATCH
+25|compile_ok|NOMATCH
+26|compile_ok|NOMATCH
+27|compile_err
+28|compile_err
+29|compile_err
+30|compile_ok|NOMATCH
+31|compile_ok|NOMATCH
+32|compile_ok|NOMATCH
+33|compile_ok|1|0|3|abc
+34|compile_ok|1|0|3|aXc
+35|compile_ok|1|0|3|a.c
+36|compile_ok|NOMATCH
+37|compile_ok|1|1|3|  
+38|compile_ok|3|0|9|0|4|5|9|user@host|user|host
+39|compile_ok|3|0|15|0|9|10|15|key:value:extra|key:value|extra
+40|compile_ok|1|0|13|NPC idle chat
+41|compile_ok|3|0|15|0|4|6|15|Zeny: 1,000,000|Zeny|1,000,000
+42|compile_ok|1|0|15|anything at all

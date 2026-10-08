@@ -1,0 +1,47 @@
+# PCRE regression corpus: pattern \t subject \t offset \t caseless
+# Covers real-world NPC chat / preg_match usage plus engine edge cases.
+# PCRE1 8.33 output for this file is pinned in pcre1.expected; the PCRE2
+# build must reproduce it byte-for-byte.
+.*hello.*	well hello there	0	0
+.*hello.*	WELL HELLO THERE	0	0
+.*hello.*	WELL HELLO THERE	0	1
+heal( me|ing)?	please heal me now	0	0
+heal( me|ing)?	healing potion	0	0
+warp to ([a-z_]+)	warp to prontera	0	0
+warp to ([a-z_]+)	WARP TO PRONTERA	0	1
+price ([0-9]+) zeny	price 15000 zeny	0	0
+price ([0-9]+) zeny	price fifteen zeny	0	0
+\bjob\b	my job is merchant	0	0
+\bjob\b	my jobs are many	0	0
+^(hi|hello|hey)$	hello	0	0
+^(hi|hello|hey)$	hello there	0	0
+(a|b)\1	aabb	0	0
+(a|b)\1	ab	0	0
+foo(?=bar)	foobar	0	0
+foo(?=bar)	foobaz	0	0
+colou?r	color	0	0
+colou?r	colour	0	0
+\d{3}-\d{4}	call 555-1234 now	0	0
+<item>(.*?)</item>	<item>Sword</item>	0	0
+a*		0	0
+a*	aaa	0	0
+^$		0	0
+.+		0	0
+offset test	offset test	7	0
+offset test	offset test	99	0
+(	invalid pattern	0	0
+[unclosed	invalid class	0	0
+a{2,1}	bad repeat	0	0
+(empty)			0	0
+x	y	0	0
+Caf\xc3\xa9	Caf\xc3\xa9 latte	0	0
+a.c	abc	0	0
+a.c	aXc	0	0
+a\.c	a.c	0	0
+a\.c	abc	0	0
+\s+	a  b	c	0	0
+([a-z]+)@([a-z]+)	user@host	0	0
+^(.*):(.*)$	key:value:extra	0	0
+npc.*chat	NPC idle chat here	0	1
+(Zeny|zeny): ([0-9,]+)	Zeny: 1,000,000	0	0
+.*	anything at all	0	0
