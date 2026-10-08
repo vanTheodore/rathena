@@ -20,9 +20,9 @@ set( YAML_HEADERS
     "${YAML_INCLUDE_DIRS}/yaml-cpp/parser.h"
     "${YAML_INCLUDE_DIRS}/yaml-cpp/ostream_wrapper.h"
     "${YAML_INCLUDE_DIRS}/yaml-cpp/null.h"
-    "${YAML_INCLUDE_DIRS}/yaml-cpp/noncopyable.h"
     "${YAML_INCLUDE_DIRS}/yaml-cpp/noexcept.h"
     "${YAML_INCLUDE_DIRS}/yaml-cpp/mark.h"
+    "${YAML_INCLUDE_DIRS}/yaml-cpp/fptostring.h"
     "${YAML_INCLUDE_DIRS}/yaml-cpp/exceptions.h"
     "${YAML_INCLUDE_DIRS}/yaml-cpp/eventhandler.h"
     "${YAML_INCLUDE_DIRS}/yaml-cpp/emitterstyle.h"
@@ -57,6 +57,7 @@ set( YAML_SOURCES
   "${YAML_SOURCE_DIR}/emitterutils.cpp"
   "${YAML_SOURCE_DIR}/exceptions.cpp"
   "${YAML_SOURCE_DIR}/exp.cpp"
+  "${YAML_SOURCE_DIR}/fptostring.cpp"
   "${YAML_SOURCE_DIR}/memory.cpp"
   "${YAML_SOURCE_DIR}/nodebuilder.cpp"
   "${YAML_SOURCE_DIR}/node.cpp"
@@ -78,9 +79,7 @@ set( YAML_SOURCES
   "${YAML_SOURCE_DIR}/contrib/graphbuilderadapter.cpp"
   "${YAML_SOURCE_DIR}/contrib/graphbuilder.cpp"
 	CACHE INTERNAL "yaml sources" )
-set( YAML_DEFINITIONS
-	"-std=c++11"
-	CACHE INTERNAL "yaml definitions" )
+# Project owns the C++23 floor; no per-dependency -std= flag.
 include_directories(${YAML_INCLUDE_DIRS} ${YAML_SOURCE_DIR})
 #message(STATUS "YAML_INCLUDE_DIRS : ${YAML_INCLUDE_DIRS}, YAML_SOURCE_DIR=${YAML_SOURCE_DIR}")
 ADD_LIBRARY(${this_target} STATIC ${YAML_SOURCES} )

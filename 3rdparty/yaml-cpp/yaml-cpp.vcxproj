@@ -152,6 +152,7 @@
   <ItemGroup>
     <ClInclude Include="src\collectionstack.h" />
     <ClInclude Include="src\contrib\graphbuilderadapter.h" />
+    <ClInclude Include="src\contrib\dragonbox.h" />
     <ClInclude Include="src\directives.h" />
     <ClInclude Include="src\emitterstate.h" />
     <ClInclude Include="src\emitterutils.h" />
@@ -187,6 +188,7 @@
     <ClCompile Include="src\emitterutils.cpp" />
     <ClCompile Include="src\exceptions.cpp" />
     <ClCompile Include="src\exp.cpp" />
+    <ClCompile Include="src\fptostring.cpp" />
     <ClCompile Include="src\memory.cpp" />
     <ClCompile Include="src\node.cpp" />
     <ClCompile Include="src\nodebuilder.cpp" />
