@@ -27,12 +27,15 @@ jobs:
           grep -q "Enabled PCRE code" configure.log
           grep -q "Configuring for system MYSQL - done" configure.log
           grep -q "Found MYSQL: .*mariadb" configure.log
+          grep -q "Using MYSQL: .*mariadb.* (MariaDB Connector/C " configure.log
+          ! grep -q "older than the supported client floor" configure.log
       - name: Build all servers + tools
         run: cmake --build build
       - name: Boot smoke (fails on absent DB only)
         run: |
           cp -r conf/import-tmpl/* conf/import/ 2>/dev/null || (mkdir -p conf/import conf/msg_conf/import db/import && cp conf/import-tmpl/* conf/import/ && cp conf/msg_conf/import-tmpl/* conf/msg_conf/import/ && cp db/import-tmpl/* db/import/)
-          timeout 20 ./map-server || test $? -eq 1
+          timeout 20 ./map-server > boot.log 2>&1 || test $? -eq 1
+          grep -Eq "MySQL client library: 3[.]" boot.log
 
   linux-clang:
     runs-on: ubuntu-24.04
@@ -46,6 +49,8 @@ jobs:
           grep -q "Enabled PCRE code" configure.log
           grep -q "Configuring for system MYSQL - done" configure.log
           grep -q "Found MYSQL: .*mariadb" configure.log
+          grep -q "Using MYSQL: .*mariadb.* (MariaDB Connector/C " configure.log
+          ! grep -q "older than the supported client floor" configure.log
       - name: Build all servers + tools
         run: cmake --build build
 
@@ -108,6 +113,8 @@ jobs:
           grep -q "Enabled PCRE code" configure.log
           grep -q "Configuring for system MYSQL - done" configure.log
           grep -q "Found MYSQL: .*mariadb" configure.log
+          grep -q "Using MYSQL: .*mariadb.* (MariaDB Connector/C " configure.log
+          ! grep -q "older than the supported client floor" configure.log
       - name: Build all servers + tools
         run: cmake --build build
       - name: Startup smoke under sanitizers
@@ -129,6 +136,8 @@ jobs:
           grep -q "Enabled PCRE code" configure.log
           grep -q "Configuring for system MYSQL - done" configure.log
           grep -q "Found MYSQL: .*mariadb" configure.log
+          grep -q "Using MYSQL: .*mariadb.* (MariaDB Connector/C " configure.log
+          ! grep -q "older than the supported client floor" configure.log
       - name: Build all servers + tools
         run: cmake --build build
 

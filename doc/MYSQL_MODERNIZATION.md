@@ -1,6 +1,7 @@
 # MySQL/MariaDB integration audit and modernization plan
 
-Status: **stage S1 landed**, no game logic touched (branch `deps/mysql-mariadb`).
+Status: **stages S1 and S2 landed**, no game logic touched (branch
+`deps/mysql-mariadb`).
 Everything below is either executed evidence from this checkout or cited
 upstream/package documentation; nothing was validated against a real database
 server or on Linux/MSVC (see "Executed vs not executed").
@@ -117,14 +118,16 @@ version", and 8.0.34+ clients warn at runtime. rAthena depends on it for the
 re-implemented explicitly (next-query/keepalive reconnect) if the option disappears,
 preserving the existing config semantics.
 
-### F4 (low) — version guards probe the wrong macro
+### F4 (low) — version guards probe the wrong macro — **fixed in S2**
 
 `src/common/sql.cpp:14,88` gate `my_bool` and `MYSQL_OPT_SSL_MODE` on
 `MYSQL_VERSION_ID` (server-version string from the client headers, 50716 in 6.1.9)
 instead of client version macros (`LIBMYSQL_VERSION_ID`, MariaDB's
 `MARIADB_VERSION_ID`). Works by accident today (the 6.1.9 header does define
 `MYSQL_OPT_SSL_MODE`, `mysql.h:176`); will silently misprobe once the client is
-replaced. Fix along with the migration.
+replaced. **S2** defines `RA_MYSQL_CLIENT_VERSION` (`LIBMYSQL_VERSION_ID` →
+`MARIADB_VERSION_ID` → `MYSQL_VERSION_ID` → 0) and uses it in both guards; the
+decision matrix is verified in section 7 (S2).
 
 ### F5 (low) — deprecated connection-less escapers
 
@@ -145,11 +148,13 @@ These are behavior, not debt: preserve them.
 time by five vcxproj targets. No hash pinning, no version floor, 32-bit blob is dead
 weight for most users, and there is no documented upgrade path for the client.
 
-### F8 (info) — client version is invisible at runtime
+### F8 (info) — client version is invisible at runtime — **fixed in S2**
 
 Nothing logs `mysql_get_client_info()`; diagnosing auth/TLS failures requires
 guessing which client is in use. A single startup log line is behavior-neutral and
-worth adding during the migration.
+worth adding during the migration. **S2** logs it once in `Sql_Init()`
+(`MySQL client library: <version>`), and the CI boot smoke asserts the line and the
+MariaDB Connector/C series in it.
 
 ### F9 (medium) — documented support matrix is stale
 
@@ -176,6 +181,53 @@ system MySQL Connector/C when one is present (secondary). This deletes the 2014
 blobs, resolves the license question, restores compatibility with default MySQL
 8.4+/MariaDB 11 authentication, and stops fighting distro packaging that already
 ships `libmariadb`. Do not chase 3.5/preview versions; 3.4 GA is the target.
+
+### 4.1 Client floor and how to install the client
+
+**Floor**: MariaDB Connector/C **≥ 3.0.8** (first release with client-side
+`caching_sha2_password`, what MySQL 8.4+/MariaDB 11+ servers require); **3.4.x
+recommended**. A MySQL Connector/C client must be **≥ 8.0**: the 6.1.x series and
+the 5.x/4.x client libraries are below the floor (no `caching_sha2_password`, no
+TLS 1.2). Both build systems report and warn about this instead of failing, so
+existing setups keep building while the legacy bundled client is replaced:
+
+- CMake: `3rdparty/cmake/FindMYSQL.cmake` reports the connector kind and the
+  *client* version (`mariadb_version.h`'s `MARIADB_PACKAGE_VERSION`, MySQL's
+  `LIBMYSQL_VERSION`, or pkg-config as a last resort); `3rdparty/mysql/CMakeLists.txt`
+  prints `Using MYSQL: <lib> (<kind> <version>)` and warns when the version is
+  below the floor.
+- Autotools: `configure` prints `checking MySQL client library... <kind>
+  <version>` and warns when the version from `mysql_config`/`mariadb_config
+  --version` is below the floor.
+
+**Installing it (build time)**:
+
+| Platform | Command / source | Provides |
+|---|---|---|
+| Debian/Ubuntu | `sudo apt-get install libmariadb-dev` (CI uses this; noble: 3.3.8) | `/usr/include/mariadb/mysql.h`, `libmariadb.so`, `libmariadb.pc` |
+| Fedora/RHEL | `sudo dnf install mariadb-connector-c-devel` | same layout under `/usr/include/mariadb` |
+| macOS | `brew install mariadb-connector-c` | `opt/mariadb-connector-c/{include,lib}` |
+| Windows | MariaDB Connector/C 3.4.x **MSI** from mariadb.com/downloads (system install) | `%PROGRAMFILES%/MariaDB/<version>/{include,lib}` + `libmariadb.dll`; the repository stops shipping the 2014 blobs in S3 |
+
+Detected through the distribution's paths, the `libmariadb.pc`/`mysqlclient.pc`
+pkg-config modules when present (hints only — pkg-config is optional and is not
+required on Windows), and MariaDB/MySQL `Program Files` layouts. No fixed paths are
+assumed.
+
+**Running the servers (runtime)**:
+
+- The client **shared library** must be present on the machine that runs
+  `login-server`/`char-server`/`map-server`: `libmariadb3` (Debian/Ubuntu),
+  `mariadb-connector-c`/`mariadb-libs` (Fedora/Arch) or `libmariadb.dll`
+  (Windows, shipped by the same MSI). Statically linking is not part of this plan.
+- No new mandatory runtime config: the existing `inter_server`/`map_server`
+  connection settings keep working. `sql_connection`-style settings, codepage
+  (`SET NAMES`) and the documented privileges are unchanged; the client only
+  changes *how* the connection authenticates and which TLS the client offers.
+- Database-side: MariaDB 10.x/11.x or MySQL 8.0/8.4+. A server whose users use
+  `caching_sha2_password` (MySQL 8.4 default) needs the ≥ 3.0.8 connector; servers
+  that only accept `mysql_native_password` keep working unchanged. No schema or
+  data migration is involved in this work.
 
 ## 5. Behavior that must not change
 
@@ -241,13 +293,37 @@ plus the existing `sql-files` import is enough.
   regenerated `configure` diffs against the previous file in exactly three hunks
   (help text, `mariadb_config` fallback, `-lmariadb`/`-lmariadbclient` probes).
   Not verified on a real Linux host (see "Executed vs not executed").
-- **S2 — client-version hygiene**: guard on client version macros, require a
-  documented client floor (MariaDB Connector/C ≥ 3.0.8 for `caching_sha2_password`;
-  3.4.x recommended), log `mysql_get_client_info()` once at startup.
-- **S3 — Windows client replacement**: stop shipping the 6.1.9 blobs; use
-  MariaDB Connector/C 3.4.x (installed via MSI, or built from source and vendored —
-  decision pending); update `3rdparty/mysql`, the five vcxproj targets and the
-  `.sln` wiring; document the required client version in `README.md`.
+- **S2 — client-version hygiene** — **landed**. `src/common/sql.cpp` defines
+  `RA_MYSQL_CLIENT_VERSION` (`LIBMYSQL_VERSION_ID` → `MARIADB_VERSION_ID` →
+  `MYSQL_VERSION_ID` → 0) and uses it for the `my_bool` bandaid and the
+  `MYSQL_OPT_SSL_MODE` guard, and `Sql_Init()` now logs
+  `MySQL client library: <mysql_get_client_info()>` once (F4/F8).
+  `3rdparty/cmake/FindMYSQL.cmake` reports the client kind and the *client* version
+  (`MARIADB_PACKAGE_VERSION`, `LIBMYSQL_VERSION`, pkg-config as last resort) and
+  takes optional pkg-config hints; `3rdparty/mysql/CMakeLists.txt` prints
+  `Using MYSQL: <lib> (<kind> <version>)` and warns below the floor;
+  `configure.ac`/`configure` print the kind and warn on the same floor (§4.1).
+  CI asserts `Using MYSQL: .*mariadb.* (MariaDB Connector/C `, the absence of the
+  floor warning, and the `MySQL client library: 3.` boot line.
+
+  Verified locally: guard matrix over seven client macro combinations (6.1.9,
+  8.0.34, MariaDB 3.4.11 with and without `LIBMYSQL_VERSION_ID`, 5.7.16, the
+  8.0.02 quirk, no macros) extracted from the edited `sql.cpp`; floor matrix for
+  CMake (12/12: MariaDB 3.4.11/3.0.8/3.0.7/2.3.7, MySQL 8.0.0/8.4.0/9.1.0/5.7.16,
+  empty kind, unknown version) and for the generated shell block (11/11, including
+  a MariaDB `10.3.34-MariaDB` server-style version and a trailing-space version);
+  find-module probes for the four header layouts plus the pkg-config hint path
+  (kind/version derived from `libmariadb`/`mysqlclient`); `bash -n configure` and
+  one-hunk regeneration with GNU Autoconf 2.69; local Windows reconfigure + build
+  green (95/95 steps, no `FAILED`) and the boot smoke printing
+  `[Info]: MySQL client library: 6.1.9`. Not verified: Linux/real `mariadb_config`
+  execution and MSVC (see §9).
+- **S3 — Windows client replacement (decided: system install, no vendoring)**:
+  delete the 6.1.9 headers and blobs from `3rdparty/mysql` and point detection and
+  the five vcxproj targets at the MSI-installed MariaDB Connector/C 3.4.x
+  (include dir, import library, matching architecture, `libmariadb.dll` next to the
+  built binaries); document the required version and the runtime DLL in `README.md`
+  and `3rdparty/README.txt`.
 - **S4 — reconnect/keepalive**: re-implement reconnect explicitly so the
   `mysql_reconnect_type`/`mysql_reconnect_count` contract survives the removal of
   `MYSQL_OPT_RECONNECT`; keep the ping timer.
@@ -257,12 +333,16 @@ plus the existing `sql-files` import is enough.
 S1 touches no game logic and is verifiable here; S3/S4 depend on the decisions
 below and on real-DB validation.
 
-## 8. Open decisions
+## 8. Decisions (closed)
 
-1. Client standard: MariaDB Connector/C only (recommended) vs "either client".
-2. Windows distribution: MSI/system install (documented requirement) vs
-   source-built vendored library vs keeping prebuilt blobs (rejected).
-3. Whether S1 lands now, before the client decision (it is connector-agnostic).
+1. Client standard: **MariaDB Connector/C 3.4.x** (LGPL-2.1+), preferably 3.4.11.
+   A system MySQL Connector/C is still detected as a secondary fallback, and the
+   floor in §4.1 applies to both.
+2. Windows distribution: **system install via the official MSI** — no prebuilt
+   blobs in the repository and no source-built vendored copy. CMake must find the
+   include dir, import library, architecture and runtime DLL of that installation.
+3. S1 (connector-agnostic detection) landed first, then S2 (version hygiene);
+   S3/S4/S5 follow on the same branch, one commit per stage.
 
 ## 9. Executed vs not executed
 
@@ -274,10 +354,21 @@ simulated Debian and MySQL layouts, `bash -n` on the regenerated `configure`,
 Autoconf 2.69 regeneration). Sources consulted for version/license/packaging
 facts are listed below.
 
+S2 verification (this checkout): the guard matrix, the CMake and shell floor
+matrices, the find-module probes (header layouts + pkg-config hints), the
+regenerated `configure` (one hunk against S1, `bash -n` clean, shell matrix run
+from the generated block), the local reconfigure/build (`ninja`, 95/95 steps, no
+`FAILED`) and the boot smoke with the new startup line. The pkg-config *executable*
+itself is not installed on this Windows host, so the real `pkg_check_modules` call
+is exercised only in CI; the hint wiring was verified by supplying the same
+variables it sets.
+
 Not executed / not claimed: no Linux host, so F1 is documentary + source-code
-evidence, not a reproduced failure; no database server available locally, so no
-part of T2/T3 has been run; no MSVC host; no CI run (no remote). No code has been
-changed yet.
+evidence, not a reproduced failure; no `mariadb_config`/`mysql_config` binary on
+this host, so the Autotools floor warning was run from the generated block rather
+than through a full `./configure`; no database server available locally, so no part
+of T2/T3 has been run; no MSVC host; no CI run (no remote). S1 and S2 changed build
+configuration, `src/common/sql.cpp` guards and a single startup log line only.
 
 ## 10. Sources
 

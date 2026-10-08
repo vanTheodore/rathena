@@ -7048,6 +7048,32 @@ $as_echo "no" >&6; }
 	as_fn_error $? "MySQL not found or incompatible" "$LINENO" 5
 fi
 
+# Client library floor (see doc/MYSQL_MODERNIZATION.md, stage S2). Logging in to
+# a current server needs caching_sha2_password support (usable since MariaDB
+# Connector/C 3.0.8, or with a MySQL 8.0 client) and TLS 1.2.
+case "$MYSQL_CONFIG_HOME" in
+	*mariadb_config*) MYSQL_CLIENT_KIND="MariaDB Connector/C" ; MYSQL_CLIENT_FLOOR="3.0.8" ;;
+	*) MYSQL_CLIENT_KIND="MySQL Connector/C" ; MYSQL_CLIENT_FLOOR="8.0" ;;
+esac
+
+# Compare dotted versions without extra tools: major * 1000000 + minor * 1000 + patch.
+mysql_version_number() {
+	_ra_version=`echo "$1" | sed -e 's/[^0-9.].*$//'`
+	_ra_saved_IFS="$IFS" ; IFS=. ; set -- $_ra_version ; IFS="$_ra_saved_IFS"
+	echo $(( ${1:-0} * 1000000 + ${2:-0} * 1000 + ${3:-0} ))
+}
+
+if test "$HAVE_MYSQL" = "yes" && test "$MYSQL_VERSION" != "unknown" ; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking MySQL client library" >&5
+$as_echo_n "checking MySQL client library... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MYSQL_CLIENT_KIND ${MYSQL_VERSION}" >&5
+$as_echo "$MYSQL_CLIENT_KIND ${MYSQL_VERSION}" >&6; }
+	if test "`mysql_version_number "$MYSQL_VERSION"`" -lt "`mysql_version_number "$MYSQL_CLIENT_FLOOR"`" ; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $MYSQL_CLIENT_KIND $MYSQL_VERSION is older than the supported client floor ($MYSQL_CLIENT_FLOOR): logging in to MySQL 8.4+/MariaDB 11+ servers (caching_sha2_password) and TLS 1.2 will not work with this client. Install MariaDB Connector/C 3.4.x and rebuild." >&5
+$as_echo "$as_me: WARNING: $MYSQL_CLIENT_KIND $MYSQL_VERSION is older than the supported client floor ($MYSQL_CLIENT_FLOOR): logging in to MySQL 8.4+/MariaDB 11+ servers (caching_sha2_password) and TLS 1.2 will not work with this client. Install MariaDB Connector/C 3.4.x and rebuild." >&2;}
+	fi
+fi
+
 
 
 

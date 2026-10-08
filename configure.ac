@@ -1276,6 +1276,29 @@ else
 	AC_MSG_ERROR([MySQL not found or incompatible])
 fi
 
+# Client library floor (see doc/MYSQL_MODERNIZATION.md, stage S2). Logging in to
+# a current server needs caching_sha2_password support (usable since MariaDB
+# Connector/C 3.0.8, or with a MySQL 8.0 client) and TLS 1.2.
+case "$MYSQL_CONFIG_HOME" in
+	*mariadb_config*) MYSQL_CLIENT_KIND="MariaDB Connector/C" ; MYSQL_CLIENT_FLOOR="3.0.8" ;;
+	*) MYSQL_CLIENT_KIND="MySQL Connector/C" ; MYSQL_CLIENT_FLOOR="8.0" ;;
+esac
+
+# Compare dotted versions without extra tools: major * 1000000 + minor * 1000 + patch.
+mysql_version_number() {
+	_ra_version=`echo "$1" | sed -e 's/@<:@^0-9.@:>@.*$//'`
+	_ra_saved_IFS="$IFS" ; IFS=. ; set -- $_ra_version ; IFS="$_ra_saved_IFS"
+	echo $(( ${1:-0} * 1000000 + ${2:-0} * 1000 + ${3:-0} ))
+}
+
+if test "$HAVE_MYSQL" = "yes" && test "$MYSQL_VERSION" != "unknown" ; then
+	AC_MSG_CHECKING([MySQL client library])
+	AC_MSG_RESULT([$MYSQL_CLIENT_KIND ${MYSQL_VERSION}])
+	if test "`mysql_version_number "$MYSQL_VERSION"`" -lt "`mysql_version_number "$MYSQL_CLIENT_FLOOR"`" ; then
+		AC_MSG_WARN([$MYSQL_CLIENT_KIND $MYSQL_VERSION is older than the supported client floor ($MYSQL_CLIENT_FLOOR): logging in to MySQL 8.4+/MariaDB 11+ servers (caching_sha2_password) and TLS 1.2 will not work with this client. Install MariaDB Connector/C 3.4.x and rebuild.])
+	fi
+fi
+
 AC_SUBST([HAVE_MYSQL])
 AC_SUBST([MYSQL_VERSION])
 AC_SUBST([MYSQL_CFLAGS])

@@ -11,10 +11,23 @@
 #include "showmsg.hpp"
 #include "timer.hpp"
 
-// MySQL 8.0 or later removed my_bool typedef.
-// Reintroduce it as a bandaid fix.
-// See https://bugs.mysql.com/?id=87337
-#if !defined(MARIADB_BASE_VERSION) && !defined(MARIADB_VERSION_ID) && MYSQL_VERSION_ID >= 80001 && MYSQL_VERSION_ID != 80002
+// Client library version, preferring the connector's own macros. MySQL's
+// MYSQL_VERSION_ID is the *server* version string baked into the client headers
+// (e.g. 50716 in MySQL Connector/C 6.1.9), so it cannot describe the client's
+// API surface and is only a last-resort fallback.
+#if defined(LIBMYSQL_VERSION_ID)
+#define RA_MYSQL_CLIENT_VERSION LIBMYSQL_VERSION_ID
+#elif defined(MARIADB_VERSION_ID)
+#define RA_MYSQL_CLIENT_VERSION MARIADB_VERSION_ID
+#elif defined(MYSQL_VERSION_ID)
+#define RA_MYSQL_CLIENT_VERSION MYSQL_VERSION_ID
+#else
+#define RA_MYSQL_CLIENT_VERSION 0
+#endif
+
+// MySQL 8.0 removed the my_bool typedef (MySQL bug #87337); MariaDB Connector/C
+// still provides it. Reintroduce it as a bandaid fix.
+#if !defined(MARIADB_BASE_VERSION) && !defined(MARIADB_VERSION_ID) && RA_MYSQL_CLIENT_VERSION >= 80001 && RA_MYSQL_CLIENT_VERSION != 80002
 #define my_bool bool
 #endif
 
@@ -85,7 +98,9 @@ int32 Sql_Connect(Sql* self, const char* user, const char* passwd, const char* h
 
 	StringBuf_Clear(&self->buf);
 
-#if !defined(MARIADB_BASE_VERSION) && !defined(MARIADB_VERSION_ID) && MYSQL_VERSION_ID >= 50710
+// MYSQL_OPT_SSL_MODE exists since the MySQL 5.7.11 client libraries; MariaDB
+// Connector/C has its own TLS options and is excluded above.
+#if !defined(MARIADB_BASE_VERSION) && !defined(MARIADB_VERSION_ID) && RA_MYSQL_CLIENT_VERSION >= 50711
 	uint32 md = SSL_MODE_DISABLED;
 
 	if( mysql_options( &self->handle, MYSQL_OPT_SSL_MODE, &md ) ){
@@ -1016,6 +1031,9 @@ void Sql_inter_server_read(const char* cfgName, bool first) {
 
 void Sql_Init(void) {
 	Sql_inter_server_read(INTER_CONF_NAME,true);
+	// Report which client library this build linked, so support can tell a
+	// MariaDB Connector/C build from a libmysqlclient one without guessing.
+	ShowInfo("MySQL client library: %s\n", mysql_get_client_info());
 }
 
 #ifdef my_bool
