@@ -65,8 +65,50 @@ working from a complete checkout.
 | rapidyaml (+c4core) | 0.4.0 / c4core 0.1.8 | **0.16.0** | small compat migration | `>>` kept via documented `RYML_WITH_LEGACY_OPERATORS` (`.deserialize()` migration is follow-up); Callbacks split 1→3 handlers re-registered to keep throwing `std::runtime_error`; `Parser::parse_in_arena` removed → free function; read-only API to `ConstNodeRef`; c4core submodule gone, required sources vendored. License MIT |
 | libconfig | 1.4.9 | **1.8.2** (pending) | safe direct update | C library; check scanner/grammar regeneration needs. License LGPL-2.1+ |
 | zlib | 1.2.8 headers + prebuilt Win DLL | **1.3.2** (not 1.3.1 — 1.3.2 is the actual latest stable, Feb 2026) | safe direct update | prebuilt blobs removed; static build from vendored source on Windows (new zlib.vcxproj, `.sln` wired, consumers link `.vs\build\zlib.lib`); system zlib elsewhere. No more runtime zlib.dll. License Zlib |
-| PCRE (8.33, PCRE1) | 8.33 | **10.49** (PCRE2) | substantial migration | 8-bit PCRE2 built from vendored source on Windows (prebuilt pcre8 DLL/import-lib blobs removed, no runtime DLL) and system `libpcre2-8` elsewhere. API/behavior differences isolated and pinned by `tools/pcre-regress` (48 cases byte-for-byte vs the PCRE1 8.33 baseline); JIT sources compiled but never invoked. License BSD-3-Clause |
+| PCRE (8.33, PCRE1) | 8.33 | **10.49** (PCRE2) | substantial migration | 8-bit PCRE2 built from vendored source on Windows (prebuilt pcre8 DLL/import-lib blobs removed, no runtime DLL) and system `libpcre2-8` elsewhere. API/behavior differences isolated and pinned by `tools/pcre-regress` (48 cases byte-for-byte vs the PCRE1 8.33 baseline); JIT sources compiled but never invoked. Vendored sources audited against the 10.49 tag; license BSD-3-Clause WITH PCRE2-exception (`3rdparty/pcre2/LICENCE.md`) |
 | MySQL client | 6.1.9 headers / 5.7.16 | **deferred** | architectural | Windows-only bundled compat headers; system client on Linux. Replacing needs DBA-level validation |
+
+### PCRE2 vendored source audit
+
+`3rdparty/pcre2` is an upstream-verbatim subset of the PCRE2 10.49 `src/`
+directory, checked file-by-file against the `pcre2-10.49` tag. The only
+additions are generated the way upstream generates them: `pcre2_chartables.c`
+is upstream's `pcre2_chartables.c.dist` (upstream writes that copy into its
+build tree too), and `include/pcre2.h` is `src/pcre2.h.in` with the version
+constants substituted plus a 3-line provenance comment.
+
+Vendored: the 31 sources of the upstream 8-bit static build and the headers
+they include. Not vendored: the test/CLI programs (`pcre2grep.c`, `pcre2test.c`,
+`pcre2demo.c`, `pcre2_dftables.c`, `pcre2_fuzzsupport.c`, the `*_test.c`
+files) and the POSIX-wrapper files (`pcre2posix.c`/`.h`, `pcre2test_inc.h`) —
+nothing in rAthena references them. Every vendored source carries upstream's
+BSD notice inline, and the full upstream `LICENCE.md`
+(BSD-3-Clause WITH PCRE2-exception) is vendored as `3rdparty/pcre2/LICENCE.md`.
+
+### PCRE2 error handling: deliberate collapse
+
+`pcre2_match()` returns a positive capture count, `0` (matched, but the 10-pair
+ovector was too small) or a negative engine status. Both call sites
+(`src/map/npc_chat.cpp` and `preg_match` in `src/map/script.cpp`) treat only
+`r > 0` as a match, collapsing every negative status into "no match" — exactly
+what the PCRE1 code did (`pcre_exec()` < 0):
+
+| Engine status | Meaning | rAthena behavior |
+|---|---|---|
+| `PCRE2_ERROR_NOMATCH` | no match | fall through / push 0 (PCRE1: same) |
+| `PCRE2_ERROR_MATCHLIMIT` / `_DEPTHLIMIT` / `_HEAPLIMIT` | execution or resource limit hit | fall through / push 0 (PCRE1: same, via `PCRE_ERROR_MATCHLIMIT`/`_RECURSIONLIMIT`) |
+| `PCRE2_ERROR_BADOFFSET` | start offset past the subject end (or negative) | fall through / push 0 (PCRE1: same) |
+| `PCRE2_ERROR_NOMEMORY`, other internal errors | real error | fall through / push 0; a pattern that fails to compile never matches |
+| `r == 0` | matched, captures do not fit 10 pairs | `preg_match` pushes `30/3 == 10` (historic quirk, pinned by corpus cases 43-45); chat treats it as no match (PCRE1: same) |
+
+No status can be mistaken for a successful match and no error path leaks
+(`pcre2_code`/`pcre2_match_data` are freed on pattern-set teardown). Reporting
+limits/real errors differently (for example logging a resource-limit hit
+instead of silently not matching) would change script and chat behavior, so it
+is left out of the engine swap. The categories stay testable instead:
+`pcre-regress --diag` prints the engine status per corpus case and
+`tools/pcre-regress/check-diag.sh` asserts them (no-match, bad offset, compile
+failure, ordinary match, ovector-too-small, execution limit).
 
 ## Validation (local: MinGW-w64 ucrt64, CMake 4.4.4, Ninja)
 
@@ -85,8 +127,11 @@ working from a complete checkout.
 - [x] PCRE2 parity: `tools/pcre-regress` (10.49) reproduces the pinned
   PCRE 8.33 output byte-for-byte over 48 chat/preg_match cases, including
   the 30-int-ovector == 10-pair capture capacity boundary and the
-  match-limit / catastrophic-backtracking error path; CI runs the harness
-  under ASan/LSan (`linux-pcre-regress`) against the committed baseline.
+  match-limit / catastrophic-backtracking error path. CI
+  (`linux-pcre-regress`) runs that comparison under ASan/LSan for **both**
+  PCRE2 variants — system `libpcre2-8` and the vendored 10.49 sources — and
+  additionally asserts via `--diag` + `check-diag.sh` that no-match,
+  execution limits, bad offset and compile errors stay distinct.
 - [x] Autotools: `configure` regenerated from `configure.ac` with GNU
   Autoconf 2.69 (the generator version of the committed file) matches
   byte-for-byte except the distro-backported `--runstatedir` block; the
@@ -122,9 +167,11 @@ Linux: GCC-latest+C++23 (Release, Debug, ASan+UBSan), Clang-latest+C++23
   boot smoke (expected to stop at absent-DB connect, exit 1 — any other
   failure, e.g. crash, fails the job).
 - `linux-clang` (Release, Clang 18): configure + full build.
-- `linux-pcre-regress`: builds `tools/pcre-regress` against system
-  `libpcre2-8` with ASan/LSan and diffs its output against the committed
-  PCRE 8.33 baseline (48 cases). No full build, no PCRE1 DLL required.
+- `linux-pcre-regress`: compiles `tools/pcre-regress` under ASan/LSan twice
+  — against system `libpcre2-8` and against the vendored 10.49 sources — and
+  diffs each run against the committed PCRE 8.33 baseline (48 cases), then
+  checks the `--diag` error categories with `check-diag.sh`. No full build,
+  no PCRE1 DLL required.
 - `linux-sanitizers` (Debug, ASan+UBSan via `-DENABLE_SANITIZERS`):
   build + login/map startup smoke. Full sanitizer *runtime* coverage is
   Linux-only (MinGW ships no ASan/UBSan runtimes); all TUs were verified to

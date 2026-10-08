@@ -46,20 +46,51 @@ jobs:
         run: cmake --build build
 
   linux-pcre-regress:
-    # Regex parity + resource-cleanup gate: the dev harness must reproduce the
-    # pinned PCRE 8.33 baseline byte-for-byte on PCRE2, and ASan/LSan must see
-    # no leaked pcre2_code / pcre2_match_data. Independent of the full build.
+    # Regex parity + resource-cleanup gate. Both PCRE2 builds the project can
+    # use are compiled and *run* here, and both must reproduce the pinned
+    # PCRE 8.33 baseline byte-for-byte, with ASan/LSan seeing no leaked
+    # pcre2_code / pcre2_match_data:
+    #   1. system libpcre2-8            (the -DWITH_LOCAL_PCRE=OFF path)
+    #   2. the vendored 10.49 sources    (what the Windows build compiles)
+    # `--diag` then asserts the categories the call sites intentionally
+    # collapse - no match, execution limits, bad offset, real/compile errors -
+    # are still distinct inside the engine (tools/pcre-regress/check-diag.sh).
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install GCC 14 + libpcre2-dev
         run: sudo apt-get update && sudo apt-get install -y g++-14 libpcre2-dev
-      - name: Build harness (ASan + LSan)
-        run: g++-14 -std=c++23 -DPCRE_SUPPORT -fsanitize=address -fno-omit-frame-pointer tools/pcre-regress/pcre-regress.cpp -lpcre2-8 -o pcre-regress
-      - name: Parity against pinned PCRE1 baseline
+
+      - name: Build harness against system libpcre2-8 (ASan + LSan)
+        run: g++-14 -std=c++23 -DPCRE_SUPPORT -fsanitize=address -fno-omit-frame-pointer tools/pcre-regress/pcre-regress.cpp -lpcre2-8 -o pcre-regress-system
+      - name: "System PCRE2: parity against pinned baseline + error categories"
         run: |
-          ASAN_OPTIONS=detect_leaks=1 ./pcre-regress tools/pcre-regress/corpus.txt > pcre2.out
-          diff <(tr -d '\r' < tools/pcre-regress/pcre1.expected) <(tr -d '\r' < pcre2.out)
+          ASAN_OPTIONS=detect_leaks=1 ./pcre-regress-system tools/pcre-regress/corpus.txt > system.out
+          diff <(tr -d '\r' < tools/pcre-regress/pcre1.expected) <(tr -d '\r' < system.out)
+          ASAN_OPTIONS=detect_leaks=1 ./pcre-regress-system --diag tools/pcre-regress/corpus.txt > system.diag
+          sh tools/pcre-regress/check-diag.sh system.diag
+
+      # The vendored build repeats the defines of the pcre2_local CMake
+      # target / pcre2.vcxproj: 8-bit, static, no generated config.h, JIT off.
+      - name: Build vendored PCRE2 10.49 + harness (ASan + LSan)
+        run: |
+          mkdir -p vendored-pcre2
+          for src in 3rdparty/pcre2/src/pcre2_*.c; do
+            gcc-14 -c -O1 -fsanitize=address -fno-omit-frame-pointer \
+              -DPCRE2_CODE_UNIT_WIDTH=8 -DSUPPORT_PCRE2_8=1 -DPCRE2_STATIC -DPCRE2_EXPORT= \
+              -DLINK_SIZE=2 -DHEAP_LIMIT=20000000 -DMATCH_LIMIT=10000000 -DMATCH_LIMIT_DEPTH=10000000 \
+              -DMAX_VARLOOKBEHIND=255 -DMAX_NAME_COUNT=10000 -DMAX_NAME_SIZE=128 -DNEWLINE_DEFAULT=2 \
+              -DPARENS_NEST_LIMIT=250 -I3rdparty/pcre2/include -I3rdparty/pcre2/src \
+              "$src" -o "vendored-pcre2/$(basename "${src%.c}").o"
+          done
+          ar rcs vendored-pcre2/libpcre2-8.a vendored-pcre2/*.o
+          g++-14 -std=c++23 -DPCRE_SUPPORT -DPCRE2_STATIC -fsanitize=address -fno-omit-frame-pointer -I3rdparty/pcre2/include tools/pcre-regress/pcre-regress.cpp vendored-pcre2/libpcre2-8.a -o pcre-regress-vendored
+      - name: "Vendored PCRE2 10.49: parity against pinned baseline + error categories"
+        run: |
+          ASAN_OPTIONS=detect_leaks=1 ./pcre-regress-vendored tools/pcre-regress/corpus.txt > vendored.out
+          diff <(tr -d '\r' < tools/pcre-regress/pcre1.expected) <(tr -d '\r' < vendored.out)
+          ASAN_OPTIONS=detect_leaks=1 ./pcre-regress-vendored --diag tools/pcre-regress/corpus.txt > vendored.diag
+          sh tools/pcre-regress/check-diag.sh vendored.diag
 
   linux-sanitizers:
     runs-on: ubuntu-24.04

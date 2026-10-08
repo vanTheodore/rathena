@@ -17,6 +17,7 @@ updating the vendored engine.
   defined in the source so it also builds standalone).
 - `pcre1.expected` — frozen output of the PCRE 8.33 run. This is the source of
   truth; the PCRE2 port must reproduce it exactly.
+- `check-diag.sh` — asserts the `--diag` error categories (see below).
 
 ## Check PCRE2 against the baseline
 
@@ -33,12 +34,34 @@ A non-empty diff rejects the change. (Windows console output is CRLF; both
 sides get normalized. Against a system PCRE2, link `-lpcre2-8` instead of the
 archive.)
 
+## Error categories (`--diag`)
+
+`rAthena` only ever observes "matched / did not match", so `pcre1.expected`
+normalizes every negative `pcre2_match()` status away. The distinction still
+matters when diagnosing a pattern, so `--diag` prints the engine status per
+case instead:
+
+```sh
+./pcre-regress --diag tools/pcre-regress/corpus.txt
+# 1|match|-1|NOMATCH     26|match|-33|BADOFFSET    45|match|0|OVEC_SMALL
+# 27|compile_err|114     33|match|1|OK            47|match|-47|LIMIT
+```
+
+Categories: `OK` (r > 0), `OVEC_SMALL` (r == 0: matched, more than 10 capture
+pairs), `NOMATCH`, `LIMIT` (`MATCHLIMIT`/`DEPTHLIMIT`/`HEAPLIMIT`),
+`BADOFFSET`, `NOMEMORY`, `ERROR`; compile failures print
+`<index>|compile_err|<code>`. This output is never diffed — assert it with
+`check-diag.sh <file>`, which pins one case per category and exits non-zero on
+any mismatch.
+
 ## CI
 
-`linux-pcre-regress` (`.github/workflows/modern-toolchain.yml`) builds this
-harness against the system `libpcre2-8` with ASan/LSan and diffs its output
-against `pcre1.expected`, so parity and resource cleanup are checked on every
-run without needing the old PCRE1 DLL.
+`linux-pcre-regress` (`.github/workflows/modern-toolchain.yml`) compiles this
+harness under ASan/LSan **twice** — against the system `libpcre2-8` and against
+the vendored 10.49 sources — and diffs each run against `pcre1.expected`, so
+parity and resource cleanup are checked for both PCRE2 variants on every run
+without needing the old PCRE1 DLL. Each run then goes through
+`check-diag.sh` to pin the error categories.
 
 ## Regenerating the baseline (PCRE1 only, when the corpus grows)
 
