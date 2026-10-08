@@ -324,9 +324,12 @@ plus the existing `sql-files` import is enough.
   (include dir, import library, matching architecture, `libmariadb.dll` next to the
   built binaries); document the required version and the runtime DLL in `README.md`
   and `3rdparty/README.txt`.
-- **S4 — reconnect/keepalive**: re-implement reconnect explicitly so the
-  `mysql_reconnect_type`/`mysql_reconnect_count` contract survives the removal of
-  `MYSQL_OPT_RECONNECT`; keep the ping timer.
+- **S4 — reconnect/keepalive (landed)**: `MYSQL_OPT_RECONNECT` removed from
+  `Sql_Malloc`; the transparent client-side reconnect (which re-executed the
+  failed statement and silently discarded session state) is replaced by an
+  explicit reconnect in `Sql_QueryV`/`Sql_QueryStr` (stored connection
+  parameters, `Sql_P_Reconnect`, one retry on connection loss, the existing
+  2003 counting/fatal path unchanged); the ping keepalive timer is kept.
 - **S5 — regression CI + docs**: land T4, restate the supported server/client
   matrix, close this document.
 
@@ -376,6 +379,15 @@ library: 3.4.9` and exits 1 at absent-DB connect. Clang 22.1.8 parses
 executed: no MSVC host (the `.props` wiring is untested), no real-DB
 validation; the MSYS2 host has no `pkg-config`, so the `pkg_check_modules`
 path stays CI-only as with S2.
+
+S4 verification (this checkout, working tree): GCC 16.2 builds the full
+project (275/275 Ninja steps, baseline warnings only); char-server and
+login-server boot smoke loads `libmariadb.dll`, logs `MySQL client library:
+3.4.9` and exits 1 at absent-DB connect. Not executed: the runtime reconnect
+path itself (no database server locally) — step 7 of T2 is the pending
+validation; the SqlStmt/prepared-statement path is unchanged by design (its
+handles die with the connection, so its runtime behavior stays
+SQL_ERROR-on-drop).
 
 Not executed / not claimed: no Linux host, so F1 is documentary + source-code
 evidence, not a reproduced failure; no `mariadb_config`/`mysql_config` binary on

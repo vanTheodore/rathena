@@ -26,7 +26,9 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 - ✅ MariaDB S1 (detección agnóstica, `479dede`), S2 (versión + suelo, `75cff02`),
   S3 (cliente del sistema/MSI + blobs 6.1.9 fuera, `68f6ebe`) — verificado en local
   (MinGW GCC 16.2: configure + build + boot smoke; Clang `-fsyntax-only`)
-- ⏳ **S4 — reconnect/keepalive**: en curso (ver «Tarea actual»)
+- ✅ S4 (reconnect/keepalive): `MYSQL_OPT_RECONNECT` fuera; reconexión explícita
+  en las query paths con el contrato `mysql_reconnect_type`/`count` preservado —
+  verificado en local (build 275/275 + boot smoke); validación real pendiente (T2 paso 7)
 - ⏳ S5 — regresión CI + docs: pendiente
 - ⏳ Validación con BD real (auth, SQL, transacciones, codificación, persistencia):
   **pendiente — no hay BD local**; requiere entorno con MariaDB (docker-compose
@@ -94,36 +96,23 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 
 ## Tarea actual
 
-**S4 — reconnect/keepalive (Fase 0).** Refutación hecha (evidencia en `sql.cpp`):
+**S5 — regresión CI + docs (Fase 0, última etapa MariaDB).** Alcance (según
+`doc/MYSQL_MODERNIZATION.md`):
 
-- `Sql_Malloc` habilita `MYSQL_OPT_RECONNECT=1` en cada conexión: la librería
-  reconecta y re-ejecuta la query fallida de forma transparente; si ese reintento
-  falla, el error que emerge es 2003 → `ra_mysql_error_handler(2003)` cuenta
-  reintentos y hace shutdown tras `mysql_reconnect_count` (type 1) o deja el
-  SQL_ERROR al caller (type 2).
-- Sin `MYSQL_OPT_RECONNECT`, una conexión caída en runtime reporta 2006/2013
-  ("server has gone away", sin re-ejecución) → el handler actual no los trata →
-  **el contrato `mysql_reconnect_type`/`count` se rompe** (type 1 dejaría de
-  recuperar y moriría tras N statements fallidos sin reconectar).
-- El path de prepared statements (SqlStmt) ya muere con la conexión (el handle del
-  stmt se invalida al reconectar): su resultado en runtime es SQL_ERROR hoy y
-  seguiría siéndolo — sin cambios necesarios para preservar comportamiento.
+- **T2** suite de conformidad con BD real: 8 escenarios (cuenta/personaje/
+  posición/inventario/zeny, mail con adjunto — transacción, save con fallo
+  forzado — rollback, round-trip no-ASCII, NULL/boundary en queries y prepared
+  statements, blob de emblema, **reconexión type 1 y 2 con outage** — la
+  validación pendiente de S4 — y la ruta wait_timeout con timeout corto)
+- **T3** comparación de clientes: T2 con el cliente 6.1.9 (control Windows) y el
+  nuevo — estado de BD idéntico
+- **T4** CI: job Linux que instala MariaDB server, importa `sql-files` y corre T2
+  headless; job Windows con build del cliente elegido
 
-Plan (pendiente de aprobación — cambia semántica de conexión; no verificable con
-BD local):
-
-1. `Sql_Malloc`: eliminar `MYSQL_OPT_RECONNECT` (y el `my_bool`)
-2. `Sql_Connect`: guardar user/passwd/host/port/db en la struct `Sql` (privada)
-3. Helper privado `Sql_P_Reconnect`: reconexión explícita con los parámetros
-   guardados (reusa `Sql_Connect`, que re-establece el keepalive)
-4. `Sql_QueryV`/`Sql_QueryStr`: en 2006/2013/2003 en runtime con type 1 →
-   reconectar + re-ejecutar una vez; si falla → ruta 2003 existente (conteo +
-   fatal tras N); type 2 sin cambios
-5. Keepalive (ping) sin cambios. Verificación local: compilar + boot smoke;
-   **la validación real de reconexión queda explícitamente pendiente** (sin BD local)
-
-Alternativa descartada: mapear 2006/2013 al conteo sin reconexión explícita —
-no preserva el contrato (type 1 dejaría de recuperar).
+Bloqueo: T2/T3 requieren un servidor MariaDB real (no hay BD local; Docker
+excluido por reglas) y T4 requiere ejecutar CI (sin push/remotos sin
+autorización). La validación real queda explícitamente pendiente hasta que
+exista entorno; sin BD, S5 no es ejecutable más allá de la documentación.
 
 ## Reglas permanentes
 

@@ -45,6 +45,14 @@ struct Sql
 	MYSQL_ROW row;
 	unsigned long* lengths;
 	int32 keepalive;
+	// Connection parameters kept for the explicit runtime reconnect:
+	// MYSQL_OPT_RECONNECT is gone, so a dropped connection is re-established
+	// by this layer (Sql_P_Reconnect), not silently by the client library.
+	char* user;
+	char* passwd;
+	char* host;
+	uint16 port;
+	char* db;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -64,8 +72,15 @@ Sql* Sql_Malloc(void)
 	self->lengths = nullptr;
 	self->result = nullptr;
 	self->keepalive = INVALID_TIMER;
-	my_bool reconnect = 1;
-	mysql_options(&self->handle, MYSQL_OPT_RECONNECT, &reconnect);
+	self->user = nullptr;
+	self->passwd = nullptr;
+	self->host = nullptr;
+	self->port = 0;
+	self->db = nullptr;
+	// No MYSQL_OPT_RECONNECT: the client's transparent reconnect re-executes the
+	// failed statement and silently discards session state (in-flight
+	// transactions roll back without anyone knowing). Runtime reconnection is
+	// explicit: Sql_QueryV/Sql_QueryStr reconnect and retry once (S4).
 	return self;
 }
 
@@ -97,6 +112,18 @@ int32 Sql_Connect(Sql* self, const char* user, const char* passwd, const char* h
 		return SQL_ERROR;
 
 	StringBuf_Clear(&self->buf);
+
+	// Remember the parameters for the explicit runtime reconnect
+	// (MYSQL_OPT_RECONNECT is gone; see Sql_P_Reconnect).
+	if( self->user != nullptr ) aFree(self->user);
+	if( self->passwd != nullptr ) aFree(self->passwd);
+	if( self->host != nullptr ) aFree(self->host);
+	if( self->db != nullptr ) aFree(self->db);
+	self->user = user ? aStrdup(user) : nullptr;
+	self->passwd = passwd ? aStrdup(passwd) : nullptr;
+	self->host = host ? aStrdup(host) : nullptr;
+	self->port = port;
+	self->db = db ? aStrdup(db) : nullptr;
 
 // MYSQL_OPT_SSL_MODE exists since the MySQL 5.7.11 client libraries; MariaDB
 // Connector/C has its own TLS options and is excluded above.
@@ -235,6 +262,59 @@ static int32 Sql_P_Keepalive(Sql* self)
 
 
 
+/// Re-establishes a dropped connection with the stored parameters.
+/// Reuses Sql_Connect, which re-establishes the keepalive timer too.
+///
+/// @return SQL_SUCCESS or SQL_ERROR
+/// @private
+static int32 Sql_P_Reconnect(Sql* self)
+{
+	if( self->keepalive != INVALID_TIMER )
+	{
+		delete_timer(self->keepalive, Sql_P_KeepaliveTimer);
+		self->keepalive = INVALID_TIMER;
+	}
+	return Sql_Connect(self, self->user, self->passwd, self->host, self->port, self->db);
+}
+
+
+
+/// Runtime connection-loss error codes: 2003 CR_CONN_HOST_ERROR,
+/// 2006 CR_SERVER_GONE_ERROR, 2013 CR_SERVER_LOST. Without
+/// MYSQL_OPT_RECONNECT these no longer reconnect transparently.
+///
+/// @private
+static bool Sql_P_IsConnectionLoss(uint32 ecode)
+{
+	return ecode == 2003 || ecode == 2006 || ecode == 2013;
+}
+
+
+
+/// Runs the query in self->buf and stores the result.
+///
+/// @return SQL_SUCCESS or SQL_ERROR
+/// @private
+static int32 Sql_P_ExecuteQuery(Sql* self)
+{
+	if( mysql_real_query(&self->handle, StringBuf_Value(&self->buf), (unsigned long)StringBuf_Length(&self->buf)) )
+	{
+		ShowSQL("DB error - %s\n", mysql_error(&self->handle));
+		ra_mysql_error_handler(mysql_errno(&self->handle));
+		return SQL_ERROR;
+	}
+	self->result = mysql_store_result(&self->handle);
+	if( mysql_errno(&self->handle) != 0 )
+	{
+		ShowSQL("DB error - %s\n", mysql_error(&self->handle));
+		ra_mysql_error_handler(mysql_errno(&self->handle));
+		return SQL_ERROR;
+	}
+	return SQL_SUCCESS;
+}
+
+
+
 /// Escapes a string.
 size_t Sql_EscapeString(Sql* self, char *out_to, const char *from)
 {
@@ -281,17 +361,18 @@ int32 Sql_QueryV(Sql* self, const char* query, va_list args)
 	Sql_FreeResult(self);
 	StringBuf_Clear(&self->buf);
 	StringBuf_Vprintf(&self->buf, query, args);
-	if( mysql_real_query(&self->handle, StringBuf_Value(&self->buf), (unsigned long)StringBuf_Length(&self->buf)) )
+	if( SQL_ERROR == Sql_P_ExecuteQuery(self) )
 	{
-		ShowSQL("DB error - %s\n", mysql_error(&self->handle));
-		ra_mysql_error_handler(mysql_errno(&self->handle));
-		return SQL_ERROR;
-	}
-	self->result = mysql_store_result(&self->handle);
-	if( mysql_errno(&self->handle) != 0 )
-	{
-		ShowSQL("DB error - %s\n", mysql_error(&self->handle));
-		ra_mysql_error_handler(mysql_errno(&self->handle));
+		// Connection loss: reconnect explicitly and retry the failed statement
+		// once (the client library no longer does it transparently). A failed
+		// reconnect surfaces 2003, which ra_mysql_error_handler counts (fatal
+		// after mysql_reconnect_count) — the contract as before.
+		if( mysql_reconnect_type == 1 && Sql_P_IsConnectionLoss(mysql_errno(&self->handle)) )
+		{
+			if( SQL_SUCCESS == Sql_P_Reconnect(self) )
+				return Sql_P_ExecuteQuery(self);
+			ra_mysql_error_handler(mysql_errno(&self->handle));
+		}
 		return SQL_ERROR;
 	}
 	return SQL_SUCCESS;
@@ -308,17 +389,18 @@ int32 Sql_QueryStr(Sql* self, const char* query)
 	Sql_FreeResult(self);
 	StringBuf_Clear(&self->buf);
 	StringBuf_AppendStr(&self->buf, query);
-	if( mysql_real_query(&self->handle, StringBuf_Value(&self->buf), (unsigned long)StringBuf_Length(&self->buf)) )
+	if( SQL_ERROR == Sql_P_ExecuteQuery(self) )
 	{
-		ShowSQL("DB error - %s\n", mysql_error(&self->handle));
-		ra_mysql_error_handler(mysql_errno(&self->handle));
-		return SQL_ERROR;
-	}
-	self->result = mysql_store_result(&self->handle);
-	if( mysql_errno(&self->handle) != 0 )
-	{
-		ShowSQL("DB error - %s\n", mysql_error(&self->handle));
-		ra_mysql_error_handler(mysql_errno(&self->handle));
+		// Connection loss: reconnect explicitly and retry the failed statement
+		// once (the client library no longer does it transparently). A failed
+		// reconnect surfaces 2003, which ra_mysql_error_handler counts (fatal
+		// after mysql_reconnect_count) — the contract as before.
+		if( mysql_reconnect_type == 1 && Sql_P_IsConnectionLoss(mysql_errno(&self->handle)) )
+		{
+			if( SQL_SUCCESS == Sql_P_Reconnect(self) )
+				return Sql_P_ExecuteQuery(self);
+			ra_mysql_error_handler(mysql_errno(&self->handle));
+		}
 		return SQL_ERROR;
 	}
 	return SQL_SUCCESS;
@@ -451,6 +533,10 @@ void Sql_Free(Sql* self)
 		self->buf.~StringBuf();
 		if( self->keepalive != INVALID_TIMER ) delete_timer(self->keepalive, Sql_P_KeepaliveTimer);
 		Sql_Close(self);
+		if( self->user != nullptr ) aFree(self->user);
+		if( self->passwd != nullptr ) aFree(self->passwd);
+		if( self->host != nullptr ) aFree(self->host);
+		if( self->db != nullptr ) aFree(self->db);
 		aFree(self);
 	}
 }
