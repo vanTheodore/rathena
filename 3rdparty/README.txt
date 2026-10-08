@@ -1,10 +1,15 @@
 This folder contains everything related to 3rdparty code or tools.
 
 cmake - scripts for the cmake build system (http://www.cmake.org)
-httplib - library for http web service (https://github.com/yhirose/cpp-httplib/commit/a9cf09795170a72372cbeb3feef3851b859c0e33)
-libconfig - library for processing structured configuration files (http://www.hyperrealm.com/libconfig/)
-mysql - library for MySQL Community Server (http://www.mysql.com)
-pcre - library for Perl Compatible Regular Expressions (http://www.pcre.org)
-zlib - library for DEFLATE lossless compression algorithm (http://www.zlib.net)
-json - library for nlohmann json (https://github.com/nlohmann/json/tree/4b2c8ce6bcfe7f39f2bb9e680c1e7a4d67c2dd48)
-yaml-cpp - library for yaml (https://github.com/jbeder/yaml-cpp/tree/0e6e28d1a38224fc8172fae0109ea7f673c096db)
+httplib - library for http web service, header-only (https://github.com/yhirose/cpp-httplib/tree/v0.60.0)
+libconfig - library for processing structured configuration files, 1.4.9 (http://www.hyperrealm.com/libconfig/)
+mysql - library for MySQL Community Server, 6.1.9 headers (http://www.mysql.com)
+pcre - library for Perl Compatible Regular Expressions, PCRE1 8.33 headers (http://www.pcre.org)
+zlib - library for DEFLATE lossless compression algorithm, 1.2.8 headers (http://www.zlib.net)
+json - library for nlohmann json, single-header (https://github.com/nlohmann/json/tree/v3.12.0)
+yaml-cpp - library for yaml, 0.8.0 + local patches (https://github.com/jbeder/yaml-cpp/tree/0.8.0)
+rapidyaml - library for rapid yaml, 0.4.0 (https://github.com/biojppm/rapidyaml/tree/v0.4.0)
+c4core - rapidyaml subproject, as vendored under 3rdparty/rapidyaml/ext/c4core
+
+Pinned versions are exact stable tags; see doc/MODERNIZATION.md for the
+audit table, licenses, and intentionally-deferred updates.

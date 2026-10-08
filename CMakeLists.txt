@@ -23,23 +23,37 @@
 
 
 set( CMAKE_LEGACY_CYGWIN_WIN32 0 )
-cmake_minimum_required( VERSION 3.13 )
-project( rAthena )
+# Baseline: 3.28 is the newest reasonable minimum, not the newest release.
+# Rationale: 3.28 is the first CMake with clean C++23 module-adjacent
+# affordances and reliable CXX_STANDARD 23 handling across GCC/Clang/MSVC,
+# while still being widely packaged. CI itself may use the latest stable.
+cmake_minimum_required( VERSION 3.28 )
+project( rAthena LANGUAGES C CXX )
 if( CYGWIN )
 	unset( WIN32 )
 endif()
-set(CMAKE_CXX_STANDARD 23) # C++23...
-set(CMAKE_CXX_STANDARD_REQUIRED ON) #...is required...
-set(CMAKE_CXX_EXTENSIONS OFF) #...without compiler extensions like gnu++23
+# Strict ISO C++23 baseline for rAthena-owned code (no GNU extensions).
+# Vendored third-party code may relax this per-target where upstream
+# requires it; see 3rdparty/ CMakeLists for per-target handling.
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-#actually this might be misleading for arm...
+# Architecture handling: do not assume 64-bit pointer == x86_64.
+# Detect x86_64/AMD64 and AArch64/ARM64 explicitly (see also
+# doc/MODERNIZATION.md). Game logic must remain architecture-neutral.
 if( CMAKE_SIZEOF_VOID_P EQUAL 4 )
 	set(architecture x86)
 elseif( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-	set(architecture x64)
+	if( CMAKE_SYSTEM_PROCESSOR MATCHES "[Aa][Aa][Rr][Cc][Hh]64|[Aa][Rr][Mm]64|[Aa][Rr][Mm]" )
+		set(architecture arm64)
+	else()
+		set(architecture x64)
+	endif()
 else()
 	message( FATAL_ERROR "unexpected architecture (CMAKE_SIZEOF_VOID_P is ${CMAKE_SIZEOF_VOID_P})" )
 endif()
+message( STATUS "Target architecture: ${architecture} (${CMAKE_SYSTEM_PROCESSOR})" )
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib/${suffixInstallStr})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib/${suffixInstallStr})
@@ -59,6 +73,88 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
     "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
+
+#
+# Modern toolchain baseline (C++23 era)
+#
+# Minimum compiler versions with complete enough C++23 support for the
+# subset rAthena uses (not merely -std=c++23 recognition).
+if( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14 )
+	message( FATAL_ERROR "GCC ${CMAKE_CXX_COMPILER_VERSION} is too old: rAthena requires GCC 14+ (primary reference: GCC 16.2) for the C++23 baseline." )
+elseif( CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 18 )
+	message( FATAL_ERROR "Clang ${CMAKE_CXX_COMPILER_VERSION} is too old: rAthena requires Clang 18+ (reference: Clang 22.1) for the C++23 baseline." )
+elseif( MSVC AND MSVC_VERSION LESS 1938 )
+	message( FATAL_ERROR "MSVC ${MSVC_VERSION} is too old: rAthena requires VS 2022 17.8+ (/std:clatest with C++23) for the C++23 baseline." )
+endif()
+
+# Release baseline: conservative -O2 unless measurements justify -O3.
+# No -ffast-math on game/server logic; no -march=native in portable artifacts
+# (ARM64/Ampere tuning is a separate measurable optimization layer).
+if( CMAKE_BUILD_TYPE STREQUAL "Release" AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang") )
+	add_compile_options( $<$<CONFIG:Release>:-O2> )
+endif()
+
+# Optional LTO (off by default; enable only if full project + deps support it).
+option( ENABLE_LTO "Enable link-time optimization (requires full project + dependency support)" OFF )
+if( ENABLE_LTO )
+	include( CheckIPOSupported )
+	check_ipo_supported( RESULT HAVE_IPO OUTPUT IPO_MSG )
+	if( HAVE_IPO )
+		set( CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE )
+		message( STATUS "LTO enabled (CMAKE_INTERPROCEDURAL_OPTIMIZATION)" )
+	else()
+		message( WARNING "LTO requested but not supported: ${IPO_MSG}" )
+	endif()
+endif()
+
+# Sanitizers: opt-in, never part of normal Release binaries.
+# E.g. -DENABLE_SANITIZERS=address,undefined for ASan+UBSan CI jobs.
+set( ENABLE_SANITIZERS "" CACHE STRING "Sanitizers to enable (comma-separated: address,undefined,thread; empty=off)" )
+if( ENABLE_SANITIZERS )
+	string( REPLACE "," ";" _SAN_LIST "${ENABLE_SANITIZERS}" )
+	foreach( _SAN IN LISTS _SAN_LIST )
+		string( STRIP "${_SAN}" _SAN )
+		if( _SAN STREQUAL "address" )
+			add_compile_options( -fsanitize=address -fno-omit-frame-pointer )
+			add_link_options( -fsanitize=address )
+		elseif( _SAN STREQUAL "undefined" )
+			add_compile_options( -fsanitize=undefined -fno-sanitize-recover=all )
+			add_link_options( -fsanitize=undefined )
+		elseif( _SAN STREQUAL "thread" )
+			add_compile_options( -fsanitize=thread )
+			add_link_options( -fsanitize=thread )
+		else()
+			message( FATAL_ERROR "Unknown sanitizer '${_SAN}' (valid: address,undefined,thread)" )
+		endif()
+	endforeach()
+	message( STATUS "Sanitizers enabled: ${ENABLE_SANITIZERS} (never enabled in Release binaries by default)" )
+endif()
+
+#
+# Warning baseline for rAthena-owned C++ (GCC/Clang).
+# Vendored 3rdparty code is treated as system code where appropriate so
+# upstream warnings do not drown out rAthena warnings.
+add_library( rathena_warnings INTERFACE )
+if( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
+	target_compile_options( rathena_warnings INTERFACE
+		-Wall -Wextra -Wpedantic
+		-Wformat=2
+		-Wshadow
+		-Wconversion -Wsign-conversion
+		-Wnull-dereference -Wdouble-promotion
+		-Wimplicit-fallthrough
+		-Wunused
+	)
+	if( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" )
+		target_compile_options( rathena_warnings INTERFACE -Wduplicated-cond -Wduplicated-branches -Wlogical-op )
+	endif()
+endif()
+
+# Strict C++23 conformance hook for rAthena-owned targets.
+add_library( rathena_cxx23 INTERFACE )
+target_compile_features( rathena_cxx23 INTERFACE cxx_std_23 )
+set_target_properties( rathena_cxx23 PROPERTIES CXX_EXTENSIONS OFF )
+target_link_libraries( rathena_cxx23 INTERFACE rathena_warnings )
 
 #
 # Prevent building in the source directory by default
@@ -89,6 +185,13 @@ set( GLOBAL_DEFINITIONS ${COMPILE_DEFINITIONS}  CACHE INTERNAL "" )# string (spa
 mark_as_advanced( GLOBAL_LIBRARIES  GLOBAL_INCLUDE_DIRS  GLOBAL_DEFINITIONS )
 if( WIN32 )
 	set_property( CACHE GLOBAL_DEFINITIONS  PROPERTY VALUE "${GLOBAL_DEFINITIONS} -DFD_SETSIZE=4096 -DWIN32" )
+	if( NOT MSVC )
+		# MinGW/Clang: socket APIs (getaddrinfo, ntohl, htonl, ...) live in
+		# ws2_32 and are NOT part of CMake's default Windows link set. Without
+		# it, a clean configure cannot run the getaddrinfo() check and the
+		# server executables fail to link (undefined __imp_getaddrinfo/...).
+		set_property( CACHE GLOBAL_LIBRARIES PROPERTY VALUE ${GLOBAL_LIBRARIES} ws2_32 )
+	endif()
 endif()
 if( MSVC )
 	set_property( CACHE GLOBAL_LIBRARIES    PROPERTY VALUE ${GLOBAL_LIBRARIES} "oldnames.lib" "ws2_32.lib" )
@@ -200,7 +303,11 @@ endif()
 
 
 # Check for getaddrinfo (modern networking API)
+# On Windows/MinGW the symbol lives in ws2_32; add it to the required libs so
+# the link check can resolve it on a clean configure.
+set( CMAKE_REQUIRED_LIBRARIES ${GLOBAL_LIBRARIES} )
 check_function_exists(getaddrinfo HAVE_GETADDRINFO)
+unset( CMAKE_REQUIRED_LIBRARIES )
 if(HAVE_GETADDRINFO)
     message(STATUS "Found getaddrinfo()")
 	add_definitions(-DHAVE_GETADDRINFO)
@@ -267,7 +374,12 @@ if(NOT APPLE)
 	CHECK_C_SOURCE_RUNS( "${_SOURCE}" HAVE_MONOTONIC_CLOCK )
 	if( HAVE_MONOTONIC_CLOCK )
 		message( STATUS "Check for monotonic clock - yes" )
-		set_property( CACHE GLOBAL_LIBRARIES    PROPERTY VALUE ${GLOBAL_LIBRARIES} ${RT_LIBRARY} )
+		# Only link librt when it actually exists. Modern glibc (>= 2.17) and
+		# MinGW/Windows provide clock_gettime in the C runtime with no separate
+		# librt; appending an unresolved NOTFOUND path breaks CMake generate.
+		if( RT_LIBRARY )
+			set_property( CACHE GLOBAL_LIBRARIES    PROPERTY VALUE ${GLOBAL_LIBRARIES} ${RT_LIBRARY} )
+		endif()
 		set_property( CACHE GLOBAL_DEFINITIONS  PROPERTY VALUE "${GLOBAL_DEFINITIONS} -DHAVE_MONOTONIC_CLOCK" )
 	else()
 		message( STATUS "Check for monotonic clock - yes" )
