@@ -34,10 +34,16 @@
 #define NOMCX
 #define NOCLIPBOARD
 #define NOCOLOR
-#define NONLS
+// NB: do NOT define NONLS here. It excludes winnls.h (MultiByteToWideChar,
+// CP_UTF8), which vendored cpp-httplib needs. Any TU including winapi.hpp
+// before httplib.h would otherwise break httplib's u8string_to_wstring.
 #define NOMEMMGR
 #define NOMETAFILE
+// NB: MinGW GCC 16 / Clang 22 predefine NOMINMAX=1 in os_defines.h, so guard
+// the define to avoid hundreds of -Wmacro-redefined warnings in C++23 builds.
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #define NOOPENFILE
 #define NOSERVICE
 #define NOSOUND

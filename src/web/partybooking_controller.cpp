@@ -115,8 +115,8 @@ HANDLER_FUNC(partybooking_add){
 		return;
 	}
 
-	uint32 aid = std::stoi( req.get_file_value( "AID" ).content );
-	uint32 cid = std::stoi( req.get_file_value( "GID" ).content );
+	uint32 aid = std::stoi( web_get_form_value(req, "AID") );
+	uint32 cid = std::stoi( web_get_form_value(req, "GID") );
 
 	SQLLock csl( CHAR_SQL_LOCK );
 	csl.lock();
@@ -144,7 +144,7 @@ HANDLER_FUNC(partybooking_add){
 
 	csl.unlock();
 
-	auto world_name = req.get_file_value( "WorldName" ).content;
+	auto world_name = web_get_form_value(req, "WorldName");
 
 	if( world_name.length() > WORLD_NAME_LENGTH ){
 		res.status = HTTP_BAD_REQUEST;
@@ -157,15 +157,15 @@ HANDLER_FUNC(partybooking_add){
 
 	entry.account_id = aid;
 	entry.char_id = cid;
-	entry.char_name = req.get_file_value( "CharName" ).content;
-	entry.purpose = std::stoi( req.get_file_value( "Type" ).content );
-	entry.assist = std::stoi( req.get_file_value( "Assist" ).content ) != 0;
-	entry.damagedealer = std::stoi( req.get_file_value( "Dealer" ).content ) != 0;
-	entry.healer = std::stoi( req.get_file_value( "Healer" ).content ) != 0;
-	entry.tanker = std::stoi( req.get_file_value( "Tanker" ).content ) != 0;
-	entry.minimum_level = std::stoi( req.get_file_value( "MinLV" ).content );
-	entry.maximum_level = std::stoi( req.get_file_value( "MaxLV" ).content );
-	entry.comment = req.get_file_value( "Memo" ).content;
+	entry.char_name = web_get_form_value(req, "CharName");
+	entry.purpose = std::stoi( web_get_form_value(req, "Type") );
+	entry.assist = std::stoi( web_get_form_value(req, "Assist") ) != 0;
+	entry.damagedealer = std::stoi( web_get_form_value(req, "Dealer") ) != 0;
+	entry.healer = std::stoi( web_get_form_value(req, "Healer") ) != 0;
+	entry.tanker = std::stoi( web_get_form_value(req, "Tanker") ) != 0;
+	entry.minimum_level = std::stoi( web_get_form_value(req, "MinLV") );
+	entry.maximum_level = std::stoi( web_get_form_value(req, "MaxLV") );
+	entry.comment = web_get_form_value(req, "Memo");
 
 	if( entry.char_name.length() > NAME_LENGTH ){
 		res.status = HTTP_BAD_REQUEST;
@@ -242,8 +242,8 @@ HANDLER_FUNC(partybooking_delete){
 		return;
 	}
 
-	auto world_name = req.get_file_value( "WorldName" ).content;
-	auto account_id = std::stoi( req.get_file_value( "AID" ).content );
+	auto world_name = web_get_form_value(req, "WorldName");
+	auto account_id = std::stoi( web_get_form_value(req, "AID") );
 
 	if( world_name.length() > WORLD_NAME_LENGTH ){
 		res.status = HTTP_BAD_REQUEST;
@@ -282,8 +282,8 @@ HANDLER_FUNC(partybooking_get){
 		return;
 	}
 
-	auto world_name = req.get_file_value( "WorldName" ).content;
-	auto account_id = std::stoi( req.get_file_value( "AID" ).content );
+	auto world_name = web_get_form_value(req, "WorldName");
+	auto account_id = std::stoi( web_get_form_value(req, "AID") );
 
 	if( world_name.length() > WORLD_NAME_LENGTH ){
 		res.status = HTTP_BAD_REQUEST;
@@ -319,8 +319,8 @@ HANDLER_FUNC(partybooking_info){
 		return;
 	}
 
-	auto world_name = req.get_file_value( "WorldName" ).content;
-	auto account_id = std::stoi( req.get_file_value( "QueryAID" ).content );
+	auto world_name = web_get_form_value(req, "WorldName");
+	auto account_id = std::stoi( web_get_form_value(req, "QueryAID") );
 
 	if( world_name.length() > WORLD_NAME_LENGTH ){
 		res.status = HTTP_BAD_REQUEST;
@@ -358,7 +358,7 @@ HANDLER_FUNC(partybooking_list){
 
 	static const std::string condition( "1=1" );
 
-	auto world_name = req.get_file_value( "WorldName" ).content;
+	auto world_name = web_get_form_value(req, "WorldName");
 
 	if( world_name.length() > WORLD_NAME_LENGTH ){
 		res.status = HTTP_BAD_REQUEST;
@@ -404,7 +404,7 @@ HANDLER_FUNC(partybooking_search){
 		return;
 	}
 
-	auto world_name = req.get_file_value( "WorldName" ).content;
+	auto world_name = web_get_form_value(req, "WorldName");
 
 	if( world_name.length() > WORLD_NAME_LENGTH ){
 		res.status = HTTP_BAD_REQUEST;
@@ -416,12 +416,12 @@ HANDLER_FUNC(partybooking_search){
 	s_party_booking_entry entry;
 
 	// Unconditional
-	entry.minimum_level = std::stoi( req.get_file_value( "MinLV" ).content );
-	entry.maximum_level = std::stoi( req.get_file_value( "MaxLV" ).content );
+	entry.minimum_level = std::stoi( web_get_form_value(req, "MinLV") );
+	entry.maximum_level = std::stoi( web_get_form_value(req, "MaxLV") );
 
 	// Conditional
-	if( req.files.find( "Type" ) != req.files.end() ){
-		entry.purpose = std::stoi( req.get_file_value( "Type" ).content );
+	if( web_has_form_value(req, "Type") ){
+		entry.purpose = std::stoi( web_get_form_value(req, "Type") );
 
 		if( entry.purpose >= BOOKING_PURPOSE_MAX ){
 			res.status = HTTP_BAD_REQUEST;
@@ -433,32 +433,32 @@ HANDLER_FUNC(partybooking_search){
 		entry.purpose = BOOKING_PURPOSE_ALL;
 	}
 
-	if( req.files.find( "Assist" ) != req.files.end() ){
-		entry.assist = std::stoi( req.get_file_value( "Assist" ).content ) != 0;
+	if( web_has_form_value(req, "Assist") ){
+		entry.assist = std::stoi( web_get_form_value(req, "Assist") ) != 0;
 	}else{
 		entry.assist = false;
 	}
 
-	if( req.files.find( "Dealer" ) != req.files.end() ){
-		entry.damagedealer = std::stoi( req.get_file_value( "Dealer" ).content ) != 0;
+	if( web_has_form_value(req, "Dealer") ){
+		entry.damagedealer = std::stoi( web_get_form_value(req, "Dealer") ) != 0;
 	}else{
 		entry.damagedealer = false;
 	}
 
-	if( req.files.find( "Healer" ) != req.files.end() ){
-		entry.healer = std::stoi( req.get_file_value( "Healer" ).content ) != 0;
+	if( web_has_form_value(req, "Healer") ){
+		entry.healer = std::stoi( web_get_form_value(req, "Healer") ) != 0;
 	}else{
 		entry.healer = false;
 	}
 
-	if( req.files.find( "Tanker" ) != req.files.end() ){
-		entry.tanker = std::stoi( req.get_file_value( "Tanker" ).content ) != 0;
+	if( web_has_form_value(req, "Tanker") ){
+		entry.tanker = std::stoi( web_get_form_value(req, "Tanker") ) != 0;
 	}else{
 		entry.tanker = false;
 	}
 
-	if( req.files.find( "Memo" ) != req.files.end() ){
-		entry.comment = req.get_file_value( "Memo" ).content;
+	if( web_has_form_value(req, "Memo") ){
+		entry.comment = web_get_form_value(req, "Memo");
 	}else{
 		entry.comment = "";
 	}

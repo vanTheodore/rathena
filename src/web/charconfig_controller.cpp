@@ -22,13 +22,13 @@ HANDLER_FUNC(charconfig_save) {
 		return;
 	}
 	
-	auto account_id = std::stoi(req.get_file_value("AID").content);
-	auto char_id = std::stoi(req.get_file_value("GID").content);
-	auto world_name = req.get_file_value("WorldName").content;
+	auto account_id = std::stoi(web_get_form_value(req, "AID"));
+	auto char_id = std::stoi(web_get_form_value(req, "GID"));
+	auto world_name = web_get_form_value(req, "WorldName");
 	auto data = nlohmann::json::object();
 
-	if (req.has_file("data")) {
-		data = nlohmann::json::parse(req.get_file_value("data").content);
+	if (web_has_form_value(req, "data")) {
+		data = nlohmann::json::parse(web_get_form_value(req, "data"));
 	}
 
 	SQLLock sl(WEB_SQL_LOCK);
@@ -90,7 +90,7 @@ HANDLER_FUNC(charconfig_save) {
 }
 
 HANDLER_FUNC(charconfig_load) {
-	if (!req.has_file("AID") || !req.has_file("WorldName")) {
+	if (!web_has_form_value(req, "AID") || !web_has_form_value(req, "WorldName")) {
 		res.status = HTTP_BAD_REQUEST;
 		res.set_content("Error", "text/plain");
 		return;
@@ -103,9 +103,9 @@ HANDLER_FUNC(charconfig_load) {
 		// return;
 	// }
 
-	auto account_id = std::stoi(req.get_file_value("AID").content);
-	auto char_id = std::stoi(req.get_file_value("GID").content);
-	auto world_name_str = req.get_file_value("WorldName").content;
+	auto account_id = std::stoi(web_get_form_value(req, "AID"));
+	auto char_id = std::stoi(web_get_form_value(req, "GID"));
+	auto world_name_str = web_get_form_value(req, "WorldName");
 	auto world_name = world_name_str.c_str();
 
 	SQLLock sl(WEB_SQL_LOCK);

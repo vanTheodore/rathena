@@ -4,7 +4,7 @@ HTTPLIB_DIR_OBJ = $(HTTPLIB_OBJ:%=obj/%)
 HTTPLIB_H =  $(shell find * -type f -name "*.h")
 HTTPLIB_AR = obj/httplib.a
 
-CXXFLAG =-std=c++11
+CXXFLAG =-std=c++23
 
 HTTPLIB_DEPENDS=httplib
 

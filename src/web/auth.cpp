@@ -14,15 +14,15 @@
 
 
 bool isAuthorized(const Request &request, bool checkGuildLeader) {
-	if (!request.has_file("AuthToken") || !request.has_file("AID"))
+	if (!web_has_form_value(request, "AuthToken") || !web_has_form_value(request, "AID"))
 		return false;
 
-	if (checkGuildLeader && !request.has_file("GDID"))
+	if (checkGuildLeader && !web_has_form_value(request, "GDID"))
 		return false;
 	
-	auto token_str = request.get_file_value("AuthToken").content;
+	auto token_str = web_get_form_value(request, "AuthToken");
 	auto token = token_str.c_str();
-	auto account_id = std::stoi(request.get_file_value("AID").content);
+	auto account_id = std::stoi(web_get_form_value(request, "AID"));
 
 	SQLLock loginlock(LOGIN_SQL_LOCK);
 
@@ -56,7 +56,7 @@ bool isAuthorized(const Request &request, bool checkGuildLeader) {
 		return true;
 	}
 
-	auto guild_id = std::stoi(request.get_file_value("GDID").content);
+	auto guild_id = std::stoi(web_get_form_value(request, "GDID"));
 
 	SQLLock charlock(CHAR_SQL_LOCK);
 	charlock.lock();

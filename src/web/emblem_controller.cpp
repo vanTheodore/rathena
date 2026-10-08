@@ -27,11 +27,11 @@ HANDLER_FUNC(emblem_download) {
 	}
 
 	bool fail = false;
-	if (!req.has_file("GDID")) {
+	if (!web_has_form_value(req, "GDID")) {
 		ShowDebug("Missing GuildID field for emblem download.\n");
 		fail = true;
 	}
-	if (!req.has_file("WorldName")) {
+	if (!web_has_form_value(req, "WorldName")) {
 		ShowDebug("Missing WorldName field for emblem download.\n");
 		fail = true;
 	}
@@ -41,9 +41,9 @@ HANDLER_FUNC(emblem_download) {
 		return;
 	}
 
-	auto world_name_str = req.get_file_value("WorldName").content;
+	auto world_name_str = web_get_form_value(req, "WorldName");
 	auto world_name = world_name_str.c_str();
-	auto guild_id = std::stoi(req.get_file_value("GDID").content);
+	auto guild_id = std::stoi(web_get_form_value(req, "GDID"));
 
 	SQLLock sl(WEB_SQL_LOCK);
 	sl.lock();
@@ -122,19 +122,19 @@ HANDLER_FUNC(emblem_upload) {
 	}
 
 	bool fail = false;
-	if (!req.has_file("GDID")) {
+	if (!web_has_form_value(req, "GDID")) {
 		ShowDebug("Missing GuildID field for emblem upload.\n");
 		fail = true;
 	}
-	if (!req.has_file("WorldName")) {
+	if (!web_has_form_value(req, "WorldName")) {
 		ShowDebug("Missing WorldName field for emblem upload.\n");
 		fail = true;
 	}
-	if (!req.has_file("Img")) {
+	if (!web_has_form_value(req, "Img")) {
 		ShowDebug("Missing Img field for emblem upload.\n");
 		fail = true;
 	}
-	if (!req.has_file("ImgType")) {
+	if (!web_has_form_value(req, "ImgType")) {
 		ShowDebug("Missing ImgType for emblem upload.\n");
 		fail = true;
 	}
@@ -144,12 +144,12 @@ HANDLER_FUNC(emblem_upload) {
 		return;
 	}
 
-	auto world_name_str = req.get_file_value("WorldName").content;
+	auto world_name_str = web_get_form_value(req, "WorldName");
 	auto world_name = world_name_str.c_str();
-	auto guild_id = std::stoi(req.get_file_value("GDID").content);
-	auto imgtype_str = req.get_file_value("ImgType").content;
+	auto guild_id = std::stoi(web_get_form_value(req, "GDID"));
+	auto imgtype_str = web_get_form_value(req, "ImgType");
 	auto imgtype = imgtype_str.c_str();
-	auto img = req.get_file_value("Img").content;
+	auto img = web_get_form_value(req, "Img");
 	auto img_cstr = img.c_str();
 	
 	if (imgtype_str != "BMP" && imgtype_str != "GIF") {

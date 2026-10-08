@@ -439,7 +439,10 @@ void logger(const Request & req, const Response & res) {
 			ShowDebug("\t%s: %s\n", header.first.c_str(), header.second.c_str());
 		}
 		ShowDebug("Incoming Pages are:\n");
-		for (const auto & file : req.files) {
+		for (const auto & field : req.form.fields) {
+			ShowDebug("\t%s: %s\n", field.first.c_str(), field.second.content.c_str());
+		}
+		for (const auto & file : req.form.files) {
 			ShowDebug("\t%s: %s\n", file.first.c_str(), file.second.content.c_str());
 		}
 		ShowDebug("Outgoing Headers are:\n");

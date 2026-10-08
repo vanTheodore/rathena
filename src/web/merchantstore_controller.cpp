@@ -22,15 +22,15 @@ HANDLER_FUNC(merchantstore_save) {
 		return;
 	}
 
-	auto account_id = std::stoi(req.get_file_value("AID").content);
-	auto char_id = std::stoi(req.get_file_value("GID").content);
-	auto world_name_str = req.get_file_value("WorldName").content;
+	auto account_id = std::stoi(web_get_form_value(req, "AID"));
+	auto char_id = std::stoi(web_get_form_value(req, "GID"));
+	auto world_name_str = web_get_form_value(req, "WorldName");
 	auto world_name = world_name_str.c_str();
-	auto store_type = std::stoi(req.get_file_value("Type").content);
+	auto store_type = std::stoi(web_get_form_value(req, "Type"));
 	std::string data;
 
-	if (req.has_file("data")) {
-		data = req.get_file_value("data").content;
+	if (web_has_form_value(req, "data")) {
+		data = web_get_form_value(req, "data");
 	}
 
 	SQLLock sl(WEB_SQL_LOCK);
@@ -95,7 +95,7 @@ HANDLER_FUNC(merchantstore_save) {
 }
 
 HANDLER_FUNC(merchantstore_load) {
-	if (!req.has_file("AID") || !req.has_file("WorldName")) {
+	if (!web_has_form_value(req, "AID") || !web_has_form_value(req, "WorldName")) {
 		res.status = HTTP_BAD_REQUEST;
 		res.set_content("Error", "text/plain");
 		return;
@@ -108,11 +108,11 @@ HANDLER_FUNC(merchantstore_load) {
 		// return;
 	// }
 
-	auto account_id = std::stoi(req.get_file_value("AID").content);
-	auto char_id = std::stoi(req.get_file_value("GID").content);
-	auto world_name_str = req.get_file_value("WorldName").content;
+	auto account_id = std::stoi(web_get_form_value(req, "AID"));
+	auto char_id = std::stoi(web_get_form_value(req, "GID"));
+	auto world_name_str = web_get_form_value(req, "WorldName");
 	auto world_name = world_name_str.c_str();
-	auto store_type = std::stoi(req.get_file_value("Type").content);
+	auto store_type = std::stoi(web_get_form_value(req, "Type"));
 
 	SQLLock sl(WEB_SQL_LOCK);
 	sl.lock();
