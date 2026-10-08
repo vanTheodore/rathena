@@ -1,0 +1,79 @@
+# Modern toolchain CI matrix (see doc/MODERNIZATION.md).
+# Baseline: strict ISO C++23, GCC 14+ / Clang 18+ / MSVC 19.38+ (VS 2022 17.8+).
+# Reference toolchains (GCC 16.2, Clang 22) are not apt-available, so Linux
+# jobs use the newest stable compilers meeting the floors. Sanitizer and
+# full-boot (MariaDB) coverage: sanitizer runtimes do not exist for
+# MinGW/Windows builds; runtime jobs run on Linux. Full login+char+map boot
+# with a database is covered by tools/docker/docker-compose.yml.
+name: modern-toolchain
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  linux-gcc:
+    strategy:
+      matrix:
+        build_type: [Release, Debug]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GCC 14 + CMake + Ninja
+        run: sudo apt-get update && sudo apt-get install -y gcc-14 g++-14 cmake ninja-build zlib1g-dev libmariadb-dev libpcre3-dev
+      - name: Configure (GCC 14, strict C++23)
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
+      - name: Build all servers + tools
+        run: cmake --build build
+      - name: Boot smoke (fails on absent DB only)
+        run: |
+          cp -r conf/import-tmpl/* conf/import/ 2>/dev/null || (mkdir -p conf/import conf/msg_conf/import db/import && cp conf/import-tmpl/* conf/import/ && cp conf/msg_conf/import-tmpl/* conf/msg_conf/import/ && cp db/import-tmpl/* db/import/)
+          timeout 20 ./map-server || test $? -eq 1
+
+  linux-clang:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Clang 18 + CMake + Ninja
+        run: sudo apt-get update && sudo apt-get install -y clang-18 cmake ninja-build zlib1g-dev libmariadb-dev libpcre3-dev
+      - name: Configure (Clang 18, strict C++23)
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18
+      - name: Build all servers + tools
+        run: cmake --build build
+
+  linux-sanitizers:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GCC 14 + CMake + Ninja
+        run: sudo apt-get update && sudo apt-get install -y gcc-14 g++-14 cmake ninja-build zlib1g-dev libmariadb-dev libpcre3-dev
+      - name: Configure (ASan + UBSan, never in Release binaries)
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DENABLE_SANITIZERS=address,undefined
+      - name: Build all servers + tools
+        run: cmake --build build
+      - name: Startup smoke under sanitizers
+        run: |
+          mkdir -p conf/import conf/msg_conf/import db/import && cp conf/import-tmpl/* conf/import/ && cp conf/msg_conf/import-tmpl/* conf/msg_conf/import/ && cp db/import-tmpl/* db/import/
+          timeout 20 ./login-server || test $? -eq 1
+          timeout 20 ./map-server || test $? -eq 1
+
+  linux-arm64:
+    # Compile coverage for the Ampere/AArch64 deployment target.
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        run: sudo apt-get update && sudo apt-get install -y gcc g++ cmake ninja-build zlib1g-dev libmariadb-dev libpcre3-dev
+      - name: Configure (native AArch64)
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Build all servers + tools
+        run: cmake --build build
+
+  windows-msvc:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure (MSVC, C++23 via vcxproj LanguageStandard)
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build all servers + tools
+        run: cmake --build build --config Release

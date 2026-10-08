@@ -45,7 +45,7 @@ working from a complete checkout.
 | yaml-cpp | ~0.8.0 (commit `0e6e28d`) | **0.9.0** (pending) | safe direct update | verify file list vs rAthena build glue |
 | rapidyaml (+c4core) | 0.4.0 / c4core 0.1.8 | **0.16.0** | small compat migration | `>>` kept via documented `RYML_WITH_LEGACY_OPERATORS` (`.deserialize()` migration is follow-up); Callbacks split 1→3 handlers re-registered to keep throwing `std::runtime_error`; `Parser::parse_in_arena` removed → free function; read-only API to `ConstNodeRef`; c4core submodule gone, required sources vendored. License MIT |
 | libconfig | 1.4.9 | **1.8.2** (pending) | safe direct update | C library; check scanner/grammar regeneration needs. License LGPL-2.1+ |
-| zlib | 1.2.8 headers | **1.3.1** (pending) | safe direct update | CVE-2016-9840 et al fixed since 1.2.8; 1.3.1 is the stable line. License Zlib |
+| zlib | 1.2.8 headers + prebuilt Win DLL | **1.3.2** (not 1.3.1 — 1.3.2 is the actual latest stable, Feb 2026) | safe direct update | prebuilt blobs removed; static build from vendored source on Windows (new zlib.vcxproj, `.sln` wired, consumers link `.vs\build\zlib.lib`); system zlib elsewhere. No more runtime zlib.dll. License Zlib |
 | PCRE (8.33, PCRE1) | 8.33 | **deferred** | substantial migration | PCRE1 EOL; PCRE2 changes regex API/behavior → isolated follow-up with compat validation, not smuggled in here |
 | MySQL client | 6.1.9 headers / 5.7.16 | **deferred** | architectural | Windows-only bundled compat headers; system client on Linux. Replacing needs DBA-level validation |
 
@@ -63,7 +63,14 @@ working from a complete checkout.
   rewrite inside this pass.
 - [x] YAML smoke (rapidyaml 0.16): const/item_equip/item_etc/mob/skill/
   achievement DBs parse — 6+12982+9959+2675+1635+361 entries, zero errors
-- [ ] Clean configure without local MinGW workarounds (in-tree ws2_32/librt fixes)
+- [x] Clean configure without workarounds (in-tree ws2_32/getaddrinfo/librt
+  fixes verified: `build-clean` configures with zero extra flags)
+- [~] Sanitizers: `-DENABLE_SANITIZERS=address,undefined` plumbing configures
+  and every TU *compiles* with instrumentation, but MinGW-w64 (GCC and Clang)
+  ships no ASan/UBSan runtimes (`cannot find -lasan/-lubsan`; even UBSan-trap
+  mode needs libubsan at link). Runtime jobs are Linux-CI-only by necessity.
+- [ ] Windows MSVC C++23 build (vcxproj updated, needs VS 2022 17.8+ host)
+- [ ] AArch64 compile coverage (CI)
 - [ ] Sanitizer build + startup smoke (login/char/map start, YAML parse, scripts load)
 - [ ] Windows MSVC C++23 build (vcxproj updated, needs VS 2022 17.8+ host)
 - [ ] AArch64 compile coverage (CI)
@@ -73,3 +80,21 @@ working from a complete checkout.
 Linux: GCC-latest+C++23 (Release, Debug, ASan+UBSan), Clang-latest+C++23
 (Release), AArch64 compile check. Windows: MSVC stable + C++23.
 `-Werror` in modern-toolchain jobs once the warning baseline is clean.
+
+## CI matrix (implemented: `.github/workflows/modern-toolchain.yml`)
+
+- `linux-gcc` (Release + Debug, GCC 14): configure + full build + map-server
+  boot smoke (expected to stop at absent-DB connect, exit 1 — any other
+  failure, e.g. crash, fails the job).
+- `linux-clang` (Release, Clang 18): configure + full build.
+- `linux-sanitizers` (Debug, ASan+UBSan via `-DENABLE_SANITIZERS`):
+  build + login/map startup smoke. Full sanitizer *runtime* coverage is
+  Linux-only (MinGW ships no ASan/UBSan runtimes); all TUs were verified to
+  *compile* under instrumentation locally.
+- `linux-arm64` (native `ubuntu-24.04-arm`): full build. No arch-specific
+  game logic; the top-level `architecture` var distinguishes `x64` vs `arm64`.
+- `windows-msvc` (windows-2022): CMake configure + Release build
+  (C++23 via `stdcpp23` vcxproj; needs host verification on VS 2022 17.8+).
+- Full login+char+map boot *with* MariaDB stays in
+  `tools/docker/docker-compose.yml` (unchanged flow; `./configure` there now
+  defaults to `-std=c++23`).
