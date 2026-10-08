@@ -45,3 +45,10 @@ a\.c	abc	0	0
 npc.*chat	NPC idle chat here	0	1
 (Zeny|zeny): ([0-9,]+)	Zeny: 1,000,000	0	0
 .*	anything at all	0	0
+# capture-capacity boundary cases: PCRE1 30-int ovector => 10 usable pairs (see pcre1.expected 43-45)
+(a)(b)(c)(d)(e)(f)(g)(h)	abcdefgh	0	0
+(a)(b)(c)(d)(e)(f)(g)(h)(i)	abcdefghi	0	0
+(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)	abcdefghij	0	0
+(x)?(y)	y	0	0
+# match-limit / catastrophic-backtracking error path (must stay NOMATCH, bounded time)
+(a+)+$	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab	0	0

@@ -15,7 +15,7 @@
 #include <cstdlib> // atoi, strtol, strtoll, exit
 
 #ifdef PCRE_SUPPORT
-#include <pcre.h> // preg_match
+#include <pcre2.h> // preg_match (PCRE2 8-bit)
 #endif
 
 #include <common/cbasetypes.hpp>
@@ -27890,25 +27890,37 @@ BUILDIN_FUNC(deletepset);
  */
 BUILDIN_FUNC(preg_match) {
 #ifdef PCRE_SUPPORT
-	pcre *re;
-	pcre_extra *pcreExtra;
-	const char *error;
-	int32 erroffset, r, offset = 0;
-	int32 subStrVec[30];
+	pcre2_code_8 *re;
+	pcre2_match_data_8 *match_data;
+	int32 errorcode, r, offset = 0;
+	PCRE2_SIZE erroffset;
 
 	const char* pattern = script_getstr(st,2);
 	const char* subject = script_getstr(st,3);
 	if (script_hasdata(st,4))
 		offset = script_getnum(st,4);
 
-	re = pcre_compile(pattern, 0, &error, &erroffset, nullptr);
-	pcreExtra = pcre_study(re, 0, &error);
+	re = pcre2_compile_8((PCRE2_SPTR)pattern, PCRE2_ZERO_TERMINATED, 0, &errorcode, &erroffset, nullptr);
 
-	r = pcre_exec(re, pcreExtra, subject, (int32)strlen(subject), offset, 0, subStrVec, 30);
+	if (re == nullptr) {
+		// Same observable behavior as the PCRE1 path (compile failure
+		// could never match): push 0.
+		script_pushint(st,0);
+		return SCRIPT_CMD_SUCCESS;
+	}
 
-	pcre_free(re);
-	if (pcreExtra != nullptr)
-		pcre_free(pcreExtra);
+	// Same capacity as the old pcre_exec() call with its 30-int ovector:
+	// PCRE1 reserved the last third of that vector as workspace, so only
+	// 10 capture pairs were usable. If the pattern captures more groups than
+	// fit, r comes back 0 (verified against the PCRE1 baseline, case 45 of
+	// tools/pcre-regress/pcre1.expected) and we push 30/3 below, preserving
+	// the historic quirk bit-for-bit.
+	match_data = pcre2_match_data_create_8(10, nullptr);
+
+	r = pcre2_match_8(re, (PCRE2_SPTR)subject, strlen(subject), offset, 0, match_data, nullptr);
+
+	pcre2_match_data_free_8(match_data);
+	pcre2_code_free_8(re);
 
 	if (r < 0)
 		script_pushint(st,0);

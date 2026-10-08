@@ -20,9 +20,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install GCC 14 + CMake + Ninja
-        run: sudo apt-get update && sudo apt-get install -y gcc-14 g++-14 cmake ninja-build zlib1g-dev libmariadb-dev libpcre3-dev
-      - name: Configure (GCC 14, strict C++23)
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
+        run: sudo apt-get update && sudo apt-get install -y gcc-14 g++-14 cmake ninja-build zlib1g-dev libmariadb-dev libpcre2-dev
+      - name: Configure (GCC 14, strict C++23; requires system PCRE2)
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 2>&1 | tee configure.log
+          grep -q "Enabled PCRE code" configure.log
       - name: Build all servers + tools
         run: cmake --build build
       - name: Boot smoke (fails on absent DB only)
@@ -35,20 +37,40 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Clang 18 + CMake + Ninja
-        run: sudo apt-get update && sudo apt-get install -y clang-18 cmake ninja-build zlib1g-dev libmariadb-dev libpcre3-dev
-      - name: Configure (Clang 18, strict C++23)
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18
+        run: sudo apt-get update && sudo apt-get install -y clang-18 cmake ninja-build zlib1g-dev libmariadb-dev libpcre2-dev
+      - name: Configure (Clang 18, strict C++23; requires system PCRE2)
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 2>&1 | tee configure.log
+          grep -q "Enabled PCRE code" configure.log
       - name: Build all servers + tools
         run: cmake --build build
+
+  linux-pcre-regress:
+    # Regex parity + resource-cleanup gate: the dev harness must reproduce the
+    # pinned PCRE 8.33 baseline byte-for-byte on PCRE2, and ASan/LSan must see
+    # no leaked pcre2_code / pcre2_match_data. Independent of the full build.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GCC 14 + libpcre2-dev
+        run: sudo apt-get update && sudo apt-get install -y g++-14 libpcre2-dev
+      - name: Build harness (ASan + LSan)
+        run: g++-14 -std=c++23 -DPCRE_SUPPORT -fsanitize=address -fno-omit-frame-pointer tools/pcre-regress/pcre-regress.cpp -lpcre2-8 -o pcre-regress
+      - name: Parity against pinned PCRE1 baseline
+        run: |
+          ASAN_OPTIONS=detect_leaks=1 ./pcre-regress tools/pcre-regress/corpus.txt > pcre2.out
+          diff <(tr -d '\r' < tools/pcre-regress/pcre1.expected) <(tr -d '\r' < pcre2.out)
 
   linux-sanitizers:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install GCC 14 + CMake + Ninja
-        run: sudo apt-get update && sudo apt-get install -y gcc-14 g++-14 cmake ninja-build zlib1g-dev libmariadb-dev libpcre3-dev
-      - name: Configure (ASan + UBSan, never in Release binaries)
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DENABLE_SANITIZERS=address,undefined
+        run: sudo apt-get update && sudo apt-get install -y gcc-14 g++-14 cmake ninja-build zlib1g-dev libmariadb-dev libpcre2-dev
+      - name: Configure (ASan + UBSan, never in Release binaries; requires system PCRE2)
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DENABLE_SANITIZERS=address,undefined 2>&1 | tee configure.log
+          grep -q "Enabled PCRE code" configure.log
       - name: Build all servers + tools
         run: cmake --build build
       - name: Startup smoke under sanitizers
@@ -63,9 +85,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install toolchain
-        run: sudo apt-get update && sudo apt-get install -y gcc g++ cmake ninja-build zlib1g-dev libmariadb-dev libpcre3-dev
-      - name: Configure (native AArch64)
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+        run: sudo apt-get update && sudo apt-get install -y gcc g++ cmake ninja-build zlib1g-dev libmariadb-dev libpcre2-dev
+      - name: Configure (native AArch64; requires system PCRE2)
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release 2>&1 | tee configure.log
+          grep -q "Enabled PCRE code" configure.log
       - name: Build all servers + tools
         run: cmake --build build
 

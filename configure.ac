@@ -428,7 +428,7 @@ AC_ARG_WITH(
 	[pcre],
 	AC_HELP_STRING(
 		[--with-pcre@<:@=ARG@:>@],
-		[use PCRE library, optionally specify the full path of pcre installation directory (by default pcre is used if found)]
+		[use PCRE2 library, optionally specify the full path of pcre2 installation directory (by default pcre2 is used if found)]
 	),
 	[
 		if test "$withval" = "no" ; then
@@ -1272,7 +1272,7 @@ AC_SUBST([MYSQL_LIBS])
 
 
 #
-# PCRE library (optional)
+# PCRE library (optional; PCRE2 8-bit implementation)
 #
 PCRE_LIBS=""
 PCRE_CFLAGS=""
@@ -1285,24 +1285,26 @@ else
 		if test -z "$PCRE_HOME" ; then PCRE_HOME="/usr/local"; fi
 	fi
 	if test -z "$PCRE_HOME" ; then
-                AC_SEARCH_LIBS([pcre_study], [pcre], [HAVE_PCRE="yes"], [])
+                AC_SEARCH_LIBS([pcre2_compile_8], [pcre2-8], [HAVE_PCRE="yes"], [])
 		if test "$HAVE_PCRE" = "yes" ; then
-			PCRE_LIBS="-lpcre"
+			PCRE_LIBS="-lpcre2-8"
 		fi
 	else
 		PCRE_OLD_LDFLAGS="$LDFLAGS" ; LDFLAGS="$LDFLAGS -L$PCRE_HOME/lib"
 		PCRE_OLD_CPPFLAGS="$CPPFLAGS" ; CPPFLAGS="$CPPFLAGS -I$PCRE_HOME/include"
-		AC_CHECK_LIB(pcre, pcre_compile, [HAVE_PCRE="yes"], [])
+		AC_CHECK_LIB(pcre2-8, pcre2_compile_8, [HAVE_PCRE="yes"], [])
 		CPPFLAGS="$PCRE_OLD_CPPFLAGS"
 		LDFLAGS="$PCRE_OLD_LDFLAGS"
 		if test "$HAVE_PCRE" = "yes" ; then
-			PCRE_LIBS="-L$PCRE_HOME/lib -lpcre"
+			PCRE_LIBS="-L$PCRE_HOME/lib -lpcre2-8"
 			test -d "$PCRE_HOME/include" && PCRE_CFLAGS="-I$PCRE_HOME/include"
 		fi
 	fi
 	AC_MSG_CHECKING([PCRE library (optional)])
 	if test "$HAVE_PCRE" = "yes" ; then
-		PCRE_VERSION="`pcre-config --version`"
+		# pcre2.h has no fallback code-unit width; rAthena uses the 8-bit library.
+		PCRE_CFLAGS="$PCRE_CFLAGS -DPCRE2_CODE_UNIT_WIDTH=8"
+		PCRE_VERSION="`pcre2-config --version`"
 		AC_MSG_RESULT([yes ($PCRE_VERSION)])
 	else
 		AC_MSG_RESULT([no])

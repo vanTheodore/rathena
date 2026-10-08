@@ -5,7 +5,7 @@
 
 #include "npc.hpp"
 
-#include <pcre.h>
+#include <pcre2.h>
 
 #include <common/malloc.hpp>
 #include <common/showmsg.hpp>
@@ -66,8 +66,8 @@
 struct pcrematch_entry {
 	struct pcrematch_entry* next;
 	char* pattern;
-	pcre* pcre_;
-	pcre_extra* pcre_extra_;
+	pcre2_code_8* pcre_;
+	pcre2_match_data_8* match_data_;
 	char* label;
 };
 
@@ -101,8 +101,10 @@ struct npc_parse {
  */
 void finalize_pcrematch_entry(struct pcrematch_entry* e)
 {
-	pcre_free(e->pcre_);
-	pcre_free(e->pcre_extra_);
+	if (e->match_data_ != nullptr)
+		pcre2_match_data_free_8(e->match_data_);
+	if (e->pcre_ != nullptr)
+		pcre2_code_free_8(e->pcre_);
 	aFree(e->pattern);
 	aFree(e->label);
 }
@@ -302,15 +304,18 @@ static struct pcrematch_entry* create_pcrematch_entry(struct pcrematch_set* set)
  */
 void npc_chat_def_pattern(npc_data* nd, int64 setid, const char* pattern, const char* label)
 {
-	const char *err;
-	int32 erroff;
-	
+	int32 errorcode;
+	PCRE2_SIZE erroff;
+
 	struct pcrematch_set * s = lookup_pcreset(nd, setid);
 	struct pcrematch_entry *e = create_pcrematch_entry(s);
 	e->pattern = aStrdup(pattern);
 	e->label = aStrdup(label);
-	e->pcre_ = pcre_compile(pattern, PCRE_CASELESS, &err, &erroff, nullptr);
-	e->pcre_extra_ = pcre_study(e->pcre_, 0, &err);
+	e->pcre_ = pcre2_compile_8((PCRE2_SPTR)pattern, PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &errorcode, &erroff, nullptr);
+	// Same capacity as the old `int32 offsets[2*10 + 10]`: PCRE1 reserved
+	// the last third of that 30-int vector as workspace, so only 10 capture
+	// pairs were usable (see tools/pcre-regress/pcre1.expected cases 43-45).
+	e->match_data_ = (e->pcre_ != nullptr) ? pcre2_match_data_create_8(10, nullptr) : nullptr;
 }
 
 /**
@@ -363,18 +368,24 @@ int32 npc_chat_sub(block_list* bl, va_list ap)
 		// interate across all patterns in that set
 		for (e = pcreset->head; e != nullptr; e = e->next)
 		{
-			int32 offsets[2*10 + 10]; // 1/3 reserved for temp space requred by pcre_exec
-			
+			// A pattern that failed to compile can never match (same as the
+			// old path, where pcre_exec() on a null pattern errored out).
+			if (e->pcre_ == nullptr || e->match_data_ == nullptr)
+				continue;
+
 			// perform pattern match
-			int32 r = pcre_exec(e->pcre_, e->pcre_extra_, msg, len, 0, 0, offsets, ARRAYLENGTH(offsets));
+			int32 r = pcre2_match_8(e->pcre_, (PCRE2_SPTR)msg, len, 0, 0, e->match_data_, nullptr);
 			if (r > 0)
 			{
 				// save out the matched strings
 				for (i = 0; i < r; i++)
 				{
 					char var[255], val[255];
+					PCRE2_SIZE vallen;
 					snprintf(var, sizeof(var), "$@p%i$", i);
-					pcre_copy_substring(msg, offsets, r, i, val, sizeof(val));
+					val[0] = '\0';
+					vallen = sizeof(val);
+					pcre2_substring_copy_bynumber_8(e->match_data_, i, (PCRE2_UCHAR8*)val, &vallen);
 					set_var_str( sd, var, val );
 				}
 				
