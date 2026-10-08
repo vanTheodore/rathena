@@ -111,7 +111,7 @@ public:
 class PlayerGroupDatabase : public TypesafeYamlDatabase<uint32, s_player_group>{
 private:
 	std::map<uint32, std::vector<std::string>> inheritance;
-	bool parseCommands( const ryml::NodeRef& node, std::vector<std::string>& commands );
+	bool parseCommands( const ryml::ConstNodeRef& node, std::vector<std::string>& commands );
 
 public:
 	PlayerGroupDatabase() : TypesafeYamlDatabase( "PLAYER_GROUP_DB", 1 ){
@@ -119,7 +119,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode( const ryml::NodeRef& node ) override;
+	uint64 parseBodyNode( const ryml::ConstNodeRef& node ) override;
 	void loadingFinished() override;
 };
 

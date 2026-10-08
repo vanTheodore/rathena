@@ -42,7 +42,7 @@ const std::string BattlegroundDatabase::getDefaultLocation() {
  * @param node: The YAML node containing the entry
  * @return count of successfully parsed rows
  */
-uint64 BattlegroundDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 BattlegroundDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	uint32 id;
 
 	if (!this->asUInt32(node, "Id", id))
@@ -288,7 +288,7 @@ uint64 BattlegroundDatabase::parseBodyNode(const ryml::NodeRef& node) {
 
 			for (const auto &it : team_list) {
 				c4::csubstr team_name = c4::to_csubstr(it);
-				const ryml::NodeRef& team = location;
+				const ryml::ConstNodeRef& team = location;
 
 				if (this->nodeExists(team, it)) {
 					s_battleground_team *team_ptr;

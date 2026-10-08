@@ -4841,7 +4841,7 @@ const std::string MobDatabase::getDefaultLocation() {
 	return std::string(db_path) + "/mob_db.yml";
 }
 
-bool MobDatabase::parseDropNode( std::string nodeName, const ryml::NodeRef& node, uint8 max, std::vector<std::shared_ptr<s_mob_drop>>& drops ){
+bool MobDatabase::parseDropNode( std::string nodeName, const ryml::ConstNodeRef& node, uint8 max, std::vector<std::shared_ptr<s_mob_drop>>& drops ){
 	for( const auto& dropit : node[c4::to_csubstr(nodeName)] ){
 		std::shared_ptr<s_mob_drop> drop;
 		bool exist;
@@ -4974,7 +4974,7 @@ s_mob_db::s_mob_db()
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 MobDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 MobDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	uint32 mob_id;
 
 	if (!this->asUInt32(node, "Id", mob_id))
@@ -5887,7 +5887,7 @@ const std::string MobAvailDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 MobAvailDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 MobAvailDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	std::string mob_name;
 
 	if (!this->asString(node, "Mob", mob_name))
@@ -6215,7 +6215,7 @@ const std::string MobSummonDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 MobSummonDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 MobSummonDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	std::string group_name;
 
 	if (!this->asString(node, "Group", group_name))
@@ -6317,7 +6317,7 @@ const std::string MobChatDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 MobChatDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 MobChatDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	uint16 id;
 
 	if (!this->asUInt16(node, "Id", id))
@@ -6696,7 +6696,7 @@ const std::string MobItemRatioDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 MobItemRatioDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 MobItemRatioDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	std::string item_name;
 
 	if (!this->asString(node, "Item", item_name))
@@ -6942,7 +6942,7 @@ const std::string MapDropDatabase::getDefaultLocation(){
 	return std::string( db_path ) + "/map_drops.yml";
 }
 
-uint64 MapDropDatabase::parseBodyNode( const ryml::NodeRef& node ){
+uint64 MapDropDatabase::parseBodyNode( const ryml::ConstNodeRef& node ){
 	std::string mapname;
 
 	if( !this->asString( node, "Map", mapname ) ){
@@ -6972,7 +6972,7 @@ uint64 MapDropDatabase::parseBodyNode( const ryml::NodeRef& node ){
 	}
 
 	if( this->nodeExists( node, "GlobalDrops" ) ){
-		const ryml::NodeRef& globalNode = node["GlobalDrops"];
+		const ryml::ConstNodeRef& globalNode = node["GlobalDrops"];
 
 		for( const auto& it : globalNode ){
 			if( !this->parseDrop( it, mapdrops->globals ) ){
@@ -6982,7 +6982,7 @@ uint64 MapDropDatabase::parseBodyNode( const ryml::NodeRef& node ){
 	}
 
 	if( this->nodeExists( node, "SpecificDrops" ) ){
-		const ryml::NodeRef& specificNode = node["SpecificDrops"];
+		const ryml::ConstNodeRef& specificNode = node["SpecificDrops"];
 
 		for( const auto& monsterNode : specificNode ){
 			if( !this->nodesExist( monsterNode, { "Monster", "Drops" } ) ){
@@ -7019,7 +7019,7 @@ uint64 MapDropDatabase::parseBodyNode( const ryml::NodeRef& node ){
 	return 1;
 }
 
-bool MapDropDatabase::parseDrop( const ryml::NodeRef& node, std::unordered_map<uint16, std::shared_ptr<s_mob_drop>>& drops ){
+bool MapDropDatabase::parseDrop( const ryml::ConstNodeRef& node, std::unordered_map<uint16, std::shared_ptr<s_mob_drop>>& drops ){
 	uint16 index;
 
 	if( !this->asUInt16( node, "Index", index ) ){

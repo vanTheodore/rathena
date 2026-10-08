@@ -14702,7 +14702,7 @@ const std::string SkillDatabase::getDefaultLocation() {
 	return std::string(db_path) + "/skill_db.yml";
 }
 
-template<typename T, size_t S> bool SkillDatabase::parseNode(const std::string& nodeName, const std::string& subNodeName, const ryml::NodeRef& node, T (&arr)[S]) {
+template<typename T, size_t S> bool SkillDatabase::parseNode(const std::string& nodeName, const std::string& subNodeName, const ryml::ConstNodeRef& node, T (&arr)[S]) {
 	int32 value;
 	const auto& skNode = node[c4::to_csubstr(nodeName)];
 	if (!skNode.is_seq()) {
@@ -14772,7 +14772,7 @@ template<typename T, size_t S> bool SkillDatabase::parseNode(const std::string& 
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 SkillDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 SkillDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	uint16 skill_id;
 
 	if (!this->asUInt16(node, "Id", skill_id))
@@ -15793,7 +15793,7 @@ const std::string ReadingSpellbookDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 ReadingSpellbookDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 ReadingSpellbookDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	std::string skill_name;
 
 	if (!this->asString(node, "Skill", skill_name))
@@ -15879,7 +15879,7 @@ const std::string MagicMushroomDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 MagicMushroomDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 MagicMushroomDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	std::string skill_name;
 
 	if (!this->asString(node, "Skill", skill_name))
@@ -15976,7 +15976,7 @@ const std::string SkillArrowDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 SkillArrowDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 SkillArrowDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	std::string source_name;
 
 	if (!this->asString(node, "Source", source_name))
@@ -16047,7 +16047,7 @@ const std::string AbraDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 AbraDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 AbraDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	std::string skill_name;
 
 	if (!this->asString(node, "Skill", skill_name))

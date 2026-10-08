@@ -12,11 +12,11 @@
 
 using namespace rathena;
 
-bool YamlDatabase::nodeExists( const ryml::NodeRef& node, const std::string& name ){
+bool YamlDatabase::nodeExists( const ryml::ConstNodeRef& node, const std::string& name ){
 	return (node.num_children() > 0 && node.has_child(c4::to_csubstr(name)));
 }
 
-bool YamlDatabase::nodesExist( const ryml::NodeRef& node, std::initializer_list<const std::string> names ){
+bool YamlDatabase::nodesExist( const ryml::ConstNodeRef& node, std::initializer_list<const std::string> names ){
 	bool missing = false;
 
 	for( const std::string& name : names ){
@@ -40,7 +40,7 @@ bool YamlDatabase::verifyCompatibility( const ryml::Tree& tree ){
 		return false;
 	}
 
-	const ryml::NodeRef& headerNode = tree["Header"];
+	const ryml::ConstNodeRef& headerNode = tree["Header"];
 
 	std::string tmpType;
 
@@ -105,11 +105,12 @@ bool YamlDatabase::load(const std::string& path) {
 	buf[real_size] = '\0';
 	fclose(f);
 
-	parser = {};
 	ryml::Tree tree;
 
 	try{
-		tree = parser.parse_in_arena(c4::to_csubstr(path), c4::to_csubstr(buf));
+		event_handler = ryml::EventHandlerTree{};
+		parser = ryml::Parser{&event_handler};
+		tree = ryml::parse_in_arena(&parser, c4::to_csubstr(path), c4::to_csubstr(buf));
 	}catch( const std::runtime_error& e ){
 		ShowError( "Failed to load %s database file from '" CL_WHITE "%s" CL_RESET "'.\n", this->type.c_str(), path.c_str() );
 		ShowError( "There is likely a syntax error in the file.\n" );
@@ -127,7 +128,7 @@ bool YamlDatabase::load(const std::string& path) {
 		return false;
 	}
 
-	const ryml::NodeRef& header = tree["Header"];
+	const ryml::ConstNodeRef& header = tree["Header"];
 
 	if( this->nodeExists( header, "Clear" ) ){
 		bool clear;
@@ -153,7 +154,7 @@ void YamlDatabase::parse( const ryml::Tree& tree ){
 	uint64 count = 0;
 
 	if( this->nodeExists( tree.rootref(), "Body" ) ){
-		const ryml::NodeRef& bodyNode = tree["Body"];
+		const ryml::ConstNodeRef& bodyNode = tree["Body"];
 		size_t childNodesCount = bodyNode.num_children();
 		const char* fileName = this->currentFile.c_str();
 #ifdef DEBUG
@@ -162,7 +163,7 @@ void YamlDatabase::parse( const ryml::Tree& tree ){
 
 		ShowStatus("Loading '" CL_WHITE "%" PRIdPTR CL_RESET "' entries in '" CL_WHITE "%s" CL_RESET "'\n", childNodesCount, fileName);
 
-		for( const ryml::NodeRef &node : bodyNode ){
+		for( const ryml::ConstNodeRef &node : bodyNode ){
 			count += this->parseBodyNode( node );
 #ifdef DETAILED_LOADING_OUTPUT
 			ShowStatus( "Loading [%" PRIdPTR "/%" PRIdPTR "] entries from '" CL_WHITE "%s" CL_RESET "'" CL_CLL "\r", ++childNodesProgressed, childNodesCount, fileName );
@@ -175,12 +176,12 @@ void YamlDatabase::parse( const ryml::Tree& tree ){
 
 void YamlDatabase::parseImports( const ryml::Tree& rootNode ){
 	if( this->nodeExists( rootNode.rootref(), "Footer" ) ){
-		const ryml::NodeRef& footerNode = rootNode["Footer"];
+		const ryml::ConstNodeRef& footerNode = rootNode["Footer"];
 
 		if( this->nodeExists( footerNode, "Imports") ){
-			const ryml::NodeRef& importsNode = footerNode["Imports"];
+			const ryml::ConstNodeRef& importsNode = footerNode["Imports"];
 
-			for( const ryml::NodeRef &node : importsNode ){
+			for( const ryml::ConstNodeRef &node : importsNode ){
 				std::string importFile;
 
 				if( !this->asString( node, "Path", importFile ) ){
@@ -227,9 +228,9 @@ void YamlDatabase::parseImports( const ryml::Tree& rootNode ){
 	}
 }
 
-template <typename R> bool YamlDatabase::asType( const ryml::NodeRef& node, const std::string& name, R& out ){
+template <typename R> bool YamlDatabase::asType( const ryml::ConstNodeRef& node, const std::string& name, R& out ){
 	if( this->nodeExists( node, name ) ){
-		const ryml::NodeRef& dataNode = node[c4::to_csubstr(name)];
+		const ryml::ConstNodeRef& dataNode = node[c4::to_csubstr(name)];
 
 		if (dataNode.val_is_null()) {
 			this->invalidWarning(node, "Node \"%s\" is missing a value.\n", name.c_str());
@@ -250,8 +251,8 @@ template <typename R> bool YamlDatabase::asType( const ryml::NodeRef& node, cons
 	}
 }
 
-bool YamlDatabase::asBool(const ryml::NodeRef& node, const std::string &name, bool &out) {
-	const ryml::NodeRef& targetNode = node[c4::to_csubstr(name)];
+bool YamlDatabase::asBool(const ryml::ConstNodeRef& node, const std::string &name, bool &out) {
+	const ryml::ConstNodeRef& targetNode = node[c4::to_csubstr(name)];
 
 	if (targetNode.val_is_null()) {
 		this->invalidWarning(node, "Node \"%s\" is missing a value.\n", name.c_str());
@@ -276,43 +277,43 @@ bool YamlDatabase::asBool(const ryml::NodeRef& node, const std::string &name, bo
 	}
 }
 
-bool YamlDatabase::asInt16( const ryml::NodeRef& node, const std::string& name, int16& out ){
+bool YamlDatabase::asInt16( const ryml::ConstNodeRef& node, const std::string& name, int16& out ){
 	return asType<int16>( node, name, out);
 }
 
-bool YamlDatabase::asUInt16(const ryml::NodeRef& node, const std::string& name, uint16& out) {
+bool YamlDatabase::asUInt16(const ryml::ConstNodeRef& node, const std::string& name, uint16& out) {
 	return asType<uint16>(node, name, out);
 }
 
-bool YamlDatabase::asInt32(const ryml::NodeRef& node, const std::string &name, int32 &out) {
+bool YamlDatabase::asInt32(const ryml::ConstNodeRef& node, const std::string &name, int32 &out) {
 	return asType<int32>(node, name, out);
 }
 
-bool YamlDatabase::asUInt32(const ryml::NodeRef& node, const std::string &name, uint32 &out) {
+bool YamlDatabase::asUInt32(const ryml::ConstNodeRef& node, const std::string &name, uint32 &out) {
 	return asType<uint32>(node, name, out);
 }
 
-bool YamlDatabase::asInt64(const ryml::NodeRef& node, const std::string &name, int64 &out) {
+bool YamlDatabase::asInt64(const ryml::ConstNodeRef& node, const std::string &name, int64 &out) {
 	return asType<int64>(node, name, out);
 }
 
-bool YamlDatabase::asUInt64(const ryml::NodeRef& node, const std::string &name, uint64 &out) {
+bool YamlDatabase::asUInt64(const ryml::ConstNodeRef& node, const std::string &name, uint64 &out) {
 	return asType<uint64>(node, name, out);
 }
 
-bool YamlDatabase::asFloat(const ryml::NodeRef& node, const std::string &name, float &out) {
+bool YamlDatabase::asFloat(const ryml::ConstNodeRef& node, const std::string &name, float &out) {
 	return asType<float>(node, name, out);
 }
 
-bool YamlDatabase::asDouble(const ryml::NodeRef& node, const std::string &name, double &out) {
+bool YamlDatabase::asDouble(const ryml::ConstNodeRef& node, const std::string &name, double &out) {
 	return asType<double>(node, name, out);
 }
 
-bool YamlDatabase::asString(const ryml::NodeRef& node, const std::string &name, std::string &out) {
+bool YamlDatabase::asString(const ryml::ConstNodeRef& node, const std::string &name, std::string &out) {
 	return asType<std::string>(node, name, out);
 }
 
-bool YamlDatabase::asUInt16Rate( const ryml::NodeRef& node, const std::string& name, uint16& out, uint16 maximum ){
+bool YamlDatabase::asUInt16Rate( const ryml::ConstNodeRef& node, const std::string& name, uint16& out, uint16 maximum ){
 	if( this->asUInt16( node, name, out ) ){
 		if( out > maximum ){
 			this->invalidWarning( node[c4::to_csubstr(name)], "Node \"%s\" with value %" PRIu16 " exceeds maximum of %" PRIu16 ".\n", name.c_str(), out, maximum );
@@ -330,7 +331,7 @@ bool YamlDatabase::asUInt16Rate( const ryml::NodeRef& node, const std::string& n
 	}
 }
 
-bool YamlDatabase::asUInt32Rate( const ryml::NodeRef& node, const std::string& name, uint32& out, uint32 maximum ){
+bool YamlDatabase::asUInt32Rate( const ryml::ConstNodeRef& node, const std::string& name, uint32& out, uint32 maximum ){
 	if( this->asUInt32( node, name, out ) ){
 		if( out > maximum ){
 			this->invalidWarning( node[c4::to_csubstr(name)], "Node \"%s\" with value %" PRIu32 " exceeds maximum of %" PRIu32 ".\n", name.c_str(), out, maximum );
@@ -348,15 +349,15 @@ bool YamlDatabase::asUInt32Rate( const ryml::NodeRef& node, const std::string& n
 	}
 }
 
-int32 YamlDatabase::getLineNumber(const ryml::NodeRef& node) {
-	return parser.source().has_str() ? (int32)parser.location(node).line : 0;
+int32 YamlDatabase::getLineNumber(const ryml::ConstNodeRef& node) {
+	return parser.source().has_str() ? (int32)node.location(parser).line : 0;
 }
 
-int32 YamlDatabase::getColumnNumber(const ryml::NodeRef& node) {
-	return parser.source().has_str() ? (int32)parser.location(node).col : 0;
+int32 YamlDatabase::getColumnNumber(const ryml::ConstNodeRef& node) {
+	return parser.source().has_str() ? (int32)node.location(parser).col : 0;
 }
 
-void YamlDatabase::invalidWarning( const ryml::NodeRef& node, const char* fmt, ... ){
+void YamlDatabase::invalidWarning( const ryml::ConstNodeRef& node, const char* fmt, ... ){
 	va_list ap;
 
 	va_start(ap, fmt);
@@ -383,10 +384,26 @@ void YamlDatabase::setGenerator(bool shouldLoad) {
 	shouldLoadGenerator = shouldLoad;
 }
 
-void on_yaml_error( const char* msg, size_t len, ryml::Location loc, void *user_data ){
-	throw std::runtime_error( msg );
+// 0.16 split errors into basic/parse/visit callbacks whose exception types
+// no longer derive from std::runtime_error. Register the same throwing
+// behavior on all three so database loading keeps failing with
+// std::runtime_error exactly as before (callers catch it).
+void on_yaml_error( c4::csubstr msg, const ryml::ErrorDataBasic&, void* ){
+	throw std::runtime_error( std::string( msg.str, msg.len ) );
+}
+
+void on_yaml_error( c4::csubstr msg, const ryml::ErrorDataParse&, void* ){
+	throw std::runtime_error( std::string( msg.str, msg.len ) );
+}
+
+void on_yaml_error( c4::csubstr msg, const ryml::ErrorDataVisit&, void* ){
+	throw std::runtime_error( std::string( msg.str, msg.len ) );
 }
 
 void do_init_database(){
-	ryml::set_callbacks( ryml::Callbacks( nullptr, nullptr, nullptr, on_yaml_error ) );
+	ryml::Callbacks callbacks;
+	callbacks.set_error_basic( on_yaml_error )
+		.set_error_parse( on_yaml_error )
+		.set_error_visit( on_yaml_error );
+	ryml::set_callbacks( callbacks );
 }

@@ -3337,7 +3337,7 @@ public:
 		this->combo_num = 0;
 	}
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 	void loadingFinished() override;
 };
 
@@ -3383,7 +3383,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 	void loadingFinished() override;
 
 	// Additional
@@ -3400,10 +3400,10 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 
 	// Additional
-	bool add_option(const ryml::NodeRef& node, std::shared_ptr<s_random_opt_group_entry> &entry);
+	bool add_option(const ryml::ConstNodeRef& node, std::shared_ptr<s_random_opt_group_entry> &entry);
 	bool option_exists(std::string name);
 	bool option_get_id(std::string name, uint16 &id);
 };
@@ -3556,7 +3556,7 @@ private:
 	std::unordered_map<std::string, std::shared_ptr<item_data>> nameToItemDataMap;
 	std::unordered_map<std::string, std::shared_ptr<item_data>> aegisNameToItemDataMap;
 
-	e_sex defaultGender( const ryml::NodeRef& node, std::shared_ptr<item_data> id );
+	e_sex defaultGender( const ryml::ConstNodeRef& node, std::shared_ptr<item_data> id );
 
 	std::string create_item_link(struct item& item, std::shared_ptr<item_data>& data);
 
@@ -3573,7 +3573,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 	void loadingFinished() override;
 	void clear() override{
 		TypesafeCachedYamlDatabase::clear();
@@ -3600,7 +3600,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 	void loadingFinished() override;
 
 	// Additional
@@ -3637,7 +3637,7 @@ public:
 	}
 
 	const std::string getDefaultLocation();
-	uint64 parseBodyNode( const ryml::NodeRef& node );
+	uint64 parseBodyNode( const ryml::ConstNodeRef& node );
 };
 
 extern LaphineSynthesisDatabase laphine_synthesis_db;
@@ -3662,7 +3662,7 @@ public:
 	}
 
 	const std::string getDefaultLocation();
-	uint64 parseBodyNode( const ryml::NodeRef& node );
+	uint64 parseBodyNode( const ryml::ConstNodeRef& node );
 };
 
 extern LaphineUpgradeDatabase laphine_upgrade_db;
@@ -3693,7 +3693,7 @@ public:
 	}
 
 	const std::string getDefaultLocation();
-	uint64 parseBodyNode( const ryml::NodeRef& node );
+	uint64 parseBodyNode( const ryml::ConstNodeRef& node );
 };
 
 extern ItemReformDatabase item_reform_db;
@@ -3755,7 +3755,7 @@ struct s_item_enchant{
 
 class ItemEnchantDatabase : public TypesafeYamlDatabase<uint64, s_item_enchant>{
 private:
-	bool parseMaterials( const ryml::NodeRef& node, std::unordered_map<t_itemid, uint16>& materials );
+	bool parseMaterials( const ryml::ConstNodeRef& node, std::unordered_map<t_itemid, uint16>& materials );
 
 public:
 	ItemEnchantDatabase() : TypesafeYamlDatabase( "ITEM_ENCHANT_DB", 1 ){
@@ -3763,7 +3763,7 @@ public:
 	}
 
 	const std::string getDefaultLocation();
-	uint64 parseBodyNode( const ryml::NodeRef& node );
+	uint64 parseBodyNode( const ryml::ConstNodeRef& node );
 };
 
 extern ItemEnchantDatabase item_enchant_db;
@@ -3794,7 +3794,7 @@ public:
 	}
 
 	const std::string getDefaultLocation();
-	uint64 parseBodyNode( const ryml::NodeRef& node );
+	uint64 parseBodyNode( const ryml::ConstNodeRef& node );
 };
 
 extern ItemPackageDatabase item_package_db;

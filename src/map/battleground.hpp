@@ -121,7 +121,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 };
 
 extern BattlegroundDatabase battleground_db;

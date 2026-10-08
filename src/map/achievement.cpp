@@ -46,7 +46,7 @@ const std::string AchievementDatabase::getDefaultLocation(){
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 AchievementDatabase::parseBodyNode(const ryml::NodeRef& node){
+uint64 AchievementDatabase::parseBodyNode(const ryml::ConstNodeRef& node){
 	uint32 achievement_id;
 
 	if( !this->asUInt32( node, "Id", achievement_id ) ){
@@ -389,7 +389,7 @@ const std::string AchievementLevelDatabase::getDefaultLocation(){
 	return std::string(db_path) + "/achievement_level_db.yml";
 }
 
-uint64 AchievementLevelDatabase::parseBodyNode( const ryml::NodeRef& node ){
+uint64 AchievementLevelDatabase::parseBodyNode( const ryml::ConstNodeRef& node ){
 	if( !this->nodesExist( node, { "Level", "Points" } ) ){
 		return 0;
 	}

@@ -36,7 +36,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 
 	// Additional
 	t_exp get_nextexp(uint16 level);
@@ -181,7 +181,7 @@ enum e_homun_grade : uint8 {
 
 class HomunculusDatabase : public TypesafeYamlDatabase<int32, s_homunculus_db> {
 private:
-	bool parseStatusNode(const std::string &nodeName, const std::string &subNodeName, const ryml::NodeRef &node, s_hom_stats &bonus);
+	bool parseStatusNode(const std::string &nodeName, const std::string &subNodeName, const ryml::ConstNodeRef &node, s_hom_stats &bonus);
 
 public:
 	HomunculusDatabase() : TypesafeYamlDatabase("HOMUNCULUS_DB", 1) {
@@ -189,7 +189,7 @@ public:
 	}
 
 	const std::string getDefaultLocation();
-	uint64 parseBodyNode(const ryml::NodeRef& node);
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node);
 
 	// Additional
 	std::shared_ptr<s_homunculus_db> homun_search(int32 class_);

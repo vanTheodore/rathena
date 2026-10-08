@@ -39,7 +39,7 @@ const std::string QuestDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 QuestDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 QuestDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	uint32 quest_id;
 
 	if (!this->asUInt32(node, "Id", quest_id))

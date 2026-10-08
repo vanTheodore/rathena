@@ -46,7 +46,7 @@ const std::string ItemDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 ItemDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 ItemDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	t_itemid nameid;
 
 	if (!this->asUInt32(node, "Id", nameid))
@@ -328,7 +328,7 @@ uint64 ItemDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	}
 
 	if (this->nodeExists(node, "Jobs")) {
-		const ryml::NodeRef& jobNode = node["Jobs"];
+		const ryml::ConstNodeRef& jobNode = node["Jobs"];
 
 		item->class_base[0] = item->class_base[1] = item->class_base[2] = 0;
 
@@ -1224,7 +1224,7 @@ void ItemDatabase::loadingFinished(){
  * @param node: the already parsed item data.
  * @return gender that should be used.
  */
-e_sex ItemDatabase::defaultGender( const ryml::NodeRef& node, std::shared_ptr<item_data> id ){
+e_sex ItemDatabase::defaultGender( const ryml::ConstNodeRef& node, std::shared_ptr<item_data> id ){
 	if (id->nameid == WEDDING_RING_M) //Grom Ring
 		return SEX_MALE;
 	if (id->nameid == WEDDING_RING_F) //Bride Ring
@@ -1528,7 +1528,7 @@ const std::string LaphineSynthesisDatabase::getDefaultLocation(){
 	return std::string( db_path ) + "/laphine_synthesis.yml";
 }
 
-uint64 LaphineSynthesisDatabase::parseBodyNode( const ryml::NodeRef& node ){
+uint64 LaphineSynthesisDatabase::parseBodyNode( const ryml::ConstNodeRef& node ){
 	t_itemid item_id;
 
 	{
@@ -1601,7 +1601,7 @@ uint64 LaphineSynthesisDatabase::parseBodyNode( const ryml::NodeRef& node ){
 	}
 
 	if( this->nodeExists( node, "Requirements" ) ){
-		for( const ryml::NodeRef& requirementNode : node["Requirements"] ){
+		for( const ryml::ConstNodeRef& requirementNode : node["Requirements"] ){
 			std::string name;
 
 			if( !this->asString( requirementNode, "Item", name ) ){
@@ -1699,7 +1699,7 @@ const std::string LaphineUpgradeDatabase::getDefaultLocation(){
 	return std::string( db_path ) + "/laphine_upgrade.yml";
 }
 
-uint64 LaphineUpgradeDatabase::parseBodyNode( const ryml::NodeRef& node ){
+uint64 LaphineUpgradeDatabase::parseBodyNode( const ryml::ConstNodeRef& node ){
 	t_itemid item_id;
 
 	{
@@ -1753,7 +1753,7 @@ uint64 LaphineUpgradeDatabase::parseBodyNode( const ryml::NodeRef& node ){
 	}
 
 	if( this->nodeExists( node, "TargetItems" ) ){
-		for( const ryml::NodeRef& targetNode : node["TargetItems"] ){
+		for( const ryml::ConstNodeRef& targetNode : node["TargetItems"] ){
 			std::string name;
 
 			if( !this->asString( targetNode, "Item", name ) ){
@@ -1914,7 +1914,7 @@ const std::string ItemReformDatabase::getDefaultLocation(){
 	return std::string( db_path ) + "/item_reform.yml";
 }
 
-uint64 ItemReformDatabase::parseBodyNode( const ryml::NodeRef& node ){
+uint64 ItemReformDatabase::parseBodyNode( const ryml::ConstNodeRef& node ){
 	t_itemid item_id;
 
 	{
@@ -1947,7 +1947,7 @@ uint64 ItemReformDatabase::parseBodyNode( const ryml::NodeRef& node ){
 	}
 
 	if( this->nodeExists( node, "BaseItems" ) ){
-		for( const ryml::NodeRef& baseNode : node["BaseItems"] ){
+		for( const ryml::ConstNodeRef& baseNode : node["BaseItems"] ){
 			t_itemid base_itemid;
 
 			{
@@ -2051,7 +2051,7 @@ uint64 ItemReformDatabase::parseBodyNode( const ryml::NodeRef& node ){
 			}
 
 			if( this->nodeExists( baseNode, "Materials" ) ){
-				for( const ryml::NodeRef& materialNode : baseNode["Materials"] ){
+				for( const ryml::ConstNodeRef& materialNode : baseNode["Materials"] ){
 					std::string name;
 
 					if( !this->asString( materialNode, "Material", name ) ){
@@ -2199,9 +2199,9 @@ const std::string ItemEnchantDatabase::getDefaultLocation(){
 	return std::string( db_path ) + "/item_enchant.yml";
 }
 
-bool ItemEnchantDatabase::parseMaterials( const ryml::NodeRef& node, std::unordered_map<t_itemid, uint16>& materials ){
+bool ItemEnchantDatabase::parseMaterials( const ryml::ConstNodeRef& node, std::unordered_map<t_itemid, uint16>& materials ){
 	if( this->nodeExists( node, "Materials" ) ){
-		for( const ryml::NodeRef& materialNode : node["Materials"] ){
+		for( const ryml::ConstNodeRef& materialNode : node["Materials"] ){
 			std::string name;
 
 			if( !this->asString( materialNode, "Material", name ) ){
@@ -2247,7 +2247,7 @@ bool ItemEnchantDatabase::parseMaterials( const ryml::NodeRef& node, std::unorde
 	return true;
 }
 
-uint64 ItemEnchantDatabase::parseBodyNode( const ryml::NodeRef& node ){
+uint64 ItemEnchantDatabase::parseBodyNode( const ryml::ConstNodeRef& node ){
 	uint64 id;
 
 	if( !this->asUInt64( node, "Id", id ) ){
@@ -2267,7 +2267,7 @@ uint64 ItemEnchantDatabase::parseBodyNode( const ryml::NodeRef& node ){
 	}
 
 	if( this->nodeExists( node, "TargetItems" ) ){
-		const ryml::NodeRef& targetItemsNode = node["TargetItems"];
+		const ryml::ConstNodeRef& targetItemsNode = node["TargetItems"];
 
 		for( const auto& it : targetItemsNode ){
 			std::string name;
@@ -2356,7 +2356,7 @@ uint64 ItemEnchantDatabase::parseBodyNode( const ryml::NodeRef& node ){
 	}
 
 	if( this->nodeExists( node, "Reset" ) ){
-		const ryml::NodeRef& resetNode = node["Reset"];
+		const ryml::ConstNodeRef& resetNode = node["Reset"];
 
 		if( this->nodeExists( resetNode, "Chance" ) ){
 			uint32 chance;
@@ -2420,7 +2420,7 @@ uint64 ItemEnchantDatabase::parseBodyNode( const ryml::NodeRef& node ){
 	}
 
 	if( this->nodeExists( node, "Slots" ) ){
-		for( const ryml::NodeRef& slotNode : node["Slots"] ){
+		for( const ryml::ConstNodeRef& slotNode : node["Slots"] ){
 			uint16 slot;
 
 			if( !this->asUInt16( slotNode, "Slot", slot ) ){
@@ -2482,7 +2482,7 @@ uint64 ItemEnchantDatabase::parseBodyNode( const ryml::NodeRef& node ){
 			}
 
 			if( this->nodeExists( slotNode, "EnchantgradeBonus" ) ){
-				for( const ryml::NodeRef& enchantgradeNode : slotNode["EnchantgradeBonus"] ){
+				for( const ryml::ConstNodeRef& enchantgradeNode : slotNode["EnchantgradeBonus"] ){
 					uint16 enchantgrade;
 
 					if( !this->asUInt16( enchantgradeNode, "Enchantgrade", enchantgrade ) ){
@@ -2505,7 +2505,7 @@ uint64 ItemEnchantDatabase::parseBodyNode( const ryml::NodeRef& node ){
 			}
 
 			if( this->nodeExists( slotNode, "Enchants" ) ){
-				for( const ryml::NodeRef& enchantNode : slotNode["Enchants"] ){
+				for( const ryml::ConstNodeRef& enchantNode : slotNode["Enchants"] ){
 					uint16 enchantgrade;
 
 					if( !this->asUInt16( enchantNode, "Enchantgrade", enchantgrade ) ){
@@ -2526,7 +2526,7 @@ uint64 ItemEnchantDatabase::parseBodyNode( const ryml::NodeRef& node ){
 					}
 
 					if( this->nodeExists( enchantNode, "Items" ) ){
-						for( const ryml::NodeRef& itemNode : enchantNode["Items"] ){
+						for( const ryml::ConstNodeRef& itemNode : enchantNode["Items"] ){
 							std::string enchant_name;
 
 							if( !this->asString( itemNode, "Item", enchant_name ) ){
@@ -2575,7 +2575,7 @@ uint64 ItemEnchantDatabase::parseBodyNode( const ryml::NodeRef& node ){
 			}
 
 			if( this->nodeExists( slotNode, "PerfectEnchants" ) ){
-				for( const ryml::NodeRef& enchantNode : slotNode["PerfectEnchants"] ){
+				for( const ryml::ConstNodeRef& enchantNode : slotNode["PerfectEnchants"] ){
 					std::string enchant_name;
 
 					if( !this->asString( enchantNode, "Item", enchant_name ) ){
@@ -2627,7 +2627,7 @@ uint64 ItemEnchantDatabase::parseBodyNode( const ryml::NodeRef& node ){
 			}
 
 			if( this->nodeExists( slotNode, "Upgrades" ) ){
-				for( const ryml::NodeRef& upgradeNode : slotNode["Upgrades"] ){
+				for( const ryml::ConstNodeRef& upgradeNode : slotNode["Upgrades"] ){
 					std::string enchant_name;
 
 					if( !this->asString( upgradeNode, "Enchant", enchant_name ) ){
@@ -2718,7 +2718,7 @@ const std::string ItemPackageDatabase::getDefaultLocation(){
 	return std::string( db_path ) + "/item_packages.yml";
 }
 
-uint64 ItemPackageDatabase::parseBodyNode( const ryml::NodeRef& node ){
+uint64 ItemPackageDatabase::parseBodyNode( const ryml::ConstNodeRef& node ){
 	t_itemid item_id;
 
 	{
@@ -2751,7 +2751,7 @@ uint64 ItemPackageDatabase::parseBodyNode( const ryml::NodeRef& node ){
 	}
 
 	if( this->nodeExists( node, "Groups" ) ){
-		for( const ryml::NodeRef& groupNode : node["Groups"] ){
+		for( const ryml::ConstNodeRef& groupNode : node["Groups"] ){
 			uint32 groupIndex;
 
 			if( !this->asUInt32( groupNode, "Group", groupIndex) ){
@@ -2770,7 +2770,7 @@ uint64 ItemPackageDatabase::parseBodyNode( const ryml::NodeRef& node ){
 				group->groupIndex = groupIndex;
 			}
 
-			for( const ryml::NodeRef& itemNode : groupNode["Items"] ){
+			for( const ryml::ConstNodeRef& itemNode : groupNode["Items"] ){
 				std::string name;
 
 				if( !this->asString( itemNode, "Item", name ) ){
@@ -3362,7 +3362,7 @@ const std::string ItemGroupDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 ItemGroupDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 ItemGroupDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	std::string group_name;
 
 	if (!this->asString(node, "Group", group_name))
@@ -3808,14 +3808,14 @@ uint16 ComboDatabase::find_combo_id( const std::vector<t_itemid>& items ){
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 ComboDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 ComboDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	std::vector<std::vector<t_itemid>> items_list;
 
 	if( !this->nodesExist( node, { "Combos" } ) ){
 		return 0;
 	}
 
-	const ryml::NodeRef& combosNode = node["Combos"];
+	const ryml::ConstNodeRef& combosNode = node["Combos"];
 
 	for (const auto& comboit : combosNode) {
 		static const std::string nodeName = "Combo";
@@ -3824,7 +3824,7 @@ uint64 ComboDatabase::parseBodyNode(const ryml::NodeRef& node) {
 			return 0;
 		}
 
-		const ryml::NodeRef& comboNode = comboit["Combo"];
+		const ryml::ConstNodeRef& comboNode = comboit["Combo"];
 
 		if (!comboNode.is_seq()) {
 			this->invalidWarning(comboNode, "%s should be a sequence.\n", nodeName.c_str());
@@ -4465,7 +4465,7 @@ const std::string RandomOptionDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 RandomOptionDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 RandomOptionDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	uint16 id;
 
 	if (!this->asUInt16(node, "Id", id))
@@ -4576,7 +4576,7 @@ const std::string RandomOptionGroupDatabase::getDefaultLocation() {
 	return std::string(db_path) + "/item_randomopt_group.yml";
 }
 
-bool RandomOptionGroupDatabase::add_option(const ryml::NodeRef& node, std::shared_ptr<s_random_opt_group_entry> &entry) {
+bool RandomOptionGroupDatabase::add_option(const ryml::ConstNodeRef& node, std::shared_ptr<s_random_opt_group_entry> &entry) {
 	uint16 option_id;
 
 	if (this->nodeExists(node, "Option")) {
@@ -4736,7 +4736,7 @@ void s_random_opt_group::apply( struct item& item ){
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 RandomOptionGroupDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 RandomOptionGroupDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	uint16 id;
 
 	if (!this->asUInt16(node, "Id", id))
@@ -4769,7 +4769,7 @@ uint64 RandomOptionGroupDatabase::parseBodyNode(const ryml::NodeRef& node) {
 
 	if (this->nodeExists(node, "Slots")) {
 		const auto& slotsNode = node["Slots"];
-		for (const ryml::NodeRef& slotNode : slotsNode) {
+		for (const ryml::ConstNodeRef& slotNode : slotsNode) {
 			if (randopt->slots.size() >= MAX_ITEM_RDM_OPT) {
 				this->invalidWarning(slotNode, "Reached maximum of %d Random Option group options. Skipping the remaining slots...\n", MAX_ITEM_RDM_OPT);
 				break;

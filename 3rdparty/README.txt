@@ -8,8 +8,8 @@ pcre - library for Perl Compatible Regular Expressions, PCRE1 8.33 headers (http
 zlib - library for DEFLATE lossless compression algorithm, 1.2.8 headers (http://www.zlib.net)
 json - library for nlohmann json, single-header (https://github.com/nlohmann/json/tree/v3.12.0)
 yaml-cpp - library for yaml, 0.9.0, no local patches (https://github.com/jbeder/yaml-cpp/tree/yaml-cpp-0.9.0)
-rapidyaml - library for rapid yaml, 0.4.0 (https://github.com/biojppm/rapidyaml/tree/v0.4.0)
-c4core - rapidyaml subproject, as vendored under 3rdparty/rapidyaml/ext/c4core
+rapidyaml - library for rapid yaml, 0.16.0, no local patches (https://github.com/biojppm/rapidyaml/tree/v0.16.0)
+c4core - rapidyaml subproject, required sources vendored as ext/c4core.src (see ext/c4core.src.txt)
 
 Pinned versions are exact stable tags; see doc/MODERNIZATION.md for the
 audit table, licenses, and intentionally-deferred updates.

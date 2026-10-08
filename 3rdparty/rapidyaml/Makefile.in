@@ -4,8 +4,8 @@ RAPIDYAML_DIR_OBJ = $(RAPIDYAML_OBJ:%=obj/%)
 RAPIDYAML_H =  $(shell find * -type f -name "*.h*")
 RAPIDYAML_AR = obj/ryml.a
 
-CXXFLAG =-std=c++11
-INC=-Isrc -Iext/c4core/src
+CXXFLAG =-std=c++23
+INC=-Isrc -Iext/c4core.src
 
 @SET_MAKE@
 
@@ -29,9 +29,9 @@ help:
 
 obj:
 	@echo "	MKDIR	obj/src/c4/yml"
-	@echo "	MKDIR	obj/ext/c4core/src/c4"
+	@echo "	MKDIR	obj/ext/c4core.src/c4"
 	@mkdir -p obj/src/c4/yml
-	@mkdir -p obj/ext/c4core/src/c4
+	@mkdir -p obj/ext/c4core.src/c4
 
 obj/%.o: %.cpp $(RAPIDYAML_H)
 	@echo "	CXX	$<"

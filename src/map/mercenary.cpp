@@ -496,7 +496,7 @@ const std::string MercenaryDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 MercenaryDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 MercenaryDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	uint32 id;
 
 	if (!this->asUInt32(node, "Id", id))
@@ -897,9 +897,9 @@ uint64 MercenaryDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	mercenary->status.aspd_rate = 1000;
 
 	if (this->nodeExists(node, "Skills")) {
-		const ryml::NodeRef& skillsNode = node["Skills"];
+		const ryml::ConstNodeRef& skillsNode = node["Skills"];
 
-		for (const ryml::NodeRef& skill : skillsNode) {
+		for (const ryml::ConstNodeRef& skill : skillsNode) {
 			std::string skill_name;
 
 			if (!this->asString(skill, "Name", skill_name))

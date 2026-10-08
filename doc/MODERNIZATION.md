@@ -43,7 +43,7 @@ working from a complete checkout.
 | cpp-httplib | 0.11.1 | **0.60.0** | small compat migration | multipart split into `fields`/`files`; `http.hpp` helpers preserve old behavior. License MIT |
 | nlohmann/json | 3.11.2 | **3.12.0** | safe direct update | single-header swap. License MIT |
 | yaml-cpp | ~0.8.0 (commit `0e6e28d`) | **0.9.0** (pending) | safe direct update | verify file list vs rAthena build glue |
-| rapidyaml (+c4core) | 0.4.0 / c4core 0.1.8 | **0.16.0** (pending) | small compat migration | 0.16 deprecates `>>`/`<<`/`|=`/`=` (still functional); check `RYML_WITH_LEGACY_OPERATORS` vs migrating `database.cpp`. License MIT |
+| rapidyaml (+c4core) | 0.4.0 / c4core 0.1.8 | **0.16.0** | small compat migration | `>>` kept via documented `RYML_WITH_LEGACY_OPERATORS` (`.deserialize()` migration is follow-up); Callbacks split 1→3 handlers re-registered to keep throwing `std::runtime_error`; `Parser::parse_in_arena` removed → free function; read-only API to `ConstNodeRef`; c4core submodule gone, required sources vendored. License MIT |
 | libconfig | 1.4.9 | **1.8.2** (pending) | safe direct update | C library; check scanner/grammar regeneration needs. License LGPL-2.1+ |
 | zlib | 1.2.8 headers | **1.3.1** (pending) | safe direct update | CVE-2016-9840 et al fixed since 1.2.8; 1.3.1 is the stable line. License Zlib |
 | PCRE (8.33, PCRE1) | 8.33 | **deferred** | substantial migration | PCRE1 EOL; PCRE2 changes regex API/behavior → isolated follow-up with compat validation, not smuggled in here |
@@ -55,6 +55,14 @@ working from a complete checkout.
 - [x] Clang 22.1.8 + C++17 baseline green
 - [x] GCC 16.2 + strict C++23 green (all servers + tools)
 - [x] Clang 22.1.8 + strict C++23 green
+- [x] Warning set wired to all owned targets (no `-Werror` yet).
+  Baseline GCC C++23: ~41k diagnostics, dominated by `-Wswitch` (~17k),
+  `-Wsign-conversion` (~6k), `-Wpedantic`/`-Wunused-parameter` (~5-6k each),
+  `-Wconversion` (~4k). Mostly repeated-template-header noise + game-code
+  enum/parameter style. Burn-down + `-Werror` is follow-up work, not a mass
+  rewrite inside this pass.
+- [x] YAML smoke (rapidyaml 0.16): const/item_equip/item_etc/mob/skill/
+  achievement DBs parse — 6+12982+9959+2675+1635+361 entries, zero errors
 - [ ] Clean configure without local MinGW workarounds (in-tree ws2_32/librt fixes)
 - [ ] Sanitizer build + startup smoke (login/char/map start, YAML parse, scripts load)
 - [ ] Windows MSVC C++23 build (vcxproj updated, needs VS 2022 17.8+ host)

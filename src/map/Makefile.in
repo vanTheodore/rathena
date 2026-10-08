@@ -13,7 +13,7 @@ RAPIDYAML_OBJ = $(shell find ../../3rdparty/rapidyaml/ -type f -name "*.cpp" | s
 RAPIDYAML_DIR_OBJ = $(RAPIDYAML_OBJ:%=obj/%)
 RAPIDYAML_AR = ../../3rdparty/rapidyaml/obj/ryml.a
 RAPIDYAML_H = $(shell find ../../3rdparty/rapidyaml/ -type f -name "*.h*")
-RAPIDYAML_INCLUDE = -I../../3rdparty/rapidyaml/src -I../../3rdparty/rapidyaml/ext/c4core/src
+RAPIDYAML_INCLUDE = -I../../3rdparty/rapidyaml/src -I../../3rdparty/rapidyaml/ext/c4core.src
 
 NLOHMANN_H = $(shell find ../../3rdparty/json/include/nlohmann/ -type f -name "*.hpp")
 NLOHMANN_INCLUDE = -I../../3rdparty/json/include

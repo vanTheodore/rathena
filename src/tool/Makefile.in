@@ -12,7 +12,7 @@ RAPIDYAML_OBJ = $(shell find ../../3rdparty/rapidyaml/src/ -type f -name "*.cpp"
 RAPIDYAML_DIR_OBJ = $(RAPIDYAML_OBJ:%=obj/%)
 RAPIDYAML_AR = ../../3rdparty/rapidyaml/obj/ryml.a
 RAPIDYAML_H = $(shell find ../../3rdparty/rapidyaml/src/ -type f -name "*.h*")
-RAPIDYAML_INCLUDE = -I../../3rdparty/rapidyaml/src -I../../3rdparty/rapidyaml/ext/c4core/src
+RAPIDYAML_INCLUDE = -I../../3rdparty/rapidyaml/src -I../../3rdparty/rapidyaml/ext/c4core.src
 
 YAML_CPP_OBJ = $(shell find ../../3rdparty/yaml-cpp/ -type f -name "*.cpp" | sed -e "s/\.cpp/\.o/g" )
 YAML_CPP_DIR_OBJ = $(YAML_CPP_OBJ:%=obj/%)

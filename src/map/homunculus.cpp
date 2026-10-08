@@ -52,7 +52,7 @@ const std::string HomExpDatabase::getDefaultLocation() {
 	return std::string(db_path) + "/exp_homun.yml";
 }
 
-uint64 HomExpDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 HomExpDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	if (!this->nodesExist(node, { "Level", "Exp" })) {
 		return 0;
 	}
@@ -1475,7 +1475,7 @@ const std::string HomunculusDatabase::getDefaultLocation() {
 	return std::string(db_path) + "/homunculus_db.yml";
 }
 
-bool HomunculusDatabase::parseStatusNode(const std::string &nodeName, const std::string &subNodeName, const ryml::NodeRef &node, s_hom_stats &bonus) {
+bool HomunculusDatabase::parseStatusNode(const std::string &nodeName, const std::string &subNodeName, const ryml::ConstNodeRef &node, s_hom_stats &bonus) {
 	uint32 value;
 
 	if (!this->asUInt32(node, nodeName, value))
@@ -1506,7 +1506,7 @@ bool HomunculusDatabase::parseStatusNode(const std::string &nodeName, const std:
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 HomunculusDatabase::parseBodyNode(const ryml::NodeRef &node) {
+uint64 HomunculusDatabase::parseBodyNode(const ryml::ConstNodeRef &node) {
 	std::string class_name;
 
 	if (!this->asString(node, "Class", class_name))
@@ -1830,9 +1830,9 @@ uint64 HomunculusDatabase::parseBodyNode(const ryml::NodeRef &node) {
 	}
 
 	if (this->nodeExists(node, "SkillTree")) {
-		const ryml::NodeRef &skillsNode = node["SkillTree"];
+		const ryml::ConstNodeRef &skillsNode = node["SkillTree"];
 
-		for (const ryml::NodeRef &skill : skillsNode) {
+		for (const ryml::ConstNodeRef &skill : skillsNode) {
 			s_homun_skill_tree_entry entry;
 
 			if (this->nodeExists(skill, "Skill")) {
@@ -1947,9 +1947,9 @@ uint64 HomunculusDatabase::parseBodyNode(const ryml::NodeRef &node) {
 			}
 
 			if (this->nodeExists(skill, "Required")) {
-				const ryml::NodeRef &required = skill["Required"];
+				const ryml::ConstNodeRef &required = skill["Required"];
 
-				for (const ryml::NodeRef &prereqskill : required) {
+				for (const ryml::ConstNodeRef &prereqskill : required) {
 					uint16 skill_id = 0, skill_lv = 0;
 
 					if (this->nodeExists(prereqskill, "Skill")) {

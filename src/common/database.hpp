@@ -29,33 +29,35 @@ private:
 	bool load( const std::string& path );
 	void parse( const ryml::Tree& rootNode );
 	void parseImports( const ryml::Tree& rootNode );
-	template <typename R> bool asType( const ryml::NodeRef& node, const std::string& name, R& out );
+	template <typename R> bool asType( const ryml::ConstNodeRef& node, const std::string& name, R& out );
 
 // These should be visible/usable by the implementation provider
 protected:
-	ryml::Parser parser;
+	ryml::EventHandlerTree event_handler;
+	// ParseEngine has no default ctor: it borrows the event handler.
+	ryml::Parser parser{&event_handler};
 
 	// Helper functions
-	bool nodeExists( const ryml::NodeRef& node, const std::string& name );
-	bool nodesExist( const ryml::NodeRef& node, std::initializer_list<const std::string> names );
-	int32 getLineNumber(const ryml::NodeRef& node);
-	int32 getColumnNumber(const ryml::NodeRef& node);
-	void invalidWarning( const ryml::NodeRef& node, const char* fmt, ... );
+	bool nodeExists( const ryml::ConstNodeRef& node, const std::string& name );
+	bool nodesExist( const ryml::ConstNodeRef& node, std::initializer_list<const std::string> names );
+	int32 getLineNumber(const ryml::ConstNodeRef& node);
+	int32 getColumnNumber(const ryml::ConstNodeRef& node);
+	void invalidWarning( const ryml::ConstNodeRef& node, const char* fmt, ... );
 	std::string getCurrentFile();
 
 	// Conversion functions
-	bool asBool(const ryml::NodeRef& node, const std::string &name, bool &out);
-	bool asInt16(const ryml::NodeRef& node, const std::string& name, int16& out );
-	bool asUInt16(const ryml::NodeRef& node, const std::string& name, uint16& out);
-	bool asInt32(const ryml::NodeRef& node, const std::string &name, int32 &out);
-	bool asUInt32(const ryml::NodeRef& node, const std::string &name, uint32 &out);
-	bool asInt64(const ryml::NodeRef& node, const std::string &name, int64 &out);
-	bool asUInt64(const ryml::NodeRef& node, const std::string &name, uint64 &out);
-	bool asFloat(const ryml::NodeRef& node, const std::string &name, float &out);
-	bool asDouble(const ryml::NodeRef& node, const std::string &name, double &out);
-	bool asString(const ryml::NodeRef& node, const std::string &name, std::string &out);
-	bool asUInt16Rate(const ryml::NodeRef& node, const std::string& name, uint16& out, uint16 maximum=10000);
-	bool asUInt32Rate(const ryml::NodeRef& node, const std::string& name, uint32& out, uint32 maximum=10000);
+	bool asBool(const ryml::ConstNodeRef& node, const std::string &name, bool &out);
+	bool asInt16(const ryml::ConstNodeRef& node, const std::string& name, int16& out );
+	bool asUInt16(const ryml::ConstNodeRef& node, const std::string& name, uint16& out);
+	bool asInt32(const ryml::ConstNodeRef& node, const std::string &name, int32 &out);
+	bool asUInt32(const ryml::ConstNodeRef& node, const std::string &name, uint32 &out);
+	bool asInt64(const ryml::ConstNodeRef& node, const std::string &name, int64 &out);
+	bool asUInt64(const ryml::ConstNodeRef& node, const std::string &name, uint64 &out);
+	bool asFloat(const ryml::ConstNodeRef& node, const std::string &name, float &out);
+	bool asDouble(const ryml::ConstNodeRef& node, const std::string &name, double &out);
+	bool asString(const ryml::ConstNodeRef& node, const std::string &name, std::string &out);
+	bool asUInt16Rate(const ryml::ConstNodeRef& node, const std::string& name, uint16& out, uint16 maximum=10000);
+	bool asUInt32Rate(const ryml::ConstNodeRef& node, const std::string& name, uint32& out, uint32 maximum=10000);
 
 	void setGenerator(bool shouldLoad);
 
@@ -78,7 +80,7 @@ public:
 	// Functions that need to be implemented for each type
 	virtual void clear() = 0;
 	virtual const std::string getDefaultLocation() = 0;
-	virtual uint64 parseBodyNode( const ryml::NodeRef& node ) = 0;
+	virtual uint64 parseBodyNode( const ryml::ConstNodeRef& node ) = 0;
 };
 
 template <typename keytype, typename datatype> class TypesafeYamlDatabase : public YamlDatabase{

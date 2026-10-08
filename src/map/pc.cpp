@@ -102,7 +102,7 @@ const std::string AttendanceDatabase::getDefaultLocation(){
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 AttendanceDatabase::parseBodyNode(const ryml::NodeRef& node){
+uint64 AttendanceDatabase::parseBodyNode(const ryml::ConstNodeRef& node){
 	uint32 start;
 
 	if( !this->asUInt32( node, "Start", start ) ){
@@ -276,7 +276,7 @@ const std::string ReputationDatabase::getDefaultLocation(){
 	return std::string( db_path ) + "/reputation.yml";
 }
 
-uint64 ReputationDatabase::parseBodyNode( const ryml::NodeRef& node ){
+uint64 ReputationDatabase::parseBodyNode( const ryml::ConstNodeRef& node ){
 	int64 id;
 
 	if( !this->asInt64( node, "Id", id ) ){
@@ -384,7 +384,7 @@ const std::string ReputationGroupDatabase::getDefaultLocation() {
 	return std::string(db_path) + "/reputation_group.yml";
 }
 
-uint64 ReputationGroupDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 ReputationGroupDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	int64 id;
 
 	if (!this->asInt64(node, "Id", id)) {
@@ -523,7 +523,7 @@ const std::string PenaltyDatabase::getDefaultLocation(){
 	return std::string( db_path ) + "/level_penalty.yml";
 }
 
-uint64 PenaltyDatabase::parseBodyNode(const ryml::NodeRef& node){
+uint64 PenaltyDatabase::parseBodyNode(const ryml::ConstNodeRef& node){
 	std::string type_constant;
 
 	if( !this->asString( node, "Type", type_constant ) ){
@@ -13419,7 +13419,7 @@ const std::string SkillTreeDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 SkillTreeDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 SkillTreeDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	std::string job_name;
 
 	if (!this->asString(node, "Job", job_name))
@@ -13441,7 +13441,7 @@ uint64 SkillTreeDatabase::parseBodyNode(const ryml::NodeRef& node) {
 		tree = std::make_shared<s_skill_tree>();
 
 	if (this->nodeExists(node, "Inherit")) {
-		const ryml::NodeRef& InheritNode = node["Inherit"];
+		const ryml::ConstNodeRef& InheritNode = node["Inherit"];
 
 		for (const auto &Inheritit : InheritNode) {
 			std::string inheritname;
@@ -13816,9 +13816,9 @@ const std::string JobDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 JobDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 JobDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	if (this->nodeExists(node, "Jobs")) {
-		const ryml::NodeRef& jobsNode = node["Jobs"];
+		const ryml::ConstNodeRef& jobsNode = node["Jobs"];
 
 		for (const auto &jobit : jobsNode) {
 			std::string job_name;
@@ -13943,7 +13943,7 @@ uint64 JobDatabase::parseBodyNode(const ryml::NodeRef& node) {
 			}
 
 			if (this->nodeExists(node, "BaseASPD")) {
-				const ryml::NodeRef& aspdNode = node["BaseASPD"];
+				const ryml::ConstNodeRef& aspdNode = node["BaseASPD"];
 				uint8 max = MAX_WEAPON_TYPE;
 				int32 def_aspd = AMOTION_ZERO_ASPD;
 
@@ -13999,7 +13999,7 @@ uint64 JobDatabase::parseBodyNode(const ryml::NodeRef& node) {
 			}
 
 			if (this->nodeExists(node, "MaxStats")) {
-				const ryml::NodeRef& statNode = node["MaxStats"];
+				const ryml::ConstNodeRef& statNode = node["MaxStats"];
 
 				for (const auto &statit : statNode) {
 					std::string stat;
@@ -14044,7 +14044,7 @@ uint64 JobDatabase::parseBodyNode(const ryml::NodeRef& node) {
 			}
 
 			if (this->nodeExists(node, "BaseExp")) {
-				for (const ryml::NodeRef& bexpNode : node["BaseExp"]) {
+				for (const ryml::ConstNodeRef& bexpNode : node["BaseExp"]) {
 					uint16 level;
 
 					if (!this->asUInt16(bexpNode, "Level", level))
@@ -14087,7 +14087,7 @@ uint64 JobDatabase::parseBodyNode(const ryml::NodeRef& node) {
 			}
 
 			if (this->nodeExists(node, "JobExp")) {
-				for (const ryml::NodeRef& jexpNode : node["JobExp"]) {
+				for (const ryml::ConstNodeRef& jexpNode : node["JobExp"]) {
 					uint16 level;
 
 					if (!this->asUInt16(jexpNode, "Level", level))
@@ -14113,9 +14113,9 @@ uint64 JobDatabase::parseBodyNode(const ryml::NodeRef& node) {
 			}
 
 			if (this->nodeExists(node, "BonusStats")) {
-				const ryml::NodeRef& bonusNode = node["BonusStats"];
+				const ryml::ConstNodeRef& bonusNode = node["BonusStats"];
 
-				for (const ryml::NodeRef& levelNode : bonusNode) {
+				for (const ryml::ConstNodeRef& levelNode : bonusNode) {
 					uint16 level;
 
 					if (!this->asUInt16(levelNode, "Level", level))
@@ -14141,7 +14141,7 @@ uint64 JobDatabase::parseBodyNode(const ryml::NodeRef& node) {
 
 #ifdef HP_SP_TABLES
 			if (this->nodeExists(node, "BaseHp")) {
-				for (const ryml::NodeRef& bhpNode : node["BaseHp"]) {
+				for (const ryml::ConstNodeRef& bhpNode : node["BaseHp"]) {
 					uint16 level;
 
 					if (!this->asUInt16(bhpNode, "Level", level))
@@ -14167,7 +14167,7 @@ uint64 JobDatabase::parseBodyNode(const ryml::NodeRef& node) {
 			}
 
 			if (this->nodeExists(node, "BaseSp")) {
-				for (const ryml::NodeRef& bspNode : node["BaseSp"]) {
+				for (const ryml::ConstNodeRef& bspNode : node["BaseSp"]) {
 					uint16 level;
 
 					if (!this->asUInt16(bspNode, "Level", level))
@@ -14193,7 +14193,7 @@ uint64 JobDatabase::parseBodyNode(const ryml::NodeRef& node) {
 			}
 
 			if (this->nodeExists(node, "BaseAp")) {
-				for (const ryml::NodeRef& bapNode : node["BaseAp"]) {
+				for (const ryml::ConstNodeRef& bapNode : node["BaseAp"]) {
 					uint16 level;
 
 					if (!this->asUInt16(bapNode, "Level", level))
@@ -14220,9 +14220,9 @@ uint64 JobDatabase::parseBodyNode(const ryml::NodeRef& node) {
 #endif
 
 			if( this->nodeExists( node, "AlternateOutfits" ) ){
-				const ryml::NodeRef& alternateOutfitNodes = node["AlternateOutfits"];
+				const ryml::ConstNodeRef& alternateOutfitNodes = node["AlternateOutfits"];
 
-				for( const ryml::NodeRef& alternateOutfitNode : alternateOutfitNodes ){
+				for( const ryml::ConstNodeRef& alternateOutfitNode : alternateOutfitNodes ){
 					std::string alternate_name;
 					c4::from_chars( alternateOutfitNode.key(), &alternate_name );
 					std::string job_name_constant = "JOB_" + alternate_name;
@@ -14448,7 +14448,7 @@ const std::string PlayerStatPointDatabase::getDefaultLocation() {
 	return std::string(db_path) + "/statpoint.yml";
 }
 
-uint64 PlayerStatPointDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 PlayerStatPointDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 
 	uint16 level;
 
@@ -16018,7 +16018,7 @@ const std::string CaptchaDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 CaptchaDatabase::parseBodyNode(const ryml::NodeRef &node) {
+uint64 CaptchaDatabase::parseBodyNode(const ryml::ConstNodeRef &node) {
 	uint16 index;
 
 	if (!this->asUInt16(node, "Id", index))

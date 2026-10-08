@@ -104,7 +104,7 @@ public:
 
 	void clear() override;
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode( const ryml::NodeRef& node ) override;
+	uint64 parseBodyNode( const ryml::ConstNodeRef& node ) override;
 
 	// Additional
 	const char* checkAlias( const char* alias );
@@ -119,7 +119,7 @@ const std::string AtcommandAliasDatabase::getDefaultLocation(){
 	return std::string(conf_path) + "/atcommands.yml";
 }
 
-uint64 AtcommandAliasDatabase::parseBodyNode( const ryml::NodeRef& node ){
+uint64 AtcommandAliasDatabase::parseBodyNode( const ryml::ConstNodeRef& node ){
 	std::string command;
 
 	if( !this->asString( node, "Command", command ) ){

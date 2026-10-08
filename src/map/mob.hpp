@@ -220,7 +220,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 };
 
 struct s_mob_item_drop_ratio {
@@ -236,7 +236,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 };
 
 struct spawn_info {
@@ -286,7 +286,7 @@ struct s_mob_db {
 
 class MobDatabase : public TypesafeCachedYamlDatabase <uint32, s_mob_db> {
 private:
-	bool parseDropNode( std::string nodeName, const ryml::NodeRef& node, uint8 max, std::vector<std::shared_ptr<s_mob_drop>>& drops );
+	bool parseDropNode( std::string nodeName, const ryml::ConstNodeRef& node, uint8 max, std::vector<std::shared_ptr<s_mob_drop>>& drops );
 
 public:
 	MobDatabase() : TypesafeCachedYamlDatabase("MOB_DB", 5, 1) {
@@ -294,7 +294,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 	void loadingFinished() override;
 };
 
@@ -318,10 +318,10 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode( const ryml::NodeRef& node ) override;
+	uint64 parseBodyNode( const ryml::ConstNodeRef& node ) override;
 
 private:
-	bool parseDrop( const ryml::NodeRef& node, std::unordered_map<uint16, std::shared_ptr<s_mob_drop>>& drops );
+	bool parseDrop( const ryml::ConstNodeRef& node, std::unordered_map<uint16, std::shared_ptr<s_mob_drop>>& drops );
 };
 
 extern MapDropDatabase map_drop_db;
@@ -410,7 +410,7 @@ public:
 
 	void clear() override{ };
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 };
 
 struct s_randomsummon_entry {
@@ -431,7 +431,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 };
 
 enum e_mob_skill_target {

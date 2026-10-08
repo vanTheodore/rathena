@@ -2360,7 +2360,7 @@ const std::string ConstantDatabase::getDefaultLocation(){
 	return std::string(db_path) + "/const.yml";
 }
 
-uint64 ConstantDatabase::parseBodyNode( const ryml::NodeRef& node ) {
+uint64 ConstantDatabase::parseBodyNode( const ryml::ConstNodeRef& node ) {
 	std::string constant_name;
 
 	if (!this->asString( node, "Name", constant_name ))

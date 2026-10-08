@@ -49,7 +49,7 @@ const std::string InstanceDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 InstanceDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 InstanceDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	int32 instance_id = 0;
 
 	if (!this->asInt32(node, "Id", instance_id))

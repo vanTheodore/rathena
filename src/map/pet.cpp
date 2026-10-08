@@ -44,7 +44,7 @@ const std::string PetDatabase::getDefaultLocation(){
 	return std::string(db_path) + "/pet_db.yml";
 }
 
-uint64 PetDatabase::parseBodyNode( const ryml::NodeRef& node ){
+uint64 PetDatabase::parseBodyNode( const ryml::ConstNodeRef& node ){
 	std::string mob_name;
 
 	if( !this->asString( node, "Mob", mob_name ) ){

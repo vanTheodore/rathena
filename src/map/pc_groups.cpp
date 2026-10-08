@@ -17,7 +17,7 @@ const std::string PlayerGroupDatabase::getDefaultLocation() {
 	return std::string( conf_path ) + "/groups.yml";
 }
 
-bool PlayerGroupDatabase::parseCommands( const ryml::NodeRef& node, std::vector<std::string>& commands ){
+bool PlayerGroupDatabase::parseCommands( const ryml::ConstNodeRef& node, std::vector<std::string>& commands ){
 	for( const auto& it : node.children() ){
 		std::string command;
 
@@ -63,7 +63,7 @@ bool PlayerGroupDatabase::parseCommands( const ryml::NodeRef& node, std::vector<
 	return true;
 }
 
-uint64 PlayerGroupDatabase::parseBodyNode( const ryml::NodeRef& node ){
+uint64 PlayerGroupDatabase::parseBodyNode( const ryml::ConstNodeRef& node ){
 	uint32 groupId;
 
 	if( !this->asUInt32( node, "Id", groupId ) ){

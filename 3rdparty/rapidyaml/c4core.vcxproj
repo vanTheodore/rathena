@@ -81,7 +81,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>ext\c4core\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext\c4core.src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <CompileAs>CompileAsCpp</CompileAs>
@@ -100,10 +100,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>ext\c4core\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext\c4core.src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>ext\c4core\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext\c4core.src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -116,7 +116,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>ext\c4core\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext\c4core.src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <CompileAs>CompileAsCpp</CompileAs>
@@ -135,10 +135,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>ext\c4core\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext\c4core.src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>ext\c4core\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext\c4core.src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -151,7 +151,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>ext\c4core\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext\c4core.src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -170,10 +170,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>ext\c4core\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext\c4core.src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>ext\c4core\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext\c4core.src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -186,7 +186,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>ext\c4core\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext\c4core.src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -205,10 +205,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>ext\c4core\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext\c4core.src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>ext\c4core\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext\c4core.src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -220,73 +220,50 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ext\c4core\src\c4\allocator.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\base64.hpp" />
-    <ClCompile Include="ext\c4core\src\c4\base64.cpp" />
-    <ClInclude Include="ext\c4core\src\c4\blob.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\bitmask.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\charconv.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\c4_pop.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\c4_push.hpp" />
-    <ClCompile Include="ext\c4core\src\c4\char_traits.cpp" />
-    <ClInclude Include="ext\c4core\src\c4\char_traits.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\common.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\compiler.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\config.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\cpu.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\ctor_dtor.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\dump.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\enum.hpp" />
-    <ClCompile Include="ext\c4core\src\c4\error.cpp" />
-    <ClInclude Include="ext\c4core\src\c4\error.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\export.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\format.hpp" />
-    <ClCompile Include="ext\c4core\src\c4\format.cpp" />
-    <ClInclude Include="ext\c4core\src\c4\hash.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\language.hpp" />
-    <ClCompile Include="ext\c4core\src\c4\language.cpp" />
-    <ClCompile Include="ext\c4core\src\c4\memory_resource.cpp" />
-    <ClInclude Include="ext\c4core\src\c4\memory_resource.hpp" />
-    <ClCompile Include="ext\c4core\src\c4\memory_util.cpp" />
-    <ClInclude Include="ext\c4core\src\c4\memory_util.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\platform.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\preprocessor.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\restrict.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\span.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\std\std.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\std\std_fwd.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\std\string.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\std\string_fwd.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\std\tuple.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\std\vector.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\std\vector_fwd.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\substr.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\substr_fwd.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\szconv.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\time.hpp" />
-    <ClCompile Include="ext\c4core\src\c4\time.cpp" />
-    <ClInclude Include="ext\c4core\src\c4\type_name.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\types.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\unrestrict.hpp" />
-    <ClCompile Include="ext\c4core\src\c4\utf.cpp" />
-    <ClInclude Include="ext\c4core\src\c4\utf.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\windows.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\windows_pop.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\windows_push.hpp" />
-    <Natvis Include="ext\c4core\src\c4\c4core.natvis" />
-    <ClInclude Include="ext\c4core\src\c4\ext\debugbreak\debugbreak.h" />
-    <ClInclude Include="ext\c4core\src\c4\ext\rng\rng.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\ext\sg14\inplace_function.h" />
-    <ClInclude Include="ext\c4core\src\c4\ext\fast_float.hpp" />
-    <ClInclude Include="ext\c4core\src\c4\ext\fast_float\include\fast_float\ascii_number.h" />
-    <ClInclude Include="ext\c4core\src\c4\ext\fast_float\include\fast_float\bigint.h" />
-    <ClInclude Include="ext\c4core\src\c4\ext\fast_float\include\fast_float\decimal_to_binary.h" />
-    <ClInclude Include="ext\c4core\src\c4\ext\fast_float\include\fast_float\digit_comparison.h" />
-    <ClInclude Include="ext\c4core\src\c4\ext\fast_float\include\fast_float\fast_float.h" />
-    <ClInclude Include="ext\c4core\src\c4\ext\fast_float\include\fast_float\fast_table.h" />
-    <ClInclude Include="ext\c4core\src\c4\ext\fast_float\include\fast_float\float_common.h" />
-    <ClInclude Include="ext\c4core\src\c4\ext\fast_float\include\fast_float\parse_number.h" />
-    <ClInclude Include="ext\c4core\src\c4\ext\fast_float\include\fast_float\simple_decimal_conversion.h" />
+    <ClInclude Include="ext\c4core.src\c4\base64.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\blob.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\charconv.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\compiler.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\config.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\cpu.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\dump.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\error.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\export.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\ext\debugbreak\debugbreak.h" />
+    <ClInclude Include="ext\c4core.src\c4\ext\fast_float.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\ext\fast_float_all.h" />
+    <ClInclude Include="ext\c4core.src\c4\format.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\format_base64.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\gcc-4.8.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\language.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\memory_util.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\platform.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\preprocessor.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\std\span.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\std\span_fwd.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\std\std.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\std\std_fwd.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\std\string.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\std\string_fwd.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\std\string_view.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\std\string_view_fwd.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\std\vector.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\std\vector_fwd.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\substr.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\substr_fwd.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\types.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\utf.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\version.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\windows.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\windows_pop.hpp" />
+    <ClInclude Include="ext\c4core.src\c4\windows_push.hpp" />
+    <ClCompile Include="ext\c4core.src\c4\base64.cpp" />
+    <ClCompile Include="ext\c4core.src\c4\error.cpp" />
+    <ClCompile Include="ext\c4core.src\c4\format.cpp" />
+    <ClCompile Include="ext\c4core.src\c4\language.cpp" />
+    <ClCompile Include="ext\c4core.src\c4\memory_util.cpp" />
+    <ClCompile Include="ext\c4core.src\c4\utf.cpp" />
+    <ClCompile Include="ext\c4core.src\c4\version.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

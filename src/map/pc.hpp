@@ -180,7 +180,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef &node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef &node) override;
 };
 
 extern CaptchaDatabase captcha_db;
@@ -1074,7 +1074,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 	void loadingFinished() override;
 };
 
@@ -1109,7 +1109,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 	void loadingFinished() override;
 
 	// Additional
@@ -1290,7 +1290,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 };
 
 extern AttendanceDatabase attendance_db;
@@ -1315,7 +1315,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode( const ryml::NodeRef& node ) override;
+	uint64 parseBodyNode( const ryml::ConstNodeRef& node ) override;
 };
 
 extern ReputationDatabase reputation_db;
@@ -1336,7 +1336,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 };
 
 extern ReputationGroupDatabase reputationgroup_db;
@@ -1354,7 +1354,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 	void loadingFinished() override;
 
 	// Additional
@@ -1634,7 +1634,7 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
-	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+	uint64 parseBodyNode(const ryml::ConstNodeRef& node) override;
 	void loadingFinished() override;
 
 	// Additional

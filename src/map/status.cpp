@@ -130,7 +130,7 @@ const std::string RefineDatabase::getDefaultLocation(){
 	return std::string( db_path ) + "/refine.yml";
 }
 
-uint64 RefineDatabase::parseBodyNode( const ryml::NodeRef& node ){
+uint64 RefineDatabase::parseBodyNode( const ryml::ConstNodeRef& node ){
 	std::string group_name;
 
 	if( !this->asString( node, "Group", group_name ) ){
@@ -498,7 +498,7 @@ const std::string SizeFixDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 SizeFixDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 SizeFixDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	std::string weapon_name;
 
 	if (!this->asString(node, "Weapon", weapon_name))
@@ -587,7 +587,7 @@ const std::string EnchantgradeDatabase::getDefaultLocation(){
 	return std::string(db_path) + "/enchantgrade.yml";
 }
 
-uint64 EnchantgradeDatabase::parseBodyNode( const ryml::NodeRef& node ){
+uint64 EnchantgradeDatabase::parseBodyNode( const ryml::ConstNodeRef& node ){
 	if( !this->nodesExist( node, { "Type", "Levels" } ) ){
 		return 0;
 	}
@@ -625,7 +625,7 @@ uint64 EnchantgradeDatabase::parseBodyNode( const ryml::NodeRef& node ){
 		enchantgrade->itemtype = itemtype;
 	}
 
-	for( const ryml::NodeRef& levelNode : node["Levels"] ){
+	for( const ryml::ConstNodeRef& levelNode : node["Levels"] ){
 		if( !this->nodesExist( levelNode, { "Level", "Grades" } ) ){
 			return 0;
 		}
@@ -643,7 +643,7 @@ uint64 EnchantgradeDatabase::parseBodyNode( const ryml::NodeRef& node ){
 
 		std::map<e_enchantgrade, std::shared_ptr<s_enchantgradelevel>>& grades = enchantgrade->levels[level];
 
-		for( const ryml::NodeRef& gradeNode : levelNode["Grades"] ){
+		for( const ryml::ConstNodeRef& gradeNode : levelNode["Grades"] ){
 			std::string gradeConstant;
 
 			if( !this->asString( gradeNode, "Grade", gradeConstant ) ){
@@ -678,7 +678,7 @@ uint64 EnchantgradeDatabase::parseBodyNode( const ryml::NodeRef& node ){
 			}
 
 			if( this->nodeExists( gradeNode, "Chances" ) ){
-				for( const ryml::NodeRef& chanceNode : gradeNode["Chances"] ){
+				for( const ryml::ConstNodeRef& chanceNode : gradeNode["Chances"] ){
 					uint16 refine;
 
 					if( !this->asUInt16( chanceNode, "Refine", refine ) ){
@@ -754,7 +754,7 @@ uint64 EnchantgradeDatabase::parseBodyNode( const ryml::NodeRef& node ){
 			}
 
 			if( this->nodeExists( gradeNode, "Catalyst") ){
-				const ryml::NodeRef& catalystNode = gradeNode["Catalyst"];
+				const ryml::ConstNodeRef& catalystNode = gradeNode["Catalyst"];
 
 				if( this->nodeExists( catalystNode, "Item" ) ){
 					std::string itemName;
@@ -828,7 +828,7 @@ uint64 EnchantgradeDatabase::parseBodyNode( const ryml::NodeRef& node ){
 			}
 
 			if( this->nodeExists( gradeNode, "Options" ) ){
-				for( const ryml::NodeRef& optionNode : gradeNode["Options"] ){
+				for( const ryml::ConstNodeRef& optionNode : gradeNode["Options"] ){
 					uint16 optionIndex;
 
 					if( !this->asUInt16( optionNode, "Option", optionIndex ) ){
@@ -15775,7 +15775,7 @@ const std::string AttributeDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 AttributeDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 AttributeDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	uint16 level;
 
 	if (!this->asUInt16(node, "Level", level))
@@ -15868,7 +15868,7 @@ const std::string StatusDatabase::getDefaultLocation() {
  * @param node: YAML node containing the entry.
  * @return count of successfully parsed rows
  */
-uint64 StatusDatabase::parseBodyNode(const ryml::NodeRef& node) {
+uint64 StatusDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
 	std::string status_name;
 
 	if (!this->asString(node, "Status", status_name))
@@ -15938,7 +15938,7 @@ uint64 StatusDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	}
 
 	if (this->nodeExists(node, "States")) {
-		const ryml::NodeRef& stateNode = node["States"];
+		const ryml::ConstNodeRef& stateNode = node["States"];
 
 		for (const auto &it : stateNode) {
 			std::string state;
@@ -15973,7 +15973,7 @@ uint64 StatusDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	}
 
 	if (this->nodeExists(node, "CalcFlags")) {
-		const ryml::NodeRef& flagNode = node["CalcFlags"];
+		const ryml::ConstNodeRef& flagNode = node["CalcFlags"];
 
 		if (this->nodeExists(flagNode, "All")) {
 			bool active;
@@ -16049,7 +16049,7 @@ uint64 StatusDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	}
 
 	if (this->nodeExists(node, "Opt2")) {
-		const ryml::NodeRef& optNode = node["Opt2"];
+		const ryml::ConstNodeRef& optNode = node["Opt2"];
 
 		for (const auto &it : optNode) {
 			std::string opt;
@@ -16084,7 +16084,7 @@ uint64 StatusDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	}
 
 	if (this->nodeExists(node, "Opt3")) {
-		const ryml::NodeRef& optNode = node["Opt3"];
+		const ryml::ConstNodeRef& optNode = node["Opt3"];
 
 		for (const auto &it : optNode) {
 			std::string opt;
@@ -16119,7 +16119,7 @@ uint64 StatusDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	}
 
 	if (this->nodeExists(node, "Options")) {
-		const ryml::NodeRef& optionNode = node["Options"];
+		const ryml::ConstNodeRef& optionNode = node["Options"];
 
 		for (const auto &it : optionNode) {
 			std::string option;
@@ -16154,7 +16154,7 @@ uint64 StatusDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	}
 
 	if (this->nodeExists(node, "Flags")) {
-		const ryml::NodeRef& flagNode = node["Flags"];
+		const ryml::ConstNodeRef& flagNode = node["Flags"];
 
 		for (const auto &it : flagNode) {
 			std::string flag;
@@ -16213,7 +16213,7 @@ uint64 StatusDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	}
 
 	if (this->nodeExists(node, "Fail")) {
-		const ryml::NodeRef& failNode = node["Fail"];
+		const ryml::ConstNodeRef& failNode = node["Fail"];
 
 		for (const auto &it : failNode) {
 			std::string fail;
@@ -16245,7 +16245,7 @@ uint64 StatusDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	}
 
 	if (this->nodeExists(node, "EndOnStart")) {
-		const ryml::NodeRef& endNode = node["EndOnStart"];
+		const ryml::ConstNodeRef& endNode = node["EndOnStart"];
 
 		for (const auto &it : endNode) {
 			std::string end;
@@ -16277,7 +16277,7 @@ uint64 StatusDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	}
 
 	if (this->nodeExists(node, "EndReturn")) {
-		const ryml::NodeRef &endNode = node["EndReturn"];
+		const ryml::ConstNodeRef &endNode = node["EndReturn"];
 
 		for (const auto &it : endNode) {
 			std::string end;
@@ -16309,7 +16309,7 @@ uint64 StatusDatabase::parseBodyNode(const ryml::NodeRef& node) {
 	}
 
 	if (this->nodeExists(node, "EndOnEnd")) {
-		const ryml::NodeRef &endNode = node["EndOnEnd"];
+		const ryml::ConstNodeRef &endNode = node["EndOnEnd"];
 
 		for (const auto &it : endNode) {
 			std::string end;

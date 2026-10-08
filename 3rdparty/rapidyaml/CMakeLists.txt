@@ -1,100 +1,55 @@
 cmake_minimum_required(VERSION 3.13)
-include(./ext/c4core/cmake/c4Project.cmake)
-project(ryml
-    DESCRIPTION "Rapid YAML parsing and emitting"
-    HOMEPAGE_URL "https://github.com/biojppm/rapidyaml"
-    LANGUAGES CXX)
-include(./compat.cmake)
 
-c4_project(VERSION 0.4.0 STANDALONE
-    AUTHOR "Joao Paulo Magalhaes <dev@jpmag.me>")
+# Vendored rapidyaml v0.16.0 (pinned stable tag, MIT).
+# Upstream 0.16 removed the c4core git submodule: only the required c4core
+# sources are vendored under ext/c4core.src/ (see ext/c4core.src.txt).
+# This file deliberately does NOT use upstream's c4Project macro machinery;
+# it builds a plain static lib like the other vendored dependencies.
+SET (this_target ryml)
+PROJECT(${this_target})
 
+find_path( RYML_INCLUDE_DIRS "ryml.hpp"
+	PATHS "${CMAKE_CURRENT_SOURCE_DIR}/src"
+	NO_DEFAULT_PATH )
+find_path( RYML_SOURCE_DIR "c4/yml/tree.cpp"
+	PATHS "${CMAKE_CURRENT_SOURCE_DIR}/src"
+	NO_DEFAULT_PATH )
+find_path( C4CORE_SOURCE_DIR "c4/substr.hpp"
+	PATHS "${CMAKE_CURRENT_SOURCE_DIR}/ext/c4core.src"
+	NO_DEFAULT_PATH )
+mark_as_advanced( RYML_INCLUDE_DIRS )
+mark_as_advanced( RYML_SOURCE_DIR )
+mark_as_advanced( C4CORE_SOURCE_DIR )
 
-#-------------------------------------------------------
+set( RYML_SOURCES
+	"${RYML_SOURCE_DIR}/c4/yml/common.cpp"
+	"${RYML_SOURCE_DIR}/c4/yml/emit_buf.cpp"
+	"${RYML_SOURCE_DIR}/c4/yml/emit_file.cpp"
+	"${RYML_SOURCE_DIR}/c4/yml/node_type.cpp"
+	"${RYML_SOURCE_DIR}/c4/yml/parse.cpp"
+	"${RYML_SOURCE_DIR}/c4/yml/reference_resolver.cpp"
+	"${RYML_SOURCE_DIR}/c4/yml/scalar_style.cpp"
+	"${RYML_SOURCE_DIR}/c4/yml/tag.cpp"
+	"${RYML_SOURCE_DIR}/c4/yml/tree.cpp"
+	"${RYML_SOURCE_DIR}/c4/yml/version.cpp"
+	CACHE INTERNAL "ryml sources" )
+# Mirror of ext/c4core.src.txt (required c4core sources, no submodule).
+set( C4CORE_SOURCES
+	"${C4CORE_SOURCE_DIR}/c4/base64.cpp"
+	"${C4CORE_SOURCE_DIR}/c4/error.cpp"
+	"${C4CORE_SOURCE_DIR}/c4/format.cpp"
+	"${C4CORE_SOURCE_DIR}/c4/language.cpp"
+	"${C4CORE_SOURCE_DIR}/c4/memory_util.cpp"
+	"${C4CORE_SOURCE_DIR}/c4/utf.cpp"
+	"${C4CORE_SOURCE_DIR}/c4/version.cpp"
+	CACHE INTERNAL "c4core sources" )
 
-option(RYML_WITH_TAB_TOKENS "Enable parsing of tabs after ':' and '-'. This is costly and disabled by default." OFF)
-option(RYML_DEFAULT_CALLBACKS "Enable ryml's default implementation of callbacks: allocate(), free(), error()" ON)
-option(RYML_BUILD_TOOLS "build tools" OFF)
-option(RYML_BUILD_API "Enable API generation (python, etc)" OFF)
-option(RYML_DBG "Enable (very verbose) ryml debug prints." OFF)
-
-
-#-------------------------------------------------------
-
-c4_require_subproject(c4core INCORPORATE
-    SUBDIRECTORY ${RYML_EXT_DIR}/c4core)
-
-c4_add_library(ryml
-    SOURCES
-        ryml.hpp
-        ryml_std.hpp
-        c4/yml/detail/checks.hpp
-        c4/yml/detail/parser_dbg.hpp
-        c4/yml/detail/print.hpp
-        c4/yml/detail/stack.hpp
-        c4/yml/common.hpp
-        c4/yml/common.cpp
-        c4/yml/emit.def.hpp
-        c4/yml/emit.hpp
-        c4/yml/export.hpp
-        c4/yml/node.hpp
-        c4/yml/node.cpp
-        c4/yml/parse.hpp
-        c4/yml/parse.cpp
-        c4/yml/preprocess.hpp
-        c4/yml/preprocess.cpp
-        c4/yml/std/map.hpp
-        c4/yml/std/std.hpp
-        c4/yml/std/string.hpp
-        c4/yml/std/vector.hpp
-        c4/yml/tree.hpp
-        c4/yml/tree.cpp
-        c4/yml/writer.hpp
-        c4/yml/yml.hpp
-        ryml.natvis
-    SOURCE_ROOT ${RYML_SRC_DIR}
-    INC_DIRS
-        $<BUILD_INTERFACE:${RYML_SRC_DIR}>
-        $<INSTALL_INTERFACE:include>
-    LIBS c4core
-    INCORPORATE c4core
-    )
-
-if(RYML_WITH_TAB_TOKENS)
-    target_compile_definitions(ryml PUBLIC RYML_WITH_TAB_TOKENS)
-endif()
-
-if(NOT RYML_DEFAULT_CALLBACKS)
-    target_compile_definitions(ryml PRIVATE RYML_NO_DEFAULT_CALLBACKS)
-endif()
-
-if(RYML_DBG)
-    target_compile_definitions(ryml PRIVATE RYML_DBG)
-endif()
-
-
-#-------------------------------------------------------
-
-c4_install_target(ryml)
-c4_install_exports(DEPENDENCIES c4core)
-c4_pack_project()
-
-
-#-------------------------------------------------------
-# developer targets
-
-
-# extern libraries, used only for testing/benchmarking
-if(RYML_BUILD_TESTS OR RYML_BUILD_BENCHMARKS OR RYML_BUILD_TOOLS)
-    include(ext/testbm.cmake)
-endif()
-
-if(RYML_BUILD_TOOLS)
-    add_subdirectory(tools)
-endif()
-
-c4_add_dev_targets()
-
-add_custom_target(ryml-uninstall
-    "${CMAKE_COMMAND}" -P "${PROJECT_SOURCE_DIR}/cmake/uninstall.cmake"
-)
+ADD_LIBRARY(${this_target} STATIC ${RYML_SOURCES} ${C4CORE_SOURCES} )
+target_include_directories(${this_target} SYSTEM PUBLIC
+	${RYML_INCLUDE_DIRS}
+	${C4CORE_SOURCE_DIR} )
+# 0.16 deprecates the NodeRef >>= / <<= / |= / = operators rAthena uses
+# (database.cpp). Define the documented legacy macro to keep them without
+# deprecation warnings; migrating to .deserialize()/.set_*() is follow-up
+# work (see doc/MODERNIZATION.md), not part of this dependency update.
+target_compile_definitions(${this_target} PUBLIC RYML_WITH_LEGACY_OPERATORS)
