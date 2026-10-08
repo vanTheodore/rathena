@@ -374,7 +374,7 @@ AC_ARG_WITH(
 	[mysql],
 	AC_HELP_STRING(
 		[--with-mysql@<:@=ARG@:>@],
-		[optionally specify the path to the mysql_config executable]
+		[optionally specify the path to the mysql_config/mariadb_config executable]
 	),
 	[
 		if test "$withval" != "no" ; then
@@ -1236,6 +1236,11 @@ AC_SEARCH_LIBS([pthread_join], [pthread], [], [AC_MSG_ERROR([pthread library not
 
 if test -z "$MYSQL_CONFIG_HOME"; then
 	AC_PATH_PROG([MYSQL_CONFIG_HOME], [mysql_config], [no])
+	# MariaDB Connector/C - the client packaged by Debian/Ubuntu, Alpine and
+	# MariaDB itself - ships "mariadb_config" instead of "mysql_config".
+	if test "$MYSQL_CONFIG_HOME" = "no" ; then
+		AC_PATH_PROG([MYSQL_CONFIG_HOME], [mariadb_config], [no])
+	fi
 fi
 
 if test "$MYSQL_CONFIG_HOME" != "no" ; then
@@ -1253,6 +1258,12 @@ fi
 MYSQL_OLD_LDFLAGS="$LDFLAGS" ; LDFLAGS="$LDFLAGS $MYSQL_LIBS"
 MYSQL_OLD_CPPFLAGS="$CPPFLAGS" ; CPPFLAGS="$CPPFLAGS $MYSQL_CFLAGS"
 AC_CHECK_LIB([mysqlclient], [mysql_init], [HAVE_MYSQL="yes"], [])
+if test "$HAVE_MYSQL" != "yes" ; then
+	AC_CHECK_LIB([mariadb], [mysql_init], [HAVE_MYSQL="yes"], [])
+fi
+if test "$HAVE_MYSQL" != "yes" ; then
+	AC_CHECK_LIB([mariadbclient], [mysql_init], [HAVE_MYSQL="yes"], [])
+fi
 AC_CHECK_HEADER([mysql.h], [], [HAVE_MYSQL=""])
 CPPFLAGS="$MYSQL_OLD_CPPFLAGS"
 LDFLAGS="$MYSQL_OLD_LDFLAGS"

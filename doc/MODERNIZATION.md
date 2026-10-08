@@ -66,7 +66,7 @@ working from a complete checkout.
 | libconfig | 1.4.9 | **1.8.2** (pending) | safe direct update | C library; check scanner/grammar regeneration needs. License LGPL-2.1+ |
 | zlib | 1.2.8 headers + prebuilt Win DLL | **1.3.2** (not 1.3.1 — 1.3.2 is the actual latest stable, Feb 2026) | safe direct update | prebuilt blobs removed; static build from vendored source on Windows (new zlib.vcxproj, `.sln` wired, consumers link `.vs\build\zlib.lib`); system zlib elsewhere. No more runtime zlib.dll. License Zlib |
 | PCRE (8.33, PCRE1) | 8.33 | **10.49** (PCRE2) | substantial migration | 8-bit PCRE2 built from vendored source on Windows (prebuilt pcre8 DLL/import-lib blobs removed, no runtime DLL) and system `libpcre2-8` elsewhere. API/behavior differences isolated and pinned by `tools/pcre-regress` (48 cases byte-for-byte vs the PCRE1 8.33 baseline); JIT sources compiled but never invoked. Vendored sources audited against the 10.49 tag; license BSD-3-Clause WITH PCRE2-exception (`3rdparty/pcre2/LICENCE.md`) |
-| MySQL client | 6.1.9 headers / 5.7.16 | **deferred** | architectural | Windows-only bundled compat headers; system client on Linux. Replacing needs DBA-level validation |
+| MySQL client | Connector/C 6.1.9 (Win) / distro client | **in progress** | architectural | Audit and staged plan in `doc/MYSQL_MODERNIZATION.md`. S1 landed: CMake (`FindMYSQL.cmake`) and Autotools (`mariadb_config`, `-lmariadb`/`-lmariadbclient`) now detect MariaDB Connector/C in addition to libmysqlclient, and CI asserts the detection. Replacing the 2014 Windows client and real-DB validation are the remaining stages |
 
 ### PCRE2 vendored source audit
 
@@ -165,7 +165,9 @@ Linux: GCC-latest+C++23 (Release, Debug, ASan+UBSan), Clang-latest+C++23
 
 - `linux-gcc` (Release + Debug, GCC 14): configure + full build + map-server
   boot smoke (expected to stop at absent-DB connect, exit 1 — any other
-  failure, e.g. crash, fails the job).
+  failure, e.g. crash, fails the job). Every Linux configure step additionally
+  asserts `Configuring for system MYSQL - done` and `Found MYSQL: .*mariadb`,
+  so the MariaDB Connector/C detection cannot silently regress.
 - `linux-clang` (Release, Clang 18): configure + full build.
 - `linux-pcre-regress`: compiles `tools/pcre-regress` under ASan/LSan twice
   — against system `libpcre2-8` and against the vendored 10.49 sources — and

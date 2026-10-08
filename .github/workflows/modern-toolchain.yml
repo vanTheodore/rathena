@@ -25,6 +25,8 @@ jobs:
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 2>&1 | tee configure.log
           grep -q "Enabled PCRE code" configure.log
+          grep -q "Configuring for system MYSQL - done" configure.log
+          grep -q "Found MYSQL: .*mariadb" configure.log
       - name: Build all servers + tools
         run: cmake --build build
       - name: Boot smoke (fails on absent DB only)
@@ -42,6 +44,8 @@ jobs:
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 2>&1 | tee configure.log
           grep -q "Enabled PCRE code" configure.log
+          grep -q "Configuring for system MYSQL - done" configure.log
+          grep -q "Found MYSQL: .*mariadb" configure.log
       - name: Build all servers + tools
         run: cmake --build build
 
@@ -102,6 +106,8 @@ jobs:
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DENABLE_SANITIZERS=address,undefined 2>&1 | tee configure.log
           grep -q "Enabled PCRE code" configure.log
+          grep -q "Configuring for system MYSQL - done" configure.log
+          grep -q "Found MYSQL: .*mariadb" configure.log
       - name: Build all servers + tools
         run: cmake --build build
       - name: Startup smoke under sanitizers
@@ -121,6 +127,8 @@ jobs:
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release 2>&1 | tee configure.log
           grep -q "Enabled PCRE code" configure.log
+          grep -q "Configuring for system MYSQL - done" configure.log
+          grep -q "Found MYSQL: .*mariadb" configure.log
       - name: Build all servers + tools
         run: cmake --build build
 

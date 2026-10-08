@@ -1,9 +1,9 @@
 # MySQL/MariaDB integration audit and modernization plan
 
-Status: **audit only** (branch `deps/mysql-mariadb`, no code changed yet). Everything
-below is either executed evidence from this checkout or cited upstream/package
-documentation; nothing was validated against a real database server or on Linux/MSVC
-(see "Executed vs not executed").
+Status: **stage S1 landed**, no game logic touched (branch `deps/mysql-mariadb`).
+Everything below is either executed evidence from this checkout or cited
+upstream/package documentation; nothing was validated against a real database
+server or on Linux/MSVC (see "Executed vs not executed").
 
 ## 1. What is integrated today
 
@@ -223,13 +223,24 @@ plus the existing `sql-files` import is enough.
 
 ## 7. Staged implementation plan (one commit per stage, branch `deps/mysql-mariadb`)
 
-- **S1 — detection supports the modern packaging** (safe, bounded):
-  extend `3rdparty/cmake/FindMYSQL.cmake` to MariaDB locations/names
-  (`/usr/include/mariadb`, `libmariadb`, `libmariadbclient`), keep the MySQL names
-  as fallback; teach `configure.ac` to fall back to `mariadb_config` and to check
-  `mariadb`/`mariadbclient` libs; make CI assert the CMake step actually enabled
-  MySQL. Verified locally by simulating the Debian layout (old module fails, new
-  module passes) plus `bash -n`/regenerated `configure`.
+- **S1 — detection supports the modern packaging** — **landed**. `3rdparty/cmake/FindMYSQL.cmake`
+  now searches MariaDB locations/names (`/usr/include/mariadb`, `libmariadb`,
+  `libmariadbclient`, MariaDB homebrew/Program Files paths) while keeping the
+  MySQL names as fallback, and reports the connector version from
+  `mariadb_version.h` when present. `configure.ac` falls back to `mariadb_config`
+  and probes `-lmariadb`/`-lmariadbclient` after `-lmysqlclient`; `configure` was
+  regenerated with GNU Autoconf 2.69 (the only non-regenerated content remains
+  the distro `--runstatedir` backport, unchanged). CI now asserts
+  `Configuring for system MYSQL - done` and `Found MYSQL: .*mariadb` in every
+  Linux configure log.
+
+  Verified locally: A/B test of the find module against a simulated Debian
+  layout (old module: `MYSQL_FOUND` off, which is exactly the CI-breaking case;
+  new module: `libmariadb.so`, version `3.4.11`) and a simulated MySQL layout
+  (`libmysqlclient.so`, version `8.4.0`, no regression); `bash -n configure`;
+  regenerated `configure` diffs against the previous file in exactly three hunks
+  (help text, `mariadb_config` fallback, `-lmariadb`/`-lmariadbclient` probes).
+  Not verified on a real Linux host (see "Executed vs not executed").
 - **S2 — client-version hygiene**: guard on client version macros, require a
   documented client floor (MariaDB Connector/C ≥ 3.0.8 for `caching_sha2_password`;
   3.4.x recommended), log `mysql_get_client_info()` once at startup.
@@ -257,8 +268,11 @@ below and on real-DB validation.
 
 Executed in this checkout: full inventory and API-surface extraction
 (ripgrep), local CMake cache inspection (which client the Windows build uses),
-`LICENSE`/`README`/conf/CI/Docker inspection, `git` history of the bundled blobs.
-Sources consulted for version/license/packaging facts are listed below.
+`LICENSE`/`README`/conf/CI/Docker inspection, `git` history of the bundled blobs,
+and the S1 verification described in the plan section (A/B find-module test with
+simulated Debian and MySQL layouts, `bash -n` on the regenerated `configure`,
+Autoconf 2.69 regeneration). Sources consulted for version/license/packaging
+facts are listed below.
 
 Not executed / not claimed: no Linux host, so F1 is documentary + source-code
 evidence, not a reproduced failure; no database server available locally, so no
