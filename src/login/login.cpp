@@ -4,6 +4,7 @@
 #pragma warning(disable:4800)
 #include "login.hpp"
 
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -18,6 +19,7 @@
 #include <common/random.hpp>
 #include <common/showmsg.hpp>
 #include <common/socket.hpp> //ip2str
+#include <common/strlib.hpp>
 #include <common/strlib.hpp>
 #include <common/timer.hpp>
 #include <common/utilities.hpp>
@@ -303,13 +305,15 @@ int32 login_mmo_auth(struct login_session_data* sd, bool isServer) {
 	if( login_config.use_dnsbl ) {
 		char r_ip[16];
 		char ip_dnsbl[256];
+		char dnsbl_servs_copy[1024]; // strtok destroys the string it tokenizes: the conf value must survive subsequent logins
 		char* dnsbl_serv;
 		uint8* sin_addr = (uint8*)&session[sd->fd]->client_addr;
 
 		sprintf(r_ip, "%u.%u.%u.%u", sin_addr[0], sin_addr[1], sin_addr[2], sin_addr[3]);
 
-		for( dnsbl_serv = strtok(login_config.dnsbl_servs,","); dnsbl_serv != nullptr; dnsbl_serv = strtok(nullptr,",") ) {
-			sprintf(ip_dnsbl, "%s.%s", r_ip, trim(dnsbl_serv));
+		safestrncpy(dnsbl_servs_copy, login_config.dnsbl_servs, sizeof(dnsbl_servs_copy));
+		for( dnsbl_serv = strtok(dnsbl_servs_copy,","); dnsbl_serv != nullptr; dnsbl_serv = strtok(nullptr,",") ) {
+			snprintf(ip_dnsbl, sizeof(ip_dnsbl), "%s.%s", r_ip, trim(dnsbl_serv));
 			if( host2ip(ip_dnsbl) ) {
 				ShowInfo("DNSBL: (%s) Blacklisted. User Kicked.\n", r_ip);
 				return 3;

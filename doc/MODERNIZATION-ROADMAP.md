@@ -60,6 +60,14 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   strcpy en buffer estático de 16 B, `mapindex_init` sprintf con `db_path` de
   conf, `checkpath`/`findfile` sin límites); los demás verificados acotados
   (grfio, md5calc, showmsg, socket, LOG_MEMMGR)
+- ✅ Buffer safety + ownership en `login` (auditoría + fix): ownership limpio
+  (account db/iter → destroy, nnode list → finalize walk, session_data → capa
+  socket; sin new/delete/malloc/free reales). **Bug real corregido**: `strtok`
+  destruía `login_config.dnsbl_servs` en sitio — tras el primer login solo se
+  consultaba el PRIMER servidor DNSBL de la lista; ahora se tokeniza una copia.
+  Además `ip_dnsbl` sprintf → snprintf (token de conf hasta 1023 chars en buffer
+  de 256 B). Verificados seguros: `r_ip` (exacto: uint8 máx 15+1=16), `smd5`
+  (exacto: loop i<16 en [33]), `message[256]`
 - ✅ Ownership en `common` (auditoría, refute-first): **premisa refutada — no hay
   bugs**. Cero expresiones `new`/`delete` reales fuera de `utilities.cpp`
   (`unique_ptr` RAII + `levenshtein` new[]/delete[] emparejado); `malloc/free`
@@ -134,11 +142,12 @@ excluido por reglas) y T4 requiere ejecutar CI (sin push/remotos sin
 autorización). La validación real queda explícitamente pendiente hasta que
 exista entorno; sin BD, S5 no es ejecutable más allá de la documentación.
 
-**Fase 2 — auditoría C++20/23: en curso.** Buffer safety y ownership de
-`common` cerradas (premisa de ownership refutada — sin bugs); macros de
-`common` cerradas (TRUE/FALSE excluido por cosmético masivo). Sigue:
-`StringBuf` (refactor transversal — requiere diseño) y las demás áreas
-(`login`/`char`/`map`/tools), una tarea a la vez.
+**Fase 2 — auditoría C++20/23: en curso.** `common` cerrado (buffer safety ✅,
+ownership ✅ refutado, macros ✅ — TRUE/FALSE excluido por cosmético masivo) y
+`login` cerrado (ownership limpio, **bug DNSBL de strtok corregido** — solo se
+consultaba el primer servidor DNSBL tras el primer login — e `ip_dnsbl`
+acotado). Sigue: `char`, `map` y tools, una tarea a la vez; `StringBuf`
+(refactor transversal — requiere diseño).
 
 ## Reglas permanentes
 
