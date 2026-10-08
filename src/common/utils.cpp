@@ -21,6 +21,7 @@
 #include "cbasetypes.hpp"
 #include "showmsg.hpp"
 #include "socket.hpp"
+#include "strlib.hpp"
 
 /// Dumps given buffer into file pointed to by a handle.
 void WriteDump(FILE* fp, const void* buffer, size_t length)
@@ -84,11 +85,11 @@ void ShowDump(const void* buffer, size_t length)
 
 #ifdef WIN32
 
-static char* checkpath(char *path, const char *srcpath)
+static char* checkpath(char *path, size_t size, const char *srcpath)
 {	// just make sure the char*path is not const
 	char *p=path;
 	if(nullptr!=path && nullptr!=srcpath)
-	while(*srcpath) {
+	while(*srcpath && (size_t)(p - path) < size - 1) {
 		if (*srcpath=='/') {
 			*p++ = '\\';
 			srcpath++;
@@ -96,7 +97,7 @@ static char* checkpath(char *path, const char *srcpath)
 		else
 			*p++ = *srcpath++;
 	}
-	*p = *srcpath; //EOS
+	*p = '\0'; //EOS
 	return path;
 }
 
@@ -109,11 +110,11 @@ void findfile(const char *p, const char *pat, void (func)(const char*))
 	const char *path    = (p  ==nullptr)? "." : p;
 	const char *pattern = (pat==nullptr)? "" : pat;
 
-	checkpath(tmppath,path);
+	checkpath(tmppath, sizeof(tmppath), path);
 	if( PATHSEP != tmppath[strlen(tmppath)-1])
-		strcat(tmppath, "\\*");
+		strncat(tmppath, "\\*", sizeof(tmppath) - strlen(tmppath) - 1);
 	else
-		strcat(tmppath, "*");
+		strncat(tmppath, "*", sizeof(tmppath) - strlen(tmppath) - 1);
 
 	hFind = FindFirstFileA(tmppath, &FindFileData);
 	if (hFind != INVALID_HANDLE_VALUE)
@@ -125,7 +126,7 @@ void findfile(const char *p, const char *pat, void (func)(const char*))
 			if (strcmp(FindFileData.cFileName, "..") == 0)
 				continue;
 
-			sprintf(tmppath,"%s%c%s",path,PATHSEP,FindFileData.cFileName);
+			snprintf(tmppath, sizeof(tmppath), "%s%c%s", path, PATHSEP, FindFileData.cFileName);
 
 			if (FindFileData.cFileName && strstr(FindFileData.cFileName, pattern)) {
 				func( tmppath );
@@ -195,11 +196,11 @@ int32 check_filepath(const char* filepath)
 	return 0;
 }
 
-static char* checkpath(char *path, const char*srcpath)
+static char* checkpath(char *path, size_t size, const char*srcpath)
 {	// just make sure the char*path is not const
 	char *p=path;
 	if(nullptr!=path && nullptr!=srcpath)
-	while(*srcpath) {
+	while(*srcpath && (size_t)(p - path) < size - 1) {
 		if (*srcpath=='\\') {
 			*p++ = '/';
 			srcpath++;
@@ -207,7 +208,7 @@ static char* checkpath(char *path, const char*srcpath)
 		else
 			*p++ = *srcpath++;
 	}
-	*p = *srcpath; //EOS
+	*p = '\0'; //EOS
 	return path;
 }
 
@@ -219,10 +220,10 @@ void findfile(const char *p, const char *pat, void (func)(const char*))
 	char tmppath[MAX_DIR_PATH * 2];
 	char path[MAX_DIR_PATH+1]= ".";
 	const char *pattern = (pat==nullptr)? "" : pat;
-	if(p!=nullptr) strcpy(path,p);
+	if(p!=nullptr) safestrncpy(path, p, sizeof(path));
 
 	// open the directory for reading
-	dir = opendir( checkpath(path, path) );
+	dir = opendir( checkpath(path, sizeof(path), path) );
 	if (!dir) {
 		ShowError("Cannot read directory '%s'\n", path);
 		return;

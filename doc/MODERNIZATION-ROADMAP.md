@@ -55,8 +55,13 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 
 - ✅ Fixes de compatibilidad: SEH MSVC → bloque plano (`d1a57ee`), `WIN32` desde
   CMake, `NOMINMAX` guardado, compat rapidyaml/httplib
-- ⏳ Auditoría de `common`/`login`/`char`/`map`/tools (ownership ambiguo, buffers
-  inseguros, macros obsoletas, wrappers redundantes): pendiente
+- ✅ Buffer safety en `common` (auditoría + fixes): 25 sitios sprintf/strcpy/
+  strcat clasificados; corregidos los overflow-prone (mapindex `getmapname_ext`
+  strcpy en buffer estático de 16 B, `mapindex_init` sprintf con `db_path` de
+  conf, `checkpath`/`findfile` sin límites); los demás verificados acotados
+  (grfio, md5calc, showmsg, socket, LOG_MEMMGR)
+- ⏳ Auditoría de `common` restante (ownership ambiguo, macros obsoletas,
+  wrappers redundantes) y de `login`/`char`/`map`/tools: pendiente
 - ⏳ Evaluación PCH/unity builds/Modules: pendiente (no adoptar automáticamente;
   CMake ya escanea módulos por defecto en C++23+Ninja)
 
@@ -113,6 +118,10 @@ Bloqueo: T2/T3 requieren un servidor MariaDB real (no hay BD local; Docker
 excluido por reglas) y T4 requiere ejecutar CI (sin push/remotos sin
 autorización). La validación real queda explícitamente pendiente hasta que
 exista entorno; sin BD, S5 no es ejecutable más allá de la documentación.
+
+**Fase 2 — auditoría C++20/23: en curso.** Buffer safety de `common` cerrada
+(ver fase 2); siguen ownership/macros/wrappers en `common` y las demás áreas
+(`login`/`char`/`map`/tools), una tarea a la vez.
 
 ## Reglas permanentes
 

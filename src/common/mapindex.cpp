@@ -3,6 +3,7 @@
 
 #include "mapindex.hpp"
 
+#include <cstdio>
 #include <cstdlib>
 
 #include "core.hpp"
@@ -48,9 +49,10 @@ const char* mapindex_getmapname_ext(const char* string, char* output) {
 
 	size_t len;
 
-	strcpy(buf,string);
+	// was unbounded into the MAP_NAME_LENGTH_EXT buffer; truncation matches
+	// mapindex_normalize_name's treatment of too-long names
+	safestrncpy(buf, string, sizeof(buf));
 	sscanf(string,"%*[^#]%*[#]%15s",buf);
-
 	len = safestrnlen(buf, MAP_NAME_LENGTH);
 
 	if (len == MAP_NAME_LENGTH) {
@@ -144,7 +146,7 @@ void mapindex_init(void) {
 	mapindex_db = strdb_alloc(DB_OPT_DUP_KEY, MAP_NAME_LENGTH);
 
 	for( size_t i = 0; i < ARRAYLENGTH(mapindex_cfgfile); i++ ){
-		sprintf( path, "%s/%s", db_path, mapindex_cfgfile[i] );
+		snprintf( path, sizeof(path), "%s/%s", db_path, mapindex_cfgfile[i] );
 
 		if( ( fp = fopen( path, "r" ) ) == nullptr ){
 			// It is only fatal if it is the main file
