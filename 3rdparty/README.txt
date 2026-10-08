@@ -5,7 +5,7 @@ httplib - library for http web service, header-only (https://github.com/yhirose/
 libconfig - library for processing structured configuration files, 1.8.2 (http://www.hyperrealm.com/libconfig/)
 mysql - library for MySQL Community Server, 6.1.9 headers (http://www.mysql.com)
 pcre - library for Perl Compatible Regular Expressions, PCRE1 8.33 headers (http://www.pcre.org)
-zlib - library for DEFLATE lossless compression algorithm, 1.2.8 headers (http://www.zlib.net)
+zlib - library for DEFLATE lossless compression algorithm, 1.3.2 built from vendored source (https://github.com/madler/zlib/tree/v1.3.2)
 json - library for nlohmann json, single-header (https://github.com/nlohmann/json/tree/v3.12.0)
 yaml-cpp - library for yaml, 0.9.0, no local patches (https://github.com/jbeder/yaml-cpp/tree/yaml-cpp-0.9.0)
 rapidyaml - library for rapid yaml, 0.16.0, no local patches (https://github.com/biojppm/rapidyaml/tree/v0.16.0)

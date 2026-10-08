@@ -119,7 +119,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ws2_32.lib;$(SolutionDir).vs\build\ryml.lib;$(SolutionDir).vs\build\common.lib;$(SolutionDir).vs\build\libconfig.lib;$(SolutionDir)3rdparty\zlib\lib\$(Platform)\zlib.lib;$(SolutionDir)3rdparty\pcre\lib\$(Platform)\pcre8.lib;$(SolutionDir)3rdparty\mysql\lib\$(Platform)\libmysql.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;$(SolutionDir).vs\build\ryml.lib;$(SolutionDir).vs\build\common.lib;$(SolutionDir).vs\build\libconfig.lib;$(SolutionDir).vs\build\zlib.lib;$(SolutionDir)3rdparty\pcre\lib\$(Platform)\pcre8.lib;$(SolutionDir)3rdparty\mysql\lib\$(Platform)\libmysql.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -140,7 +140,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ws2_32.lib;$(SolutionDir).vs\build\ryml.lib;$(SolutionDir).vs\build\common.lib;$(SolutionDir).vs\build\libconfig.lib;$(SolutionDir)3rdparty\zlib\lib\$(Platform)\zlib.lib;$(SolutionDir)3rdparty\pcre\lib\$(Platform)\pcre8.lib;$(SolutionDir)3rdparty\mysql\lib\$(Platform)\libmysql.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;$(SolutionDir).vs\build\ryml.lib;$(SolutionDir).vs\build\common.lib;$(SolutionDir).vs\build\libconfig.lib;$(SolutionDir).vs\build\zlib.lib;$(SolutionDir)3rdparty\pcre\lib\$(Platform)\pcre8.lib;$(SolutionDir)3rdparty\mysql\lib\$(Platform)\libmysql.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -165,7 +165,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>ws2_32.lib;$(SolutionDir).vs\build\ryml.lib;$(SolutionDir).vs\build\common.lib;$(SolutionDir).vs\build\libconfig.lib;$(SolutionDir)3rdparty\zlib\lib\$(Platform)\zlib.lib;$(SolutionDir)3rdparty\pcre\lib\$(Platform)\pcre8.lib;$(SolutionDir)3rdparty\mysql\lib\$(Platform)\libmysql.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;$(SolutionDir).vs\build\ryml.lib;$(SolutionDir).vs\build\common.lib;$(SolutionDir).vs\build\libconfig.lib;$(SolutionDir).vs\build\zlib.lib;$(SolutionDir)3rdparty\pcre\lib\$(Platform)\pcre8.lib;$(SolutionDir)3rdparty\mysql\lib\$(Platform)\libmysql.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
@@ -191,7 +191,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>ws2_32.lib;$(SolutionDir).vs\build\ryml.lib;$(SolutionDir).vs\build\common.lib;$(SolutionDir).vs\build\libconfig.lib;$(SolutionDir)3rdparty\zlib\lib\$(Platform)\zlib.lib;$(SolutionDir)3rdparty\pcre\lib\$(Platform)\pcre8.lib;$(SolutionDir)3rdparty\mysql\lib\$(Platform)\libmysql.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;$(SolutionDir).vs\build\ryml.lib;$(SolutionDir).vs\build\common.lib;$(SolutionDir).vs\build\libconfig.lib;$(SolutionDir).vs\build\zlib.lib;$(SolutionDir)3rdparty\pcre\lib\$(Platform)\pcre8.lib;$(SolutionDir)3rdparty\mysql\lib\$(Platform)\libmysql.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>

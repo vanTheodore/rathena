@@ -1,40 +1,52 @@
 
 #
-# local copy
+# vendored source build (Windows) or system zlib (other platforms)
+#
+# Windows has no system zlib, so 1.3.2 is built from the vendored source as
+# a static lib. This replaces the old prebuilt DLL/import-lib blobs and
+# removes the runtime zlib.dll dependency. ZLIB_VERSION is read from the
+# vendored header so configure reports the real version.
 #
 if( WIN32 )
 message( STATUS "Detecting local ZLIB" )
 find_path( ZLIB_LOCAL_INCLUDE_DIRS "zlib.h"
 	PATHS "${CMAKE_CURRENT_SOURCE_DIR}/include"
 	NO_DEFAULT_PATH )
-if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-find_library( ZLIB_LOCAL_LIBRARIES
-	NAMES zlib
-	PATHS "${CMAKE_CURRENT_SOURCE_DIR}/lib/Win32"
-	NO_DEFAULT_PATH )
-else()
-find_library( ZLIB_LOCAL_LIBRARIES
-	NAMES zlib
-	PATHS "${CMAKE_CURRENT_SOURCE_DIR}/lib/x64"
-	NO_DEFAULT_PATH )
-endif()
 mark_as_advanced( ZLIB_LOCAL_LIBRARIES )
 mark_as_advanced( ZLIB_LOCAL_INCLUDE_DIRS )
 
-if( ZLIB_LOCAL_LIBRARIES AND ZLIB_LOCAL_INCLUDE_DIRS )
+if( ZLIB_LOCAL_INCLUDE_DIRS )
 	file( STRINGS "${ZLIB_LOCAL_INCLUDE_DIRS}/zlib.h" ZLIB_H REGEX "^#define[ \t]+ZLIB_VERSION[ \t]+\"[^\"]+\".*$" )
 	string( REGEX REPLACE "^.*ZLIB_VERSION[ \t]+\"([^\"]+)\".*$" "\\1" ZLIB_VERSION "${ZLIB_H}" )
-	message( STATUS "Found local ZLIB: ${ZLIB_LOCAL_LIBRARIES} (found version ${ZLIB_VERSION})" )
+	message( STATUS "Building vendored ZLIB from source (header version ${ZLIB_VERSION})" )
+	set( ZLIB_LOCAL_SOURCES
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/adler32.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/compress.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/crc32.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/deflate.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/gzclose.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/gzlib.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/gzread.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/gzwrite.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/infback.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/inffast.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/inflate.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/inftrees.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/trees.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/uncompr.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/zutil.c"
+		CACHE INTERNAL "vendored zlib sources" )
+	add_library( zlib_local STATIC ${ZLIB_LOCAL_SOURCES} )
+	target_include_directories( zlib_local PUBLIC
+		"${CMAKE_CURRENT_SOURCE_DIR}/include"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src" )
+	set( ZLIB_LOCAL_LIBRARIES zlib_local
+		CACHE PATH "local zlib libraries" )
 	set( HAVE_LOCAL_ZLIB ON
-		CACHE BOOL "zlib is available as a local copy" )
+		CACHE BOOL "zlib is available as a local copy")
 	mark_as_advanced( HAVE_LOCAL_ZLIB )
 else()
-	foreach( _VAR ZLIB_LOCAL_LIBRARIES ZLIB_LOCAL_INCLUDE_DIRS )
-		if( NOT "${_VAR}" )
-			set( MISSING_VARS ${MISSING_VARS} ${_VAR} )
-		endif()
-	endforeach()
-	message( STATUS "Could NOT find local ZLIB (missing: ${MISSING_VARS})" )
+	message( STATUS "Could NOT find local ZLIB (missing include/zlib.h)" )
 	unset( HAVE_LOCAL_ZLIB CACHE )
 endif()
 message( STATUS "Detecting local ZLIB - done" )
