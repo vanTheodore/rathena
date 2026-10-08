@@ -60,8 +60,23 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   strcpy en buffer estático de 16 B, `mapindex_init` sprintf con `db_path` de
   conf, `checkpath`/`findfile` sin límites); los demás verificados acotados
   (grfio, md5calc, showmsg, socket, LOG_MEMMGR)
-- ⏳ Auditoría de `common` restante (ownership ambiguo, macros obsoletas,
-  wrappers redundantes) y de `login`/`char`/`map`/tools: pendiente
+- ✅ Ownership en `common` (auditoría, refute-first): **premisa refutada — no hay
+  bugs**. Cero expresiones `new`/`delete` reales fuera de `utilities.cpp`
+  (`unique_ptr` RAII + `levenshtein` new[]/delete[] emparejado); `malloc/free`
+  crudos de `core.cpp` emparejados sin returns intermedios (inconsistencia de
+  estilo sin valor: saltan el memory manager pero se liberan); `aMalloc`/
+  `CREATE` con teardown centralizado consistente verificado en sql/grfio/
+  socket/timer (grfio_reads: bloques de asignación mutuamente excluyentes, las
+  tres rutas de error liberan); sin leaks ni double-frees en las rutas
+  auditadas. LSan en CI pendiente (detección empírica)
+- ✅ Macros en `common` (auditoría): `TRUE`/`FALSE` (84 usos) — renombrar a
+  bool/true sería un cambio cosmético masivo, **excluido por reglas**; el
+  bandaid `my_bool` es necesario (MySQL 8); `CREATE`/`aMalloc` son la gestión
+  de memoria propia del proyecto
+- ⏳ Wrapper redundante `StringBuf` (vs `std::string`): refactor transversal
+  grande — requiere diseño y evaluación previa (regla permanente)
+- ⏳ Auditoría de `login`/`char`/`map`/tools (ownership/buffers/APIs modernas
+  cuando aporten valor): pendiente, una tarea a la vez
 - ⏳ Evaluación PCH/unity builds/Modules: pendiente (no adoptar automáticamente;
   CMake ya escanea módulos por defecto en C++23+Ninja)
 
@@ -119,8 +134,10 @@ excluido por reglas) y T4 requiere ejecutar CI (sin push/remotos sin
 autorización). La validación real queda explícitamente pendiente hasta que
 exista entorno; sin BD, S5 no es ejecutable más allá de la documentación.
 
-**Fase 2 — auditoría C++20/23: en curso.** Buffer safety de `common` cerrada
-(ver fase 2); siguen ownership/macros/wrappers en `common` y las demás áreas
+**Fase 2 — auditoría C++20/23: en curso.** Buffer safety y ownership de
+`common` cerradas (premisa de ownership refutada — sin bugs); macros de
+`common` cerradas (TRUE/FALSE excluido por cosmético masivo). Sigue:
+`StringBuf` (refactor transversal — requiere diseño) y las demás áreas
 (`login`/`char`/`map`/tools), una tarea a la vez.
 
 ## Reglas permanentes
