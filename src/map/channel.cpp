@@ -263,7 +263,7 @@ int32 channel_mjoin(map_session_data *sd) {
 	}
 
 	if( mapdata->channel->opt & CHAN_OPT_ANNOUNCE_SELF ) {
-		sprintf(mout, msg_txt(sd,1435),mapdata->channel->name,mapdata->name); // You're now in the '#%s' channel for '%s'.
+		snprintf(mout, sizeof(mout), msg_txt(sd,1435),mapdata->channel->name,mapdata->name); // You're now in the '#%s' channel for '%s'.
 		clif_messagecolor(sd, color_table[COLOR_LIGHT_GREEN], mout, false, SELF);
 	}
 

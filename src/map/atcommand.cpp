@@ -1814,7 +1814,7 @@ ACMD_FUNC(help){
 	}
 
 	if (!pc_can_use_command(sd, command_name, COMMAND_ATCOMMAND)) {
-		sprintf(atcmd_output, msg_txt(sd,153), message); // "%s is Unknown Command"
+		snprintf(atcmd_output, sizeof(atcmd_output), msg_txt(sd,153), message); // "%s is Unknown Command"
 		clif_displaymessage(fd, atcmd_output);
 		atcommand_get_suggestions(sd, command_name, true);
 		return -1;
@@ -5961,7 +5961,7 @@ ACMD_FUNC(broadcast)
 		return -1;
 	}
 
-	sprintf(atcmd_output, "%s: %s", sd->status.name, message);
+	snprintf(atcmd_output, sizeof(atcmd_output), "%s: %s", sd->status.name, message);
 	intif_broadcast(atcmd_output, strlen(atcmd_output) + 1, BC_DEFAULT);
 
 	return 0;
@@ -5981,7 +5981,7 @@ ACMD_FUNC(localbroadcast)
 		return -1;
 	}
 
-	sprintf(atcmd_output, "%s: %s", sd->status.name, message);
+	snprintf(atcmd_output, sizeof(atcmd_output), "%s: %s", sd->status.name, message);
 
 	clif_broadcast(sd, atcmd_output, strlen(atcmd_output) + 1, BC_DEFAULT, ALL_SAMEMAP);
 
@@ -8914,7 +8914,7 @@ ACMD_FUNC(me)
 		return -1;
 	}
 
-	sprintf(atcmd_output, msg_txt(sd,270), sd->status.name, tempmes);	// *%s %s*
+	snprintf(atcmd_output, sizeof(atcmd_output), msg_txt(sd,270), sd->status.name, tempmes);	// *%s %s*
 	clif_disp_overhead(sd, atcmd_output);
 
 	return 0;
@@ -9539,7 +9539,7 @@ ACMD_FUNC(request)
 		return -1;
 	}
 
-	sprintf(atcmd_output, msg_txt(sd,278), message);	// (@request): %s
+	snprintf(atcmd_output, sizeof(atcmd_output), msg_txt(sd,278), message);	// (@request): %s
 	intif_wis_message_to_gm(sd->status.name, PC_PERM_RECEIVE_REQUESTS, atcmd_output);
 	clif_messagecolor(sd, color_table[COLOR_LIGHT_GREEN], atcmd_output, false, SELF);
 	clif_displaymessage(sd->fd,msg_txt(sd,279));	// @request sent.
@@ -10289,7 +10289,7 @@ ACMD_FUNC(addperm) {
 	ARR_FIND(0, perm_size, i, strcmpi(pc_g_permission_name[i].name, message) == 0);
 
 	if( i == perm_size ) {
-		sprintf(atcmd_output,msg_txt(sd,1380),message); // '%s' is not a known permission.
+		snprintf(atcmd_output, sizeof(atcmd_output),msg_txt(sd,1380),message); // '%s' is not a known permission.
 		clif_displaymessage(fd, atcmd_output);
 		clif_displaymessage(fd, msg_txt(sd,1379)); // -- Permission List
 		for( i = 0; i < perm_size; i++ ) {
@@ -10331,7 +10331,7 @@ ACMD_FUNC(rmvperm) {
 	ARR_FIND(0, perm_size, i, strcmpi(pc_g_permission_name[i].name, message) == 0);
 
 	if( i == perm_size ) {
-		sprintf(atcmd_output,msg_txt(sd,1380),message); // '%s' is not a known permission.
+		snprintf(atcmd_output, sizeof(atcmd_output),msg_txt(sd,1380),message); // '%s' is not a known permission.
 		clif_displaymessage(fd, atcmd_output);
 		clif_displaymessage(fd, msg_txt(sd,1379)); // -- Permission List
 		for( i = 0; i < perm_size; i++ ) {
@@ -10598,13 +10598,13 @@ ACMD_FUNC(fontcolor)
 		unsigned char k;
 		ARR_FIND(0,channel_config.colors_count,k,( strcmpi(message,channel_config.colors_name[k]) == 0 ));
 		if( k == channel_config.colors_count ) {
-			sprintf(atcmd_output, msg_txt(sd,1411), message);// Unknown color '%s'.
+			snprintf(atcmd_output, sizeof(atcmd_output), msg_txt(sd,1411), message);// Unknown color '%s'.
 			clif_displaymessage(fd, atcmd_output);
 			return -1;
 		}
 		sd->fontcolor = k;
 	}
-	sprintf(atcmd_output, msg_txt(sd,1454), message);// Color set to '%s'.
+	snprintf(atcmd_output, sizeof(atcmd_output), msg_txt(sd,1454), message);// Color set to '%s'.
 	clif_displaymessage(fd, atcmd_output);
 
 	return 0;
@@ -10837,7 +10837,7 @@ ACMD_FUNC(costume) {
 			break;
 
 	if( k == len ) {
-		sprintf(atcmd_output, msg_txt(sd, 723), message); // '%s' is an unknown costume
+		snprintf(atcmd_output, sizeof(atcmd_output), msg_txt(sd, 723), message); // '%s' is an unknown costume
 		clif_displaymessage(sd->fd, atcmd_output);
 		return -1;
 	}

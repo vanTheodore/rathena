@@ -79,6 +79,18 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   respetan (los paths de break llegan al aFree); el strtok de
   `char_config_split_startpoint` destruye una copia local de la línea de conf,
   no el almacenamiento
+- ✅ Buffer safety de `map` (auditoría + fix): 617 sitios clasificados por clase.
+  **10 overflows reales corregidos en atcommand.cpp**: sprintf del texto tecleado
+  del jugador (%s, hasta 255 chars) con prefijo del formato en el buffer estático
+  `atcmd_output[256]` (CHAT_SIZE_MAX) — @me (281 chars), @broadcast/
+  @localbroadcast (281), @request, unknown-command, unknown-permission ×2,
+  unknown color ×2, unknown-costume → snprintf. **1 en channel.cpp**: `mout[60]`
+  desbordaba incluso con nombres por defecto (formato 37 + canal ≤20 + mapa ≤15
+  = 73 > 60) → snprintf. Verificados seguros: script.cpp (codegen interno con
+  formatos literales), pc/duel/skill/chrif (nombres/números acotados), y el path
+  del chat en clif.cpp (mensaje acotado a ≤255 en `clif_process_message:10532`,
+  `output[304]` cabe el máximo 282, `fakename`/`out_name` ambos NAME_LENGTH con
+  escritura acotada en @fakename)
 - ✅ Ownership en `common` (auditoría, refute-first): **premisa refutada — no hay
   bugs**. Cero expresiones `new`/`delete` reales fuera de `utilities.cpp`
   (`unique_ptr` RAII + `levenshtein` new[]/delete[] emparejado); `malloc/free`
