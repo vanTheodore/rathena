@@ -142,10 +142,20 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 - ✅ Regresión PCRE2 (48 casos chat/preg_match, pinned)
 - ⏳ Regresiones login/char/map con BD real: pendiente (sin BD local)
 
-### 5. Benchmarks y profiling — pendiente
+### 5. Benchmarks y profiling — parcial
 
-- ⏳ Mediciones reproducibles (CPU, memoria, latencias, throughput, asignaciones,
-  tiempos de compilación): pendiente
+- ✅ **Baseline de compilación** (medido 2026-10-09, MinGW-w64 ucrt64 GCC 16.2,
+  CMake 4.4.4 + Ninja, Release, `-j2`, build completo tras tocar todos los
+  fuentes): **772 s (~12,9 min)**. Binarios (deps estáticas): map-server 9,0 MB,
+  csv2yaml 2,0 MB, web-server 2,0 MB, yamlupgrade 1,9 MB, yaml2sql 1,6 MB,
+  char-server 1,2 MB, login-server 0,8 MB, mapcache 0,7 MB
+- ⏳ CPU/memoria/latencias/throughput/asignaciones de los servidores:
+  **bloqueado** — necesita un servidor corriendo (BD real; docker-compose
+  excluido por reglas)
+- ⏳ Profiling de map-server, timers, pathfinding, IA, scripts, combate, SQL y
+  red: bloqueado (igual)
+- ⏳ Repetir la medición del baseline para verificar reproducibilidad:
+  pendiente
 
 ### 6. Optimización de compilación — parcial
 
