@@ -184,7 +184,14 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   off por defecto). El crash es un candidato real de UB que el build normal
   enmascara — investigar con los sanitizers de CI o un debugger (no hay gdb
   ni eventos WER en este host)
-- ⏳ Experimentos ThinLTO/PGO/BOLT contra Release baseline: pendientes
+- ⏳ Experimentos PGO/BOLT contra Release baseline: **bloqueados** — PGO
+  necesita ejecutar binarios instrumentados con carga real (servidor corriendo
+  → BD real); BOLT necesita Linux + perf (sin host Linux)
+- ✅ **ThinLTO descartado en este host (2026-10-09, evidencia directa)**:
+  Clang 22.1.8 ucrt64 no trae `ld.lld`/`lld` (`-fuse-ld=lld` inválido) y el
+  `ld` GNU falla cargando el plugin `LLVMgold.dll` — sin linker compatible
+  no hay ThinLTO. Verificación: hello-world `-flto=thin`, segundos, sin build
+  completo
 - ⏳ Investigación del crash LTO (UB expuesto vs miscompile): pendiente —
   requiere debugger o sanitizers en CI
 
