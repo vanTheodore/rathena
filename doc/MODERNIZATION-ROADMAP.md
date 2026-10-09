@@ -160,7 +160,20 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 ### 6. Optimización de compilación — parcial
 
 - ✅ LTO opt-in (`-DENABLE_LTO`, off por defecto, `check_ipo_supported`)
-- ⏳ Experimentos LTO/ThinLTO/PGO/BOLT contra Release baseline: pendientes
+- ✅ **Experimento LTO A/B (medido 2026-10-09, GCC 16.2, -j2)**: LTO soportado
+  (configure 99 s); build completo **613 s vs 772 s baseline** (una medición
+  por lado — la varianza de máquina puede explicar parte; repetir para
+  rigor). Tamaños: **-11% a -56% en todo** (map-server 9,0→8,3 MB,
+  char-server -22%, login-server -50%, mapcache -56%). **PERO: crash
+  reproducible al salir (exit -1073740940 = 0xC0000374, heap corruption) en
+  map-server y char-server** — el mismo código sin LTO sale limpio (exit 1).
+  **Decisión: LTO NO se adopta** (regla: solo mejoras sin regresiones; sigue
+  off por defecto). El crash es un candidato real de UB que el build normal
+  enmascara — investigar con los sanitizers de CI o un debugger (no hay gdb
+  ni eventos WER en este host)
+- ⏳ Experimentos ThinLTO/PGO/BOLT contra Release baseline: pendientes
+- ⏳ Investigación del crash LTO (UB expuesto vs miscompile): pendiente —
+  requiere debugger o sanitizers en CI
 
 ### 7. Optimización interna — pendiente
 
@@ -175,6 +188,12 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   pequeñas: pendiente
 
 ## Tarea actual
+
+**Fase 6 — experimento LTO A/B (cerrado): no se adopta** (crash reproducible
+0xC0000374 al salir en map/char; tamaños -11%/-56% pero con regresión —
+ver fase 6). Siguiente accionable sin BD: repetir el baseline de Fase 5 para
+rigurosidad, o ThinLTO/PGO/BOLT contra baseline; los benchmarks de servidor
+siguen bloqueados sin BD real.
 
 **Fase 3 — arquitectura: errores ignorados (cerrado, refute-first).** El sweep
 de llamadas SQL sin comprobar resultado: 9 sitios en todo el codebase, todos
