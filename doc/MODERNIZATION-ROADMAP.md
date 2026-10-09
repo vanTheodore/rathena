@@ -117,10 +117,16 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   bool/true sería un cambio cosmético masivo, **excluido por reglas**; el
   bandaid `my_bool` es necesario (MySQL 8); `CREATE`/`aMalloc` son la gestión
   de memoria propia del proyecto
+- ✅ `tools` (auditoría, refute-first): **premisa refutada — sin hallazgos**.
+  Los 2 sprintf de `mapcache.cpp` son seguros (nombres acotados con
+  `sscanf("%15s")` en buffer de 256 B; máx 25 bytes); cero new/delete/malloc/
+  free reales; el pairing de `aMalloc` correcto (`gat` liberado en la ruta
+  temprana y la normal, `m->cells`/`write_buf` al final); csv2yaml/yaml2sql/
+  yamlupgrade sin hallazgos
 - ⏳ Wrapper redundante `StringBuf` (vs `std::string`): refactor transversal
   grande — requiere diseño y evaluación previa (regla permanente)
-- ⏳ Auditoría de `login`/`char`/`map`/tools (ownership/buffers/APIs modernas
-  cuando aporten valor): pendiente, una tarea a la vez
+- ⏳ Auditoría de `char`/`map`/tools hecha; `StringBuf` y PCH/unity/Modules
+  restan en la fase
 - ⏳ Evaluación PCH/unity builds/Modules: pendiente (no adoptar automáticamente;
   CMake ya escanea módulos por defecto en C++23+Ninja)
 
@@ -178,12 +184,12 @@ excluido por reglas) y T4 requiere ejecutar CI (sin push/remotos sin
 autorización). La validación real queda explícitamente pendiente hasta que
 exista entorno; sin BD, S5 no es ejecutable más allá de la documentación.
 
-**Fase 2 — auditoría C++20/23: en curso.** `common` cerrado (buffer safety ✅,
-ownership ✅ refutado, macros ✅), `login` cerrado (bug DNSBL de strtok
-corregido), `char` cerrado (premisa refutada) y `map` cerrado (buffer safety:
-11 overflows corregidos; ownership: refutado — placement new con dtors
-explícitos). Sigue: tools, una tarea a la vez; `StringBuf` (refactor
-transversal — requiere diseño).
+**Fase 2 — auditoría C++20/23: todas las áreas auditadas.** `common` cerrado
+(buffer safety ✅, ownership ✅ refutado, macros ✅), `login` cerrado (bug DNSBL
+de strtok corregido), `char` cerrado (premisa refutada), `map` cerrado (buffer
+safety: 11 overflows corregidos; ownership: refutado) y `tools` cerrado
+(premisa refutada). Restante en la fase: el diseño de `StringBuf` y la
+evaluación PCH/unity/Modules. Siguiente fase del roadmap: **3 (arquitectura)**.
 
 ## Reglas permanentes
 
