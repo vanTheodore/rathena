@@ -48,7 +48,7 @@ El proyecto es **GPL-3.0** (`LICENSE` en la raíz — no mover ni relicenciar).
 | zlib 1.3.2 | Zlib | fuente vendored |
 | PCRE2 10.49 | BSD-3-Clause WITH PCRE2-exception | `3rdparty/pcre2/LICENCE.md` |
 | MariaDB Connector/C (sistema) | LGPL-2.1+ | instalación del sistema, no vendored |
-| yaml-cpp 0.9.0 | ⏳ sin verificar (sin archivo de licencia en el árbol) | pendiente |
+| yaml-cpp 0.9.0 | MIT | licencia upstream verificada (texto MIT de jbeder/yaml-cpp) |
 
 Todas compatibles con GPLv3. GPL, no AGPL: operar un servidor modificado no
 obliga a publicar el código (la obligación nace al distribuir).

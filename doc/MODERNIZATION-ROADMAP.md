@@ -281,8 +281,12 @@ persistencia silenciosos.**
 
 Bloqueo: T2/T3 requieren un servidor MariaDB real (no hay BD local; Docker
 excluido por reglas) y T4 requiere ejecutar CI (sin push/remotos sin
-autorización). La validación real queda explícitamente pendiente hasta que
-exista entorno; sin BD, S5 no es ejecutable más allá de la documentación.
+autorización). Investigación de desbloqueo (2026-10-09, solo lectura): sin
+servidor/servicio/proceso en este host (sin servicios mysql/maria, sin
+rutas de instalación, nada en el puerto 3306; MSYS2 solo tiene el cliente
+3.4.9-1 y `mariadb-clients` en repos — sin paquete de servidor). Vía viable:
+ZIP portable de MariaDB en carpeta aislada + puerto 3307 (pasos documentados
+en el informe, sin instalar nada). Autoconf y gdb tampoco están instalados.
 
 **Fase 2 — auditoría C++20/23: todas las áreas auditadas.** `common` cerrado
 (buffer safety ✅, ownership ✅ refutado, macros ✅), `login` cerrado (bug DNSBL
