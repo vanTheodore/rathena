@@ -212,8 +212,14 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 
 - ✅ Docs: README (cliente BD), `3rdparty/README.txt`, `doc/MYSQL_MODERNIZATION.md`,
   `doc/MODERNIZATION.md`
-- ⏳ Doc de builds/distribución, sincronización con upstream, contribuciones
-  pequeñas: pendiente
+- ✅ `doc/BUILD-DISTRIBUTION.md` (nuevo): matriz de build verificada, instalación
+  de dependencias por plataforma (evidenciada: apt del CI, MSI en Windows,
+  `mingw-w64-ucrt-x86_64-libmariadbclient` en MSYS2), tabla de licencias
+  (yaml-cpp sin verificar — sin archivo en el árbol), postura de flags,
+  distribución GPL-3.0
+- ⏳ Sincronización con upstream: **bloqueada** — sin remotos configurados (no
+  se configura ninguno sin autorización); contribuciones pequeñas pendientes
+  de decisión (los fixes son backportables en dialecto viejo)
 
 ## Tarea actual
 
