@@ -288,6 +288,20 @@ rutas de instalación, nada en el puerto 3306; MSYS2 solo tiene el cliente
 ZIP portable de MariaDB en carpeta aislada + puerto 3307 (pasos documentados
 en el informe, sin instalar nada). Autoconf y gdb tampoco están instalados.
 
+**Validación real ejecutada (2026-10-09, MariaDB 11.4.13 portable en
+127.0.0.1:3307, BD `ragnarok_test`, 66 tablas):** boot completo login+char+map
+con enlaces inter-server (1265 mapas, castillos, clanes); creación de cuenta
+y login por protocolo real; recovery type 1 tras outage (ACCEPT); KILL de
+conexión = recovery (ACCEPT, T2-7/T2-8 conductual); type 2 fail-closed sin
+reintento y servidor vivo; agotamiento type 1 = shutdown fatal documentado
+(exit 1); round-trip non-ASCII byte-exacto (é = C3A9); keepalive adaptado a
+wait_timeout=60 (pings cada 30 s). Tres fixes que salieron de aquí:
+ryml-locations (`a7fd5a0`), retry con statement preservado (`11466f1c`) y
+conteo 2003 del reconnect fallido (`5298b5a`). T3 obsoleto (cliente 6.1.9
+eliminado por decisión S3); mail/rollback/account-save/NULL/blob/emblem
+pendientes de cliente de juego; compat MySQL-servidor pendiente (esto valida
+MariaDB solamente).
+
 **Fase 2 — auditoría C++20/23: todas las áreas auditadas.** `common` cerrado
 (buffer safety ✅, ownership ✅ refutado, macros ✅), `login` cerrado (bug DNSBL
 de strtok corregido), `char` cerrado (premisa refutada), `map` cerrado (buffer
