@@ -270,16 +270,29 @@ static int32 Sql_P_Keepalive(Sql* self)
 /// Re-establishes a dropped connection with the stored parameters.
 /// Reuses Sql_Connect, which re-establishes the keepalive timer too.
 ///
+/// Sql_Connect reuses self->buf (it clears it and its keepalive setup runs
+/// its own queries through it), so the pending statement is stashed aside
+/// and restored: otherwise the retry below would re-run leftovers instead
+/// of the failed statement.
+///
 /// @return SQL_SUCCESS or SQL_ERROR
 /// @private
 static int32 Sql_P_Reconnect(Sql* self)
 {
+	StringBuf saved;
+	int32 res;
+
 	if( self->keepalive != INVALID_TIMER )
 	{
 		delete_timer(self->keepalive, Sql_P_KeepaliveTimer);
 		self->keepalive = INVALID_TIMER;
 	}
-	return Sql_Connect(self, self->user, self->passwd, self->host, self->port, self->db);
+	StringBuf_Init(&saved);
+	StringBuf_Append(&saved, &self->buf);
+	res = Sql_Connect(self, self->user, self->passwd, self->host, self->port, self->db);
+	StringBuf_Clear(&self->buf);
+	StringBuf_Append(&self->buf, &saved);
+	return res; // saved is destroyed here (no explicit dtor: it is a stack object)
 }
 
 
