@@ -150,11 +150,18 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 
 ### 5. Benchmarks y profiling — parcial
 
-- ✅ **Baseline de compilación** (medido 2026-10-09, MinGW-w64 ucrt64 GCC 16.2,
-  CMake 4.4.4 + Ninja, Release, `-j2`, build completo tras tocar todos los
-  fuentes): **772 s (~12,9 min)**. Binarios (deps estáticas): map-server 9,0 MB,
-  csv2yaml 2,0 MB, web-server 2,0 MB, yamlupgrade 1,9 MB, yaml2sql 1,6 MB,
-  char-server 1,2 MB, login-server 0,8 MB, mapcache 0,7 MB
+- ✅ **Baseline de compilación** (MinGW-w64 ucrt64 GCC 16.2, CMake 4.4.4 +
+  Ninja, Release, `-j2`, build completo tras tocar todos los fuentes):
+  **772 s (~12,9 min) el 2026-10-09 y 920 s (~15,3 min) en repetición** —
+  varianza de máquina ±20% con una medición por lado; el rango honesto es
+  13–15 min. Warnings del build completo: ~40,5k (coherente con los ~41k
+  documentados en `doc/MODERNIZATION.md`). Binarios (deps estáticas,
+  1.ª medición): map-server 9,0 MB, csv2yaml 2,0 MB, web-server 2,0 MB,
+  yamlupgrade 1,9 MB, yaml2sql 1,6 MB, char-server 1,2 MB, login-server
+  0,8 MB, mapcache 0,7 MB. La repetición con fuentes idénticas dio binarios
+  ~2% más pequeños (map-server 9,0→8,8 MB) — causa no investigada (candidato:
+  no-determinismo del enlazado); sin impacto funcional (exit 0 + smoke
+  limpio). Los binarios LTO con crash quedaron reemplazados por los limpios
 - ⏳ CPU/memoria/latencias/throughput/asignaciones de los servidores:
   **bloqueado** — necesita un servidor corriendo (BD real; docker-compose
   excluido por reglas)
