@@ -91,6 +91,19 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   del chat en clif.cpp (mensaje acotado a ≤255 en `clif_process_message:10532`,
   `output[304]` cabe el máximo 282, `fakename`/`out_name` ambos NAME_LENGTH con
   escritura acotada en @fakename)
+- ✅ Ownership de `map` (auditoría, refute-first): **premisa refutada — sin
+  bugs**. Cero expresiones new/delete/malloc/free reales (los ~100 matches eran
+  comentarios y strings SQL). **Placement new ×6** (map_session_data ×3,
+  mob_data, guardian_data, pet_data) emparejado con **dtors explícitos** en el
+  dispatch de destrucción de bloques (`map_destroyblock`: BL_MOB/PET/HOM/MER/
+  ITEM/SKILL/NPC/CHAT/ELEM llaman a su dtor + aFree); el dtor de
+  `map_session_data` se difiere a `chrif_auth_delete` (runtime) y
+  `auth_db_final` (shutdown) — documentado en el código, ambos sitios
+  verificados correctos (dtor + aFree dentro de `if(node->sd)`, paths
+  mutuamente excluyentes — un aparente use-after-free era artefacto de mi grep
+  que fusionó dos funciones); el reciclaje (`map_freeblock`) tiene un único
+  path de destrucción; los arrays aCalloc'd de int_achievement/int_quest con
+  ownership documentado
 - ✅ Ownership en `common` (auditoría, refute-first): **premisa refutada — no hay
   bugs**. Cero expresiones `new`/`delete` reales fuera de `utilities.cpp`
   (`unique_ptr` RAII + `levenshtein` new[]/delete[] emparejado); `malloc/free`
@@ -166,10 +179,11 @@ autorización). La validación real queda explícitamente pendiente hasta que
 exista entorno; sin BD, S5 no es ejecutable más allá de la documentación.
 
 **Fase 2 — auditoría C++20/23: en curso.** `common` cerrado (buffer safety ✅,
-ownership ✅ refutado, macros ✅), `login` cerrado (**bug DNSBL de strtok
-corregido** — solo se consultaba el primer servidor DNSBL tras el primer login)
-y `char` cerrado (**premisa refutada — sin hallazgos**). Sigue: `map` y tools,
-una tarea a la vez; `StringBuf` (refactor transversal — requiere diseño).
+ownership ✅ refutado, macros ✅), `login` cerrado (bug DNSBL de strtok
+corregido), `char` cerrado (premisa refutada) y `map` cerrado (buffer safety:
+11 overflows corregidos; ownership: refutado — placement new con dtors
+explícitos). Sigue: tools, una tarea a la vez; `StringBuf` (refactor
+transversal — requiere diseño).
 
 ## Reglas permanentes
 
