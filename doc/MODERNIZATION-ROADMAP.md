@@ -177,17 +177,22 @@ desconectar). El keepalive que ignora el resultado de `Sql_Ping`: inofensivo
 con el diseño S4 (la siguiente statement reconecta). **Sin fallos de
 persistencia silenciosos.**
 
-**Hallazgo material destapado (preexistente): interacción
-transacción/reconnect.** Hay 5 transacciones multi-statement (account ×2 —
-`account.cpp:350/575`, mail — `int_mail.cpp:89`, char-slot swap —
-`char_clif.cpp:113`, buyingstore — `buyingstore.cpp:319`). El reintento de S4
-— y el reconnect transparente que reemplazó — ejecuta la statement fallida
-FUERA de la transacción que el servidor ya revirtió al morir la conexión: un
-drop a mitad de transacción puede dejarlas semi-aplicadas (ej: el swap de
-slots → posiciones duplicadas). El T2 paso 3 (save de account con fallo
-forzado) es la validación pendiente exacta de esto. El fix candidato (acotar
-el reconnect: no reintentar dentro de transacción, fallo limpio) CAMBIA el
-diseño S4 aprobado — requiere decisión.
+**Fase 3 — interacción transacción/reconnect (cerrado, opción B: fallo limpio).**
+El reintento de S4 — y el reconnect transparente que reemplazó — ejecutaba la
+statement fallida FUERA de la transacción que el servidor ya revirtió al morir
+la conexión: un drop a mitad de transacción podía dejar las 5 transacciones
+multi-statement (account ×2 — `account.cpp:350/575`, mail —
+`int_mail.cpp:89`, char-slot swap — `char_clif.cpp:113`, buyingstore —
+`buyingstore.cpp:319`) semi-aplicadas (ej: el swap de slots → posiciones
+duplicadas). **Fix**: flag `in_transaction` en la struct `Sql` (detectando los
+prefijos START TRANSACTION/COMMIT/ROLLBACK en `Sql_P_ExecuteQuery`, las
+llamadas exactas que usan los callers); en pérdida de conexión dentro de
+transacción NO se reintenta — fallo limpio (el servidor ya revirtió al
+desconectar y el caller maneja el error); el flag se limpia al fallar para que
+las statements siguientes reconecten. Paths verificados: el ROLLBACK del path
+de error se reintenta correctamente (el flag ya está limpio), el swap queda
+consistente, un COMMIT fallido limpia. La validación real (T2 paso 3) sigue
+pendiente de BD.
 
 **S5 — regresión CI + docs (Fase 0, última etapa MariaDB).** Alcance (según
 `doc/MYSQL_MODERNIZATION.md`):

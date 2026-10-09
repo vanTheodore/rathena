@@ -53,6 +53,10 @@ struct Sql
 	char* host;
 	uint16 port;
 	char* db;
+	// True between a successful START TRANSACTION and its COMMIT/ROLLBACK:
+	// retrying a failed statement outside the (server-rolled-back) transaction
+	// would leave it half-applied, so the reconnect path needs to know.
+	bool in_transaction;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -77,6 +81,7 @@ Sql* Sql_Malloc(void)
 	self->host = nullptr;
 	self->port = 0;
 	self->db = nullptr;
+	self->in_transaction = false;
 	// No MYSQL_OPT_RECONNECT: the client's transparent reconnect re-executes the
 	// failed statement and silently discards session state (in-flight
 	// transactions roll back without anyone knowing). Runtime reconnection is
@@ -310,6 +315,16 @@ static int32 Sql_P_ExecuteQuery(Sql* self)
 		ra_mysql_error_handler(mysql_errno(&self->handle));
 		return SQL_ERROR;
 	}
+	// Track the transaction state (the callers use exactly these statements
+	// via Sql_QueryStr): the reconnect path must not retry inside a
+	// transaction whose connection died.
+	{
+		const char* query = StringBuf_Value(&self->buf);
+		if( strncmp(query, "START TRANSACTION", sizeof("START TRANSACTION")-1) == 0 )
+			self->in_transaction = true;
+		else if( strncmp(query, "COMMIT", sizeof("COMMIT")-1) == 0 || strncmp(query, "ROLLBACK", sizeof("ROLLBACK")-1) == 0 )
+			self->in_transaction = false;
+	}
 	return SQL_SUCCESS;
 }
 
@@ -369,9 +384,15 @@ int32 Sql_QueryV(Sql* self, const char* query, va_list args)
 		// after mysql_reconnect_count) — the contract as before.
 		if( mysql_reconnect_type == 1 && Sql_P_IsConnectionLoss(mysql_errno(&self->handle)) )
 		{
-			if( SQL_SUCCESS == Sql_P_Reconnect(self) )
+			if( self->in_transaction ) {
+				// The server rolled the transaction back when the connection
+				// died; retrying outside it would leave it half-applied —
+				// fail clean and let the caller handle the error.
+				self->in_transaction = false;
+			} else if( SQL_SUCCESS == Sql_P_Reconnect(self) )
 				return Sql_P_ExecuteQuery(self);
-			ra_mysql_error_handler(mysql_errno(&self->handle));
+			else
+				ra_mysql_error_handler(mysql_errno(&self->handle));
 		}
 		return SQL_ERROR;
 	}
@@ -397,9 +418,15 @@ int32 Sql_QueryStr(Sql* self, const char* query)
 		// after mysql_reconnect_count) — the contract as before.
 		if( mysql_reconnect_type == 1 && Sql_P_IsConnectionLoss(mysql_errno(&self->handle)) )
 		{
-			if( SQL_SUCCESS == Sql_P_Reconnect(self) )
+			if( self->in_transaction ) {
+				// The server rolled the transaction back when the connection
+				// died; retrying outside it would leave it half-applied —
+				// fail clean and let the caller handle the error.
+				self->in_transaction = false;
+			} else if( SQL_SUCCESS == Sql_P_Reconnect(self) )
 				return Sql_P_ExecuteQuery(self);
-			ra_mysql_error_handler(mysql_errno(&self->handle));
+			else
+				ra_mysql_error_handler(mysql_errno(&self->handle));
 		}
 		return SQL_ERROR;
 	}
