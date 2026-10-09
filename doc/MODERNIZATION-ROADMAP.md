@@ -123,10 +123,16 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   free reales; el pairing de `aMalloc` correcto (`gat` liberado en la ruta
   temprana y la normal, `m->cells`/`write_buf` al final); csv2yaml/yaml2sql/
   yamlupgrade sin hallazgos
-- ⏳ Wrapper redundante `StringBuf` (vs `std::string`): refactor transversal
-  grande — requiere diseño y evaluación previa (regla permanente)
-- ⏳ Auditoría de `char`/`map`/tools hecha; `StringBuf` y PCH/unity/Modules
-  restan en la fase
+- ✅ `StringBuf` (diseño evaluado, **se mantiene**): ~494 usos
+  (common/char/map). Ya es RAII (ctor/dtor) y su valor frente a `std::string`
+  es la integración con el memory manager (aMalloc2/aRealloc2 con ALC_MARK →
+  contabilidad y detección de leaks por sitio); migrar perdería eso por cero
+  ganancia funcional. Solo 51 sitios con ownership manual
+  (Malloc/Init/Free); el resto son miembros por valor. Alternativas
+  descartadas: reemplazo total por `std::string` (transversal, ~500 sitios,
+  pierde tracking), abstracción nueva (innecesaria). Sin cambios
+- ⏳ Auditoría de `char`/`map`/tools hecha; `StringBuf` cerrado (se mantiene);
+  resta PCH/unity/Modules en la fase
 - ⏳ Evaluación PCH/unity builds/Modules: pendiente (no adoptar automáticamente;
   CMake ya escanea módulos por defecto en C++23+Ninja)
 
@@ -254,7 +260,7 @@ exista entorno; sin BD, S5 no es ejecutable más allá de la documentación.
 (buffer safety ✅, ownership ✅ refutado, macros ✅), `login` cerrado (bug DNSBL
 de strtok corregido), `char` cerrado (premisa refutada), `map` cerrado (buffer
 safety: 11 overflows corregidos; ownership: refutado) y `tools` cerrado
-(premisa refutada). Restante en la fase: el diseño de `StringBuf` y la
+(premisa refutada). Restante en la fase: la
 evaluación PCH/unity/Modules. Siguiente fase del roadmap: **3 (arquitectura)**.
 
 ## Reglas permanentes
