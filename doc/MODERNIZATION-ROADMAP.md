@@ -29,10 +29,20 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 - ✅ S4 (reconnect/keepalive): `MYSQL_OPT_RECONNECT` fuera; reconexión explícita
   en las query paths con el contrato `mysql_reconnect_type`/`count` preservado —
   verificado en local (build 275/275 + boot smoke); validación real pendiente (T2 paso 7)
+- ✅ S4 validado con BD real (2026-10-09, MariaDB 11.4.13 portable): recovery,
+  KILL/timeout-drop, type 2 fail-closed, agotamiento fatal, keepalive adaptado;
+  3 fixes (`a7fd5a0`, `11466f1c`, `5298b5a`). Riesgos heredados aceptados
+  (detallados en `doc/INTEGRATION-PR.md`): (1) el reintento tras error 2013
+  puede reaplicar una escritura no-idempotente ya ejecutada — idéntico al
+  reconnect transparente anterior, mitigado en transacciones (fallo limpio);
+  (2) el contador `static retry` del handler nunca se resetea ante éxitos —
+  preexistente, sin cambios
 - ⏳ S5 — regresión CI + docs: pendiente
-- ⏳ Validación con BD real (auth, SQL, transacciones, codificación, persistencia):
-  **pendiente — no hay BD local**; requiere entorno con MariaDB (docker-compose
-  excluido por reglas)
+- ✅ Validación con BD real (parcial, 2026-10-09): MariaDB 11.4.13 portable en
+  127.0.0.1:3307, BD `ragnarok_test` (66 tablas), boot login+char+map con links,
+  auth/creación por protocolo, recovery/reconnect/agotamiento/keepalive,
+  non-ASCII byte-exacto. Pendiente de cliente de juego: mail, rollback,
+  NULL/blob/emblema. Pendiente de entorno: compat MySQL-servidor, T4/CI
 - ✅ PCRE2: paridad 48 casos byte-for-byte + `--diag` + CI (`linux-pcre-regress`)
 - ✅ Autotools: `configure` regenerado con Autoconf 2.69, sin ediciones manuales
 - ❌ MSVC C++23: **pendiente — sin host**; vcxproj actualizados, CI listo
