@@ -405,7 +405,12 @@ int32 Sql_QueryV(Sql* self, const char* query, va_list args)
 			} else if( SQL_SUCCESS == Sql_P_Reconnect(self) )
 				return Sql_P_ExecuteQuery(self);
 			else
-				ra_mysql_error_handler(mysql_errno(&self->handle));
+				// A failed explicit reconnect surfaces the raw connect errno
+				// (e.g. 2002 refused), but the historical contract counts a
+				// failed reconnect as 2003 — the transparent client reconnect
+				// it replaces always surfaced 2003 here. Keep counting it so
+				// mysql_reconnect_type/count still ends in shutdown after N.
+				ra_mysql_error_handler(2003);
 		}
 		return SQL_ERROR;
 	}
@@ -439,7 +444,12 @@ int32 Sql_QueryStr(Sql* self, const char* query)
 			} else if( SQL_SUCCESS == Sql_P_Reconnect(self) )
 				return Sql_P_ExecuteQuery(self);
 			else
-				ra_mysql_error_handler(mysql_errno(&self->handle));
+				// A failed explicit reconnect surfaces the raw connect errno
+				// (e.g. 2002 refused), but the historical contract counts a
+				// failed reconnect as 2003 — the transparent client reconnect
+				// it replaces always surfaced 2003 here. Keep counting it so
+				// mysql_reconnect_type/count still ends in shutdown after N.
+				ra_mysql_error_handler(2003);
 		}
 		return SQL_ERROR;
 	}
