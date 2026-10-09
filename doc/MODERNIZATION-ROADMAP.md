@@ -166,6 +166,29 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 
 ## Tarea actual
 
+**Fase 3 — arquitectura: errores ignorados (cerrado, refute-first).** El sweep
+de llamadas SQL sin comprobar resultado: 9 sitios en todo el codebase, todos
+intencionales — 5 en realidad comprobados (la primera línea de `if` de dos
+líneas: buyingstore/vending close+final con `Sql_ShowDebug`), 1 stat no
+crítica (char moves) y 3 `ROLLBACK` fire-and-forget en paths de error (el
+error original ya se loguea; un ROLLBACK fallido sobre conexión muerta es
+inofensivo — el servidor revierte las transacciones no comprometidas al
+desconectar). El keepalive que ignora el resultado de `Sql_Ping`: inofensivo
+con el diseño S4 (la siguiente statement reconecta). **Sin fallos de
+persistencia silenciosos.**
+
+**Hallazgo material destapado (preexistente): interacción
+transacción/reconnect.** Hay 5 transacciones multi-statement (account ×2 —
+`account.cpp:350/575`, mail — `int_mail.cpp:89`, char-slot swap —
+`char_clif.cpp:113`, buyingstore — `buyingstore.cpp:319`). El reintento de S4
+— y el reconnect transparente que reemplazó — ejecuta la statement fallida
+FUERA de la transacción que el servidor ya revirtió al morir la conexión: un
+drop a mitad de transacción puede dejarlas semi-aplicadas (ej: el swap de
+slots → posiciones duplicadas). El T2 paso 3 (save de account con fallo
+forzado) es la validación pendiente exacta de esto. El fix candidato (acotar
+el reconnect: no reintentar dentro de transacción, fallo limpio) CAMBIA el
+diseño S4 aprobado — requiere decisión.
+
 **S5 — regresión CI + docs (Fase 0, última etapa MariaDB).** Alcance (según
 `doc/MYSQL_MODERNIZATION.md`):
 
