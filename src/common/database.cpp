@@ -109,7 +109,12 @@ bool YamlDatabase::load(const std::string& path) {
 
 	try{
 		event_handler = ryml::EventHandlerTree{};
-		parser = ryml::Parser{&event_handler};
+		// ryml 0.16 tracks source locations only on opt-in (0.4 did it by
+		// default); invalidWarning() reports file/line/col via
+		// node.location(), so locations must be enabled or the first
+		// database warning terminates the process.
+		ryml::ParserOptions options;
+		parser = ryml::Parser{&event_handler, options.locations(true)};
 		tree = ryml::parse_in_arena(&parser, c4::to_csubstr(path), c4::to_csubstr(buf));
 	}catch( const std::runtime_error& e ){
 		ShowError( "Failed to load %s database file from '" CL_WHITE "%s" CL_RESET "'.\n", this->type.c_str(), path.c_str() );
