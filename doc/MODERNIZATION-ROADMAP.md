@@ -133,8 +133,16 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   pierde tracking), abstracción nueva (innecesaria). Sin cambios
 - ⏳ Auditoría de `char`/`map`/tools hecha; `StringBuf` cerrado (se mantiene);
   resta PCH/unity/Modules en la fase
-- ⏳ Evaluación PCH/unity builds/Modules: pendiente (no adoptar automáticamente;
-  CMake ya escanea módulos por defecto en C++23+Ninja)
+- ✅ **Unity builds evaluados (2026-10-09): rechazado global, sin adopción**.
+  `-DCMAKE_UNITY_BUILD=ON` global rompe en 52 s en el primer batch:
+  `3rdparty/zlib/.../Unity/unity_1_c.c.obj` — los headers internos de zlib
+  (`inftrees.h`, `inflate.h`: structs/enums anónimos, enumeradores
+  CODES/LENS/DISTS/HEAD) no están hechos para amalgamación y colisionan al
+  fusionar TUs. Es el 3rdparty, no el código propio. Variante acotada
+  (unity solo en targets propios, OFF en 3rdparty) anotada como follow-up —
+  requiere tocar el glue de build de 3rdparty y otro build completo; no
+  quemado aquí. Configure del experimento: 573 s (anómalo frente a ~99 s;
+  causa no investigada)
 
 ### 3. Arquitectura — pendiente
 
