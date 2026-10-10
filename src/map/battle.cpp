@@ -7388,10 +7388,14 @@ enum damage_lv battle_weapon_attack(block_list* src, block_list* target, t_tick 
 		if (sc && sc->getSCE(SC_DUPLELIGHT) && (wd.flag & BF_SHORT)) { // Activates only from regular melee damage. Success chance is separate for both duple light attacks.
 			uint16 duple_rate = 10 + 2 * sc->getSCE(SC_DUPLELIGHT)->val1;
 
-			if (rand() % 100 < duple_rate)
+			// rnd_chance shares the single mt19937 generator: these draws shift
+			// later sequences, but each probability is preserved exactly.
+			// int32 matches the signed comparison the old code performed
+			// after promoting duple_rate (no narrowing, no new warnings).
+			if (rnd_chance<int32_t>(duple_rate, 100))
 				skill_castend_damage_id(src, target, AB_DUPLELIGHT_MELEE, sc->getSCE(SC_DUPLELIGHT)->val1, tick, flag | SD_LEVEL);
 
-			if (rand() % 100 < duple_rate)
+			if (rnd_chance<int32_t>(duple_rate, 100))
 				skill_castend_damage_id(src, target, AB_DUPLELIGHT_MAGIC, sc->getSCE(SC_DUPLELIGHT)->val1, tick, flag | SD_LEVEL);
 		}
 	}
@@ -7580,7 +7584,7 @@ enum damage_lv battle_weapon_attack(block_list* src, block_list* target, t_tick 
 				clif_status_change(src, EFST_POSTDELAY, 1, skill_delayfix(src, r_skill, r_lv), 0, 0, 1);
 			}
 		}
-		if (wd.flag&BF_WEAPON && sc && sc->getSCE(SC_FALLINGSTAR) && rand()%100 < sc->getSCE(SC_FALLINGSTAR)->val2) {
+		if (wd.flag&BF_WEAPON && sc && sc->getSCE(SC_FALLINGSTAR) && rnd_chance(sc->getSCE(SC_FALLINGSTAR)->val2, 100)) {
 			if (sd)
 				sd->state.autocast = 1;
 			if (status_charge(src, 0, skill_get_sp(SJ_FALLINGSTAR_ATK, sc->getSCE(SC_FALLINGSTAR)->val1)))
@@ -7762,7 +7766,7 @@ enum damage_lv battle_weapon_attack(block_list* src, block_list* target, t_tick 
 		}
 	}
 
-	if (sd && tsc && wd.flag&BF_LONG && tsc->getSCE(SC_WINDSIGN) && rand()%100 < tsc->getSCE(SC_WINDSIGN)->val2)
+	if (sd && tsc && wd.flag&BF_LONG && tsc->getSCE(SC_WINDSIGN) && rnd_chance(tsc->getSCE(SC_WINDSIGN)->val2, 100))
 		status_heal(src, 0, 0, 1, 0);
 
 	return wd.dmg_lv;
