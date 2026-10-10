@@ -9,6 +9,7 @@
 
 #include "script.hpp"
 
+#include <algorithm> // std::sort
 #include <cerrno>
 #include <cmath>
 #include <csetjmp>
@@ -6506,10 +6507,6 @@ BUILDIN_FUNC(getarraysize)
 	return SCRIPT_CMD_SUCCESS;
 }
 
-int32 script_array_index_cmp(const void *a, const void *b) {
-	return ( *(uint32*)a - *(uint32*)b );
-}
-
 /// Deletes count or all the elements in an array, from the starting index.
 /// ex: deletearray arr[4],2;
 ///
@@ -6592,7 +6589,14 @@ BUILDIN_FUNC(deletearray)
 			uint32 *list = nullptr, size = 0;
 			list = script_array_cpy_list(sa);
 			size = sa->size;
-			qsort(list, size, sizeof(uint32), script_array_index_cmp);
+			// Strict ascending order (default operator< on uint32). The old
+			// qsort comparator subtracted unsigned values into int32,
+			// inverting the order of values 2^31 apart; std::sort has the
+			// same non-stability guarantee as qsort, which is all the range
+			// scan below needs. Empty ranges are skipped so no pointer
+			// arithmetic runs on a possibly null list.
+			if (size > 0)
+				std::sort(list, list + size);
 			
 			ARR_FIND(0, size, i, list[i] >= start);
 			
