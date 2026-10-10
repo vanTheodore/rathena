@@ -136,9 +136,13 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 - ✅ `apply_rate`/`apply_rate2` (1.ª modernización justificada,
   `modernize/apply-rate-template`): macros de triple evaluación → function
   templates `constexpr` con `std::common_type` explícito (evalúan 1 vez,
-  cero warnings nuevos). Equivalencia probada en rejilla (bordes 99999/
-  100000/100001, negativos, uint64/short/unsigned, double) + build verde +
-  smoke. 24 call sites intactos
+  cero warnings nuevos). Test permanente `tools/apply-rate-check.cpp`
+  (convención pcre-regress: standalone, sin cablear al build): rejilla de
+  equivalencia macro-vs-template (bordes, negativos, mixtos exactos de los
+  24 sitios, double) + control negativo (la macro legacy evalúa 2×, el
+  template 1×) + `static_assert`s; verde en GCC 16.2 y Clang 22.1.8.
+  Revisión semántica por sitio (tipos de retorno, promociones, negativos,
+  overflow): sin diferencias reales — veredicto GO. 24 call sites intactos
 - ⏳ Backlog priorizado (una por iteración, con test de equivalencia): `rand
   %100` ×4 en battle → `rnd()`; `qsort` ×2 → `std::sort`; `cap_value`
   (499 sitios, transversal — requiere plan); `ARR_FIND`, `atoi`, `expected`,
