@@ -143,11 +143,16 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   template 1×) + `static_assert`s; verde en GCC 16.2 y Clang 22.1.8.
   Revisión semántica por sitio (tipos de retorno, promociones, negativos,
   overflow): sin diferencias reales — veredicto GO. 24 call sites intactos
-- ⏳ Backlog priorizado (una por iteración, con test de equivalencia): `rand
-  %100` ×4 en battle → `rnd()`; `qsort` ×2 → `std::sort`; `cap_value`
-  (499 sitios, transversal — requiere plan); `ARR_FIND`, `atoi`, `expected`,
-  `string_view`/`span` aparcados por alcance; `NULL→nullptr` y
-  `to_underlying` rechazados (estética)
+- ✅ `rand %100` ×4 en battle → `rnd_chance()` (`modernize/rnd-chance-battle`):
+  elimina RNG libc sin seed (secuencia idéntica por boot), salida débil y
+  sesgo de módulo; probabilidades preservadas (bordes 0/≥100 exactos,
+  int32 firmado como la comparación original); test permanente
+  `tools/rnd-chance-check.cpp` verde en GCC/Clang; build sin warnings nuevos
+- ⏳ Backlog priorizado (una por iteración, con test de equivalencia):
+  `qsort` ×2 → `std::sort`; `cap_value` (499 sitios, transversal —
+  requiere plan); `ARR_FIND`, `atoi`, `expected`, `string_view`/`span`
+  aparcados por alcance; `NULL→nullptr` y `to_underlying` rechazados
+  (estética)
 - ✅ `StringBuf` (diseño evaluado, **se mantiene**): ~494 usos
   (common/char/map). Ya es RAII (ctor/dtor) y su valor frente a `std::string`
   es la integración con el memory manager (aMalloc2/aRealloc2 con ALC_MARK →
