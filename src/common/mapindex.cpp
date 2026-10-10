@@ -42,10 +42,18 @@ const char* mapindex_getmapname(const char* string, char* output) {
 }
 
 /// Retrieves the map name from 'string' (adding .gat extension if not already present).
-/// Result gets placed either into 'buf' or in a static local buffer.
+/// The result is placed into 'output', which must hold at least
+/// MAP_NAME_LENGTH_EXT bytes. Returns 'output' for convenience, or nullptr
+/// when 'output' (or 'string') is null. There is no shared static buffer.
+/// (Note: nullpo_* helpers are debug-only no-ops in release builds, so this
+/// contract is enforced with plain checks like the rest of the codebase.)
 const char* mapindex_getmapname_ext(const char* string, char* output) {
-	static char buf[MAP_NAME_LENGTH_EXT];
-	char* dest = (output != nullptr) ? output : buf;
+	if (output == nullptr || string == nullptr)
+		return nullptr;
+	// Automatic storage: each call gets its own scratch space, so nested or
+	// concurrent uses can never alias each other through a shared static.
+	char buf[MAP_NAME_LENGTH_EXT];
+	char* dest = output;
 
 	size_t len;
 
