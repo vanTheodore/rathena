@@ -110,9 +110,15 @@ bool chclif_parse_moveCharSlot( int32 fd, char_session_data& sd ){
 		// We want to move to a used position
 		if( charserv_config.charmove_config.char_movetoused ){ // TODO: check if the target is in deletion process
 			// Admin is friendly and uses triangle exchange
+			// Single statement (not two UPDATEs): there is no window between writes
+			// in which a dropped connection can leave the two slots half-swapped.
+			// On InnoDB installs the surrounding transaction still gives full
+			// atomicity; on MyISAM the statement holds the table write lock for
+			// its whole duration. Re-applying the same mapping is idempotent
+			// (same char_id keys map to the same numbers), so a transport-level
+			// retry cannot duplicate.
 			if( SQL_ERROR == Sql_QueryStr(sql_handle, "START TRANSACTION")
-				|| SQL_ERROR == Sql_Query(sql_handle, "UPDATE `%s` SET `char_num`='%d' WHERE `char_id` = '%d'",schema_config.char_db, to, sd.found_char[from] )
-				|| SQL_ERROR == Sql_Query(sql_handle, "UPDATE `%s` SET `char_num`='%d' WHERE `char_id` = '%d'", schema_config.char_db, from, sd.found_char[to] )
+				|| SQL_ERROR == Sql_Query(sql_handle, "UPDATE `%s` SET `char_num`=CASE `char_id` WHEN '%d' THEN '%d' WHEN '%d' THEN '%d' END WHERE `char_id` IN ('%d','%d')",schema_config.char_db, sd.found_char[from], to, sd.found_char[to], from, sd.found_char[from], sd.found_char[to] )
 				|| SQL_ERROR == Sql_QueryStr(sql_handle, "COMMIT")
 				){
 				chclif_moveCharSlotReply( fd, sd, from, 1 );
