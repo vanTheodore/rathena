@@ -5,6 +5,7 @@
 #define UTILS_HPP
 
 #include <cstdio> // FILE*
+#include <type_traits> // common_type_t
 
 #include "cbasetypes.hpp"
 
@@ -20,10 +21,30 @@ bool exists(const char* filename);
 #define cap_value(a, min, max) (((a) >= (max)) ? (max) : ((a) <= (min)) ? (min) : (a))
 
 /// Apply rate for val, divided by 100)
-#define apply_rate(val, rate) (((rate) == 100) ? (val) : ((val) > 100000) ? ((val) / 100 * (rate)) : ((val) * (rate) / 100))
+/// Function template (not a macro): each argument is evaluated exactly once,
+/// and mismatched argument types resolve through std::common_type exactly as
+/// the macro's usual arithmetic conversions did — with the conversions made
+/// explicit so no new -Wconversion/-Wsign-conversion diagnostics appear.
+template <typename T, typename R>
+constexpr auto apply_rate(T val, R rate)
+{
+	using C = std::common_type_t<T, R>;
+	const auto v = static_cast<C>(val);
+	const auto r = static_cast<C>(rate);
+	return (r == 100) ? v : (v > 100000) ? (v / 100 * r) : (v * r / 100);
+}
 
 /// Apply rate for val, divided by per
-#define apply_rate2(val, rate, per) (((rate) == (per)) ? (val) : ((val) > 100000) ? ((val) / (per) * (rate)) : ((val) * (rate) / (per)))
+/// Same single-evaluation and conversion guarantees as apply_rate.
+template <typename T, typename R, typename P>
+constexpr auto apply_rate2(T val, R rate, P per)
+{
+	using C = std::common_type_t<T, R, P>;
+	const auto v = static_cast<C>(val);
+	const auto r = static_cast<C>(rate);
+	const auto p = static_cast<C>(per);
+	return (r == p) ? v : (v > 100000) ? (v / p * r) : (v * r / p);
+}
 
 /// calculates the value of A / B, in percent (rounded down)
 uint32 get_percentage(const uint32 A, const uint32 B);

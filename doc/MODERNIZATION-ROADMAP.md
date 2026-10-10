@@ -133,6 +133,17 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   free reales; el pairing de `aMalloc` correcto (`gat` liberado en la ruta
   temprana y la normal, `m->cells`/`write_buf` al final); csv2yaml/yaml2sql/
   yamlupgrade sin hallazgos
+- ✅ `apply_rate`/`apply_rate2` (1.ª modernización justificada,
+  `modernize/apply-rate-template`): macros de triple evaluación → function
+  templates `constexpr` con `std::common_type` explícito (evalúan 1 vez,
+  cero warnings nuevos). Equivalencia probada en rejilla (bordes 99999/
+  100000/100001, negativos, uint64/short/unsigned, double) + build verde +
+  smoke. 24 call sites intactos
+- ⏳ Backlog priorizado (una por iteración, con test de equivalencia): `rand
+  %100` ×4 en battle → `rnd()`; `qsort` ×2 → `std::sort`; `cap_value`
+  (499 sitios, transversal — requiere plan); `ARR_FIND`, `atoi`, `expected`,
+  `string_view`/`span` aparcados por alcance; `NULL→nullptr` y
+  `to_underlying` rechazados (estética)
 - ✅ `StringBuf` (diseño evaluado, **se mantiene**): ~494 usos
   (common/char/map). Ya es RAII (ctor/dtor) y su valor frente a `std::string`
   es la integración con el memory manager (aMalloc2/aRealloc2 con ALC_MARK →
