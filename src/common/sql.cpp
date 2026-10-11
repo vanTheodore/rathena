@@ -326,6 +326,10 @@ static int32 Sql_P_Reconnect(Sql* self)
 				self->keepalive = INVALID_TIMER;
 			}
 			Sql_Close(self);
+			// Re-initialise so later reconnects can heal this handle instead
+			// of failing forever on the closed one (verified on Connector/C:
+			// close alone wedges reconnects with 2013, re-init recovers).
+			mysql_init(&self->handle);
 			res = SQL_ERROR;
 		}
 	}
