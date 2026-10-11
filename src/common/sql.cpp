@@ -120,15 +120,22 @@ int32 Sql_Connect(Sql* self, const char* user, const char* passwd, const char* h
 
 	// Remember the parameters for the explicit runtime reconnect
 	// (MYSQL_OPT_RECONNECT is gone; see Sql_P_Reconnect).
+	// Duplicate first: the arguments may alias the stored parameters
+	// (Sql_P_Reconnect passes self->user and friends), so freeing before
+	// copying would read freed memory.
+	char* user_dup = user ? aStrdup(user) : nullptr;
+	char* passwd_dup = passwd ? aStrdup(passwd) : nullptr;
+	char* host_dup = host ? aStrdup(host) : nullptr;
+	char* db_dup = db ? aStrdup(db) : nullptr;
 	if( self->user != nullptr ) aFree(self->user);
 	if( self->passwd != nullptr ) aFree(self->passwd);
 	if( self->host != nullptr ) aFree(self->host);
 	if( self->db != nullptr ) aFree(self->db);
-	self->user = user ? aStrdup(user) : nullptr;
-	self->passwd = passwd ? aStrdup(passwd) : nullptr;
-	self->host = host ? aStrdup(host) : nullptr;
+	self->user = user_dup;
+	self->passwd = passwd_dup;
+	self->host = host_dup;
 	self->port = port;
-	self->db = db ? aStrdup(db) : nullptr;
+	self->db = db_dup;
 
 // MYSQL_OPT_SSL_MODE exists since the MySQL 5.7.11 client libraries; MariaDB
 // Connector/C has its own TLS options and is excluded above.
@@ -140,7 +147,7 @@ int32 Sql_Connect(Sql* self, const char* user, const char* passwd, const char* h
 	}
 #endif
 
-	if( !mysql_real_connect(&self->handle, host, user, passwd, db, (uint32)port, nullptr/*unix_socket*/, 0/*clientflag*/) )
+	if( !mysql_real_connect(&self->handle, self->host, self->user, self->passwd, self->db, (uint32)port, nullptr/*unix_socket*/, 0/*clientflag*/) )
 	{
 		ShowSQL("%s\n", mysql_error(&self->handle));
 		return SQL_ERROR;
