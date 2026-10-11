@@ -11,6 +11,10 @@
 # so nothing credential-like is embedded. Point the servers at a disposable
 # database; never at production data.
 #
+# Prerequisite: the servers must run with mysql_reconnect_type: 1 in their
+# SQL config, otherwise there is no statement-level reconnect to exercise
+# (type 2 fails closed: the post-bounce run fails with or without any fix).
+#
 # Usage (PowerShell):
 #   powershell -ExecutionPolicy Bypass -File tools/sql-bounce-check.ps1 `
 #     -MariadbBin C:\path\to\mariadb\bin -DataDir C:\path\to\data `
