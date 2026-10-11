@@ -183,11 +183,8 @@ async function createChar(chport: number, aid: number, l1: number, l2: number,
 	return { verdict: id, errcode: -1 };
 }
 async function main() {
-	// Boot DB.
-	try { execFileSync("taskkill", ["/F", "/IM", "mariadbd.exe"]); } catch {}
-	await sleep(4000);
-	spawn(MARIADBD, [`--datadir=${argv["data-dir"]}`, "--bind-address=127.0.0.1",
-		`--port=${DB_PORT}`], { cwd: argv["mariadb-bin"], stdio: "ignore", detached: true }).unref();
+	// The DB must already run (game servers are booted externally and stay
+	// up across the bounce below); only the bounce itself restarts it.
 	if (!waitDb("up")) { stopAll(); console.log(`FAILURES=${fails}`); process.exit(fails); }
 	// Boot servers.
 	startExe("login-server.exe", "t-login");
