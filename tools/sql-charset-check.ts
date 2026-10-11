@@ -1,7 +1,19 @@
 #!/usr/bin/env bun
 // sql-charset-check: E2E regression for session-charset restore on reconnect.
-// The DB must already run and the game servers must already be booted
-// externally (this tool never starts services). Flow: control creation with
+// The DB and game servers must already be booted externally by the operator.
+// Ownership model: this tool NEVER kills by image name (no taskkill /IM).
+// The pre-bounce instances are external and are never terminated by name;
+// the bounce uses a port-scoped SHUTDOWN (127.0.0.1:3307, exactly the test
+// endpoint) and the replacement instance is tracked by PID and killed only
+// via PID-verified taskkill /PID. Game servers are never stopped here: on
+// any abort the tool exits and the operator restarts them manually.
+// Destructive SQL (bounce + fixture DELETE) runs only against disposable
+// test schemas: --char-db/--login-db must match /^[A-Za-z0-9_]+_test$/ AND
+// the operator must pass --confirm-disposable YES (suffix alone proves
+// nothing about the data inside). Fixture cleanup is additionally scoped to
+// the login account used by the run, so colliding names on other accounts
+// are never touched.
+// Flow: control creation with
 // non-ASCII bytes on pristine handles (must succeed), bounce (DB restart,
 // verified fresh), converge loop (bounded full runs with fresh names;
 // handles heal lazily and monotonically, dead->healthy only, so round 1 is
@@ -21,16 +33,17 @@
 //   bun tools/sql-charset-check.ts --mariadb-bin C:/path/bin \
 //     --data-dir C:/path/data --server-dir C:/path/rathena \
 //     --db-user root --db-pass <db-pass> --char-db <test-db> \
-//     --login-db <login-db> --user <test-user> --pass <test-pass>
+//     --login-db <login-db> --user <test-user> --pass <test-pass> \
+//     --confirm-disposable YES
 import net from "node:net";
-import { spawn, execFileSync } from "node:child_process";
+import { spawn, execFileSync, type ChildProcess } from "node:child_process";
 
 type Args = Record<string, string>;
 const argv: Args = {};
 for (let i = 2; i < process.argv.length; i += 2)
 	argv[process.argv[i].replace(/^--/, "")] = process.argv[i + 1] ?? "";
 const req = ["mariadb-bin", "data-dir", "server-dir", "db-user", "db-pass",
-	"char-db", "login-db", "user", "pass"];
+	"char-db", "login-db", "user", "pass", "confirm-disposable"];
 for (const k of req) {
 	if (!argv[k]) {
 		console.log(`ABORT-MISSING-ARG ${k}`);
@@ -146,11 +159,24 @@ function nameField(hex: string): Buffer {
 	raw.copy(f, 0, 0, Math.min(raw.length, 24));
 	return f;
 }
-function stopAll() {
-	try { execFileSync("taskkill", ["/F", "/IM", "login-server.exe"]); } catch {}
-	try { execFileSync("taskkill", ["/F", "/IM", "char-server.exe"]); } catch {}
-	try { execFileSync("taskkill", ["/F", "/IM", "map-server.exe"]); } catch {}
-	try { execFileSync("taskkill", ["/F", "/IM", "mariadbd.exe"]); } catch {}
+// Only the mariadbd instance spawned by this tool's bounce is ever stopped,
+// by PID after verifying the PID still belongs to mariadbd.exe. External
+// processes (pre-bounce DB, game servers, anything else on this host) are
+// never terminated here.
+let ownedDb: ChildProcess | null = null;
+function killOwnedDb() {
+	if (!ownedDb || ownedDb.pid === undefined) { ownedDb = null; return; }
+	try {
+		const out = execFileSync("tasklist", ["/FI", `PID eq ${ownedDb.pid}`,
+			"/FO", "CSV", "/NH"], { encoding: "utf8" }) as string;
+		if (!out.toLowerCase().includes("mariadbd.exe")) {
+			console.log(`ABORT-OWNERSHIP-LOST pid=${ownedDb.pid}`);
+			ownedDb = null;
+			return;
+		}
+		execFileSync("taskkill", ["/F", "/PID", String(ownedDb.pid)]);
+	} catch {}
+	ownedDb = null;
 }
 async function login(): Promise<{ c: Conn, aid: number, l1: number, l2: number, chport: number } | null> {
 	const c = new Conn(LOGIN_PORT);
@@ -221,39 +247,56 @@ async function selectMap(chport: number, aid: number, l1: number, l2: number,
 	return data.length;
 }
 async function main() {
-	// Destructive ops (bounce + DELETE) are test-only: refuse any database
-	// that does not look like a disposable test schema, before touching
-	// anything. No stopAll here: nothing was started yet.
+	// Destructive ops (bounce + fixture DELETE) need two independent proofs:
+	// a fully-allowlisted identifier AND an explicit operator assertion that
+	// the target is disposable. Either check runs before anything is touched
+	// and never stops external processes.
 	for (const k of ["char-db", "login-db"]) {
-		if (!/_test$/.test(argv[k] ?? "")) {
+		if (!/^[A-Za-z0-9_]+_test$/.test(argv[k] ?? "")) {
 			console.log(`ABORT-UNSAFE-TARGET ${k}=${argv[k] ?? ""}`);
 			process.exit(2);
 		}
 	}
-	if (!waitDb("up")) { stopAll(); console.log(`FAILURES=${fails}`); process.exit(fails); }
+	if (!/^[A-Za-z0-9_]+$/.test(argv["user"] ?? "")) {
+		console.log(`ABORT-UNSAFE-USER user=${argv["user"] ?? ""}`);
+		process.exit(2);
+	}
+	if (argv["confirm-disposable"] !== "YES") {
+		console.log("ABORT-NOT-CONFIRMED-DISPOSABLE");
+		process.exit(2);
+	}
+	// --db-pass/--pass are never interpolated into SQL (protocol only).
+	if (!waitDb("up")) { console.log("OPERATOR-ACTION restart test DB + servers manually"); console.log(`FAILURES=${fails}`); process.exit(fails); }
 	// Fixture account must exist (created once by the operator procedure);
 	// a missing fixture is a harness failure, not a server verdict.
-	const fxid = cli(`SELECT account_id FROM ${argv["login-db"]}.\`login\` WHERE userid='${argv["user"]}';`);
+	const fxid = cli(`SELECT account_id FROM \`${argv["login-db"]}\`.\`login\` WHERE userid='${argv["user"]}';`);
 	if (!/^\d+$/.test(fxid.trim())) {
 		console.log(`ABORT-NO-FIXTURE-ACCOUNT ${argv["user"]}`);
-		stopAll();
+		console.log("OPERATOR-ACTION restart test servers manually if needed");
 		process.exit(2);
 	}
 	console.log(`FIXTURE-OK ${argv["user"]} aid=${fxid.trim()}`);
 	// Control on pristine handles: non-ASCII creation must succeed.
 	const L = await login();
 	step("1-login-accept", L !== null);
-	if (!L) { stopAll(); console.log(`FAILURES=${fails}`); process.exit(fails); }
+	if (!L) { console.log("OPERATOR-ACTION restart test servers manually if needed"); console.log(`FAILURES=${fails}`); process.exit(fails); }
 	console.log(`login: AID=${L.aid} char=127.0.0.1:${L.chport}`);
+	// Owner scope for every later fixture query: creation and cleanup touch
+	// only this account, so identical names on other accounts are never
+	// counted or deleted. AID comes from the server packet (uint32).
+	const ownerAid = L.aid >>> 0;
 	const ctl = await createChar(L.chport, L.aid, L.l1, L.l2, nameHex("LatA"), 0);
 	step("2-control-create", ctl.verdict === 0xb6f);
 	L.c.close();
-	// Bounce: restart the DB (kills every handle, deterministic).
-	try { execFileSync("taskkill", ["/F", "/IM", "mariadbd.exe"]); } catch {}
+	// Bounce: port-scoped SHUTDOWN reaches exactly the server on
+	// 127.0.0.1:3307 (never by image name), then boot our own instance and
+	// track it. External game servers are left alone throughout.
+	cli("SHUTDOWN;");
 	await sleep(8000);
-	spawn(MARIADBD, [`--datadir=${argv["data-dir"]}`, "--bind-address=127.0.0.1",
-		`--port=${DB_PORT}`], { cwd: argv["mariadb-bin"], stdio: "ignore", detached: true }).unref();
-	if (!waitDb("post")) { stopAll(); console.log(`FAILURES=${fails}`); process.exit(fails); }
+	ownedDb = spawn(MARIADBD, [`--datadir=${argv["data-dir"]}`, "--bind-address=127.0.0.1",
+		`--port=${DB_PORT}`], { cwd: argv["mariadb-bin"], stdio: "ignore", detached: true });
+	try { ownedDb.unref(); } catch {}
+	if (!waitDb("post")) { killOwnedDb(); console.log(`FAILURES=${fails}`); process.exit(fails); }
 	const up = cli("SHOW GLOBAL STATUS LIKE 'Uptime';").trim().split(/[\t ]+/).pop() ?? "?";
 	if (/^\d+$/.test(up) && parseInt(up) < 180) console.log(`BOUNCE-OK uptime=${up}`);
 	else { console.log(`ABORT-BOUNCE-FAILED uptime=${up}`); fails++; }
@@ -290,19 +333,21 @@ async function main() {
 	}
 	step("3-round1-red", round1red);
 	step("4-green-reached", greenRound > 0);
-	// Byte-exact + no-duplicate oracle on the green round (if any).
+	// Byte-exact + no-duplicate oracle on the green round (if any),
+	// both scoped to the run's owner account.
 	if (greenRound > 0) {
 		const want = storedHex(`LatR${greenRound}`);
-		const got = cli(`SELECT HEX(name) FROM ${argv["char-db"]}.\`char\` WHERE HEX(name)='${want}';`);
+		const got = cli(`SELECT HEX(name) FROM \`${argv["char-db"]}\`.\`char\` WHERE account_id=${ownerAid} AND HEX(name)='${want}';`);
 		step("5-bytes-exact", got.includes(want));
 	}
 	const hexes = ["4C617441C3A9", "4C61745231C3A9", "4C61745232C3A9",
 		"4C61745233C3A9", "4C61745234C3A9", "4C61745235C3A9", "4C61745236C3A9"];
-	const cnt = cli(`SELECT COUNT(*) FROM ${argv["char-db"]}.\`char\` WHERE HEX(name) IN (${hexes.map(h => `'${h}'`).join(",")});`);
+	const cnt = cli(`SELECT COUNT(*) FROM \`${argv["char-db"]}\`.\`char\` WHERE account_id=${ownerAid} AND HEX(name) IN (${hexes.map(h => `'${h}'`).join(",")});`);
 	step("6-no-duplicates", /^\d+$/.test(cnt.trim()) && parseInt(cnt.trim()) <= 2);
-	cli(`DELETE FROM ${argv["char-db"]}.\`char\` WHERE HEX(name) IN (${hexes.map(h => `'${h}'`).join(",")});`);
+	cli(`DELETE FROM \`${argv["char-db"]}\`.\`char\` WHERE account_id=${ownerAid} AND HEX(name) IN (${hexes.map(h => `'${h}'`).join(",")});`);
 	console.log("CLEANUP-DONE");
-	stopAll();
+	killOwnedDb();
+	console.log("OPERATOR-ACTION test servers left running; stop them manually");
 	console.log(`FAILURES=${fails}`);
 	process.exit(fails);
 }
