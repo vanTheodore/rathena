@@ -182,6 +182,18 @@ async function createChar(chport: number, aid: number, l1: number, l2: number,
 	if (id === 0x6e && blob.length >= 3) return { verdict: id, errcode: blob[2] };
 	return { verdict: id, errcode: -1 };
 }
+// First login after a loss must fail clean (dead handle); the immediate
+// retry must succeed (re-established handle). Returns both attempts.
+async function loginRetry() {
+	const first = await login();
+	if (first) return { first, second: first };
+	const second = await login();
+	return { first, second };
+}
+function tidy() {
+	cli(`DELETE FROM ${argv["char-db"]}.\`char\` WHERE HEX(name) IN ('4C617441C3A9','4C617442C3A9','4865616C58');`);
+	console.log("CLEANUP-DONE");
+}
 async function main() {
 	// The DB must already run (game servers are booted externally and stay
 	// up across the bounce below); only the bounce itself restarts it.
@@ -196,7 +208,7 @@ async function main() {
 	// Control: login + create latin1 name in slot 0.
 	const L = await login();
 	step("1-login-accept", L !== null);
-	if (!L) { stopAll(); console.log(`FAILURES=${fails}`); process.exit(fails); }
+	if (!L) { tidy(); stopAll(); console.log(`FAILURES=${fails}`); process.exit(fails); }
 	console.log(`login: AID=${L.aid} char=127.0.0.1:${L.chport}`);
 	const ctl = await createChar(L.chport, L.aid, L.l1, L.l2, "4C617441E9", 0);
 	step("2-control-create", ctl.verdict === 0xb6f);
@@ -239,9 +251,13 @@ async function main() {
 	if (/^\d+$/.test(up) && parseInt(up) < 180) console.log(`BOUNCE-OK uptime=${up}`);
 	else { console.log(`ABORT-BOUNCE-FAILED uptime=${up}`); fails++; }
 	// Heal: creation on the dead handle must fail clean (red), never retry.
-	const L2 = await login();
-	step("4-login-accept", L2 !== null);
-	if (!L2) { stopAll(); console.log(`FAILURES=${fails}`); process.exit(fails); }
+	// The heal login itself proves fail-then-heal: first attempt dies on the
+	// dead handle, the immediate retry rides the re-established one.
+	const R = await loginRetry();
+	step("4-login-accept", R.second !== null);
+	step("4b-first-touch-failed", R.first === null);
+	if (!R.second) { tidy(); stopAll(); console.log(`FAILURES=${fails}`); process.exit(fails); }
+	const L2 = R.second;
 	const heal = await createChar(L2.chport, L2.aid, L2.l1, L2.l2, "4865616C58", 0);
 	const healRed = heal.verdict !== 0xb6f;
 	console.log(`heal-verdict=0x${heal.verdict.toString(16)} (expected non-0xb6f)`);
@@ -251,7 +267,7 @@ async function main() {
 	// Expose: creation on the re-established handle. Post-fix this succeeds
 	// with byte-exact storage; pre-fix the server rejects it (1366).
 	const L3 = await login();
-	if (!L3) { console.log("FAIL 6-expose-login"); fails++; }
+	if (!L3) { console.log("FAIL 6-expose-login"); fails++; tidy(); }
 	else {
 		const ex = await createChar(L3.chport, L3.aid, L3.l1, L3.l2, "4C617442E9", 1);
 		step("6-expose-create", ex.verdict === 0xb6f);
@@ -267,8 +283,8 @@ async function main() {
 	const cntHeal = cli(`SELECT COUNT(*) FROM ${argv["char-db"]}.\`char\` WHERE HEX(name)='4865616C58';`);
 	step("8-no-duplicates", cnt.trim() === "2" && cntHeal.trim() === "0");
 	// Tidy test rows.
-	cli(`DELETE FROM ${argv["char-db"]}.\`char\` WHERE HEX(name) IN ('4C617441C3A9','4C617442C3A9','4865616C58');`);
-	console.log("CLEANUP-DONE");
+	tidy();
+	stopAll();
 	stopAll();
 	console.log(`FAILURES=${fails}`);
 	process.exit(fails);
