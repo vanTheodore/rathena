@@ -91,6 +91,19 @@ function CleanupCreates {
   Remove-Item (Join-Path $ServerDir "t-cleanup.sql") -ErrorAction SilentlyContinue
   "CLEANUP-DONE"
 }
+# A run must leave no residue: afterwards every phase name counts zero,
+# otherwise the next run inherits state and its oracle goes vacuous.
+function VerifyCleanup {
+  $lines = foreach ($n in $Names) { 'SELECT COUNT(*) FROM `' + $CharDb + '`.`char` WHERE name=''' + $n + ''';' }
+  $lines | Out-File (Join-Path $ServerDir "t-verify.sql") -Encoding ascii
+  $vals = @(Get-Content (Join-Path $ServerDir "t-verify.sql") | & $M @(DbArgs) -N --batch 2>&1 | Where-Object { "$_".Trim() -match '^\d+$' })
+  Remove-Item (Join-Path $ServerDir "t-verify.sql") -ErrorAction SilentlyContinue
+  for ($i = 0; $i -lt $Names.Count; $i++) {
+    $c = if ($i -lt $vals.Count) { $vals[$i].Trim() } else { "?" }
+    if ($c -ne "0") { "RESIDUE $($Names[$i])=$c"; $script:fails++ }
+  }
+  "VERIFY-CLEANUP-DONE"
+}
 function BootServers {
   $env:PATH = "$MsysBin;$env:PATH"
   Start-Process -FilePath (Join-Path $ServerDir "login-server.exe") -WorkingDirectory $ServerDir -NoNewWindow -RedirectStandardOutput (Join-Path $ServerDir "t-login.out.log") -RedirectStandardError (Join-Path $ServerDir "t-login.err.log")
@@ -147,6 +160,7 @@ if ($DbDown) {
   AssertCreates "final" $false
 }
 CleanupCreates
+VerifyCleanup
 StopServers; StopDb
 "FAILURES=$script:fails"
 exit $script:fails
