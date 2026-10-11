@@ -7,20 +7,23 @@
 # preparation, execution and cleanup.
 #
 # Usage:
-#   powershell -ExecutionPolicy Bypass -File tools/proto-smoke.ps1 -User <test-user> -Pass <test-pass> -Char <test-char> [-Slot 1]
+#   powershell -ExecutionPolicy Bypass -File tools/proto-smoke.ps1 -User <test-user> -Pass <test-pass> -Char <fixture-char> -NewChar <fresh-char> [-Slot 1]
 # Exit 0 + "FAILURES=0" on success; nonzero exit + FAIL lines on failure.
 #
 # Security: this tool performs NO destructive operation. It opens sockets,
-# creates at most one test character and quits (quit triggers the normal
-# server-side save). It never touches a database directly, embeds no
-# password and reads no credential file: -User/-Pass/-Char are mandatory
-# precisely so nothing personal or secret lives in this file. Point the
+# checks that the fixture character is listed, creates at most one test
+# character and quits (quit triggers the normal server-side save). It never
+# touches a database directly, embeds no password and reads no credential
+# file: -User/-Pass/-Char/-NewChar are mandatory precisely so nothing
+# personal or secret lives in this file. -Char must already exist (positive
+# list evidence); -NewChar must be fresh (creation verdict). Point the
 # servers at a disposable database; never at production data. The 0x1fb
 # char-delete flow is deliberately NOT included (pending, see doc).
 param(
   [Parameter(Mandatory=$true)][string]$User,
   [Parameter(Mandatory=$true)][string]$Pass,
   [Parameter(Mandatory=$true)][string]$Char,
+  [Parameter(Mandatory=$true)][string]$NewChar,
   [string]$LoginHost = "127.0.0.1",
   [int]$LoginPort = 6900,
   [int]$ClientVer = 20211103,
@@ -116,14 +119,14 @@ $lst = $null; $end = (Get-Date).AddSeconds(15)
 while ((Get-Date) -lt $end) { $p = ReadPkt $s; if ($p -eq $null) { break }; if ($p.id -eq 0x6b) { $lst = $p; break } }
 Step "2b-char-list" ($lst -ne $null -and (ParseCharList $lst.data $Char))
 
-# 3. Create char 0xa39 in slot $Slot, then read the server verdict instead of
+# 3. Create $NewChar with 0xa39 in slot $Slot, then read the server verdict instead of
 # blindly draining: 0xb6f (accept) vs 0x6e (refuse + error code). Flush stale
 # auth-phase traffic first (e.g. pincode 0x09a0 may still sit in the stream
 # after the 0x6b loop breaks, and would otherwise be mistaken for the
 # verdict). No verdict within the window is a FAIL (unknown outcome, never
 # assumed success).
 Drain $s 800 | Out-Null
-$mk = (U16 0xa39) + (Str $Char 24) + [byte[]]@($Slot) + (U16 1) + (U16 1) + (U32 0) + [byte[]]@(1)
+$mk = (U16 0xa39) + (Str $NewChar 24) + [byte[]]@($Slot) + (U16 1) + (U16 1) + (U32 0) + [byte[]]@(1)
 SendBytes $s $mk
 $cr = DrainCollect $s 2500
 if ($cr.Length -ge 2) {

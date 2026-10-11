@@ -23,10 +23,10 @@ salida limpia dispara en el servidor. Nada más.
 ## Ejecución
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools/proto-smoke.ps1 -User <test-user> -Pass <test-pass> -Char <test-char> [-Slot 1]
+powershell -ExecutionPolicy Bypass -File tools/proto-smoke.ps1 -User <test-user> -Pass <test-pass> -Char <fixture-char> -NewChar <fresh-char> [-Slot 1]
 ```
 
-`-User/-Pass/-Char` son obligatorios y no tienen valores por defecto: así
+`-User/-Pass/-Char/-NewChar` son obligatorios y no tienen valores por defecto: así
 ningún secreto ni dato personal vive en el repositorio. Solo `-LoginPort`
 (6900), `-LoginHost` (127.0.0.1) y `-ClientVer` (debe coincidir con el
 `PACKETVER` del build) tienen defecto. Los puertos de char y map se
