@@ -19,8 +19,10 @@
 # or secrets live in this file. -DbPass/-User/-Pass are mandatory precisely
 # so nothing credential-like is embedded. -Char must be alphanumeric
 # (it is interpolated into a cleanup script). Point the servers at a
-# disposable database; never at production data. The account needs two
-# free character slots (1 and 2; slot 0 typically holds the fixture char).
+# disposable database; never at production data. -Char names the pre-existing
+# fixture character expected in the list; fresh per-phase names derive from
+# it. The account needs two free character slots (1 and 2; slot 0 typically
+# holds the fixture char).
 #
 # Prerequisite: the servers must run with mysql_reconnect_type: 1 in their
 # SQL config, otherwise there is no statement-level reconnect to exercise
@@ -48,7 +50,9 @@ param(
   [int]$BootWait = 75,
   [switch]$DbDown
 )
-if ($Char -notmatch '^[A-Za-z0-9]+$' -or $Char.Length -gt 20) { "ABORT-BAD-CHAR (alphanumeric, max 20)"; exit 2 }
+if ($Char -notmatch '^[A-Za-z0-9]+$' -or $Char.Length -gt 22) { "ABORT-BAD-CHAR (alphanumeric, max 22)"; exit 2 }
+# $Char is the pre-existing fixture char expected in the list; fresh names
+# are "$Char" suffixed with the phase number.
 $script:fails = 0
 $M = Join-Path $MariadbBin "mariadb.exe"
 $D = Join-Path $MariadbBin "mariadbd.exe"
@@ -117,7 +121,7 @@ function StopServers { Get-Process login-server, char-server, map-server -ErrorA
 function StopDb { Get-Process mariadbd, mysqld -ErrorAction SilentlyContinue | Stop-Process -Force }
 function StartDb { Start-Process -FilePath $D -ArgumentList "--datadir=$DataDir", "--bind-address=127.0.0.1", "--port=$DbPort" -WorkingDirectory $MariadbBin -NoNewWindow }
 function RunSmoke($tag, $name, $slot) {
-  powershell -ExecutionPolicy Bypass -File $Smoke -User $User -Pass $Pass -Char $name -Slot $slot -LoginPort $LoginPort
+  powershell -ExecutionPolicy Bypass -File $Smoke -User $User -Pass $Pass -Char $Char -NewChar $name -Slot $slot -LoginPort $LoginPort
   $c = $LASTEXITCODE
   "SMOKE-${tag}-EXIT=$c"
   [void]($script:fails += $c)
@@ -132,7 +136,7 @@ RunSmoke "pre" "${Char}1" 1
 AssertCreates "pre" $true
 if ($DbDown) {
   StopDb; Start-Sleep -Seconds 8
-  powershell -ExecutionPolicy Bypass -File $Smoke -User $User -Pass $Pass -Char $Char -Slot 0 -LoginPort $LoginPort > $null 2>&1
+  powershell -ExecutionPolicy Bypass -File $Smoke -User $User -Pass $Pass -Char $Char -NewChar "${Char}9" -Slot 1 -LoginPort $LoginPort > $null 2>&1
   $c = $LASTEXITCODE
   "SMOKE-down-EXIT=$c (expected non-zero)"
   if ($c -eq 0) { "UNEXPECTED-GREEN-DOWN"; $script:fails++ }
@@ -151,7 +155,7 @@ if ($DbDown) {
   $ok = CheckFresh; "$script:note"
   if (!$ok) { StopServers; StopDb; "FAILURES=$script:fails"; exit $script:fails }
   $Names = @("${Char}1", "${Char}2")
-  powershell -ExecutionPolicy Bypass -File $Smoke -User $User -Pass $Pass -Char "${Char}2" -Slot 2 -LoginPort $LoginPort
+  powershell -ExecutionPolicy Bypass -File $Smoke -User $User -Pass $Pass -Char $Char -NewChar "${Char}2" -Slot 2 -LoginPort $LoginPort
   $cPost = $LASTEXITCODE
   "SMOKE-post-EXIT=$cPost (expected non-zero: first touch after loss fails clean)"
   if ($cPost -eq 0) { "UNEXPECTED-GREEN-POST"; $script:fails++ }
