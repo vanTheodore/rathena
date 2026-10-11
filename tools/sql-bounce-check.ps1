@@ -1,11 +1,12 @@
 # sql-bounce-check: regression for runtime SQL reconnects (Sql_P_Reconnect).
 # Procedure: start the DB, boot the three servers, prove green with
 # proto-smoke, BOUNCE the database (kills every server SQL handle at once,
-# no timing games), prove green again. The post-bounce run is THE assertion:
-# every handle must reconnect with intact parameters and keep serving.
-# A general_log scan after each smoke run asserts no write statement reached
-# the server twice (the duplicate-execution hazard): any repeated write
-# fails the run. With -DbDown the bounce is replaced by an outage: the DB
+# no timing games), then run smoke twice: the first post-bounce run MUST fail
+# (fail-closed: the statements caught by the loss return errors, they are
+# never re-executed), and the follow-up run MUST be fully green (the
+# re-established connection serves normally). A general_log scan after each
+# smoke run asserts no write statement reached the server twice (the
+# duplicate-execution hazard): any repeated write fails the run. With -DbDown the bounce is replaced by an outage: the DB
 # stays down for one smoke run (expected red, orderly behavior, no crash),
 # then comes back for a recovery run (expected green, no corruption).
 # Exit 0 + FAILURES=0 on success; nonzero otherwise (ABORT lines mean
@@ -125,7 +126,14 @@ if ($DbDown) {
   if (!$ok) { StopServers; StopDb; "FAILURES=$script:fails"; exit $script:fails }
   $ok = CheckFresh; "$script:note"
   if (!$ok) { StopServers; StopDb; "FAILURES=$script:fails"; exit $script:fails }
-  LogClear; RunSmoke "post"; LogScan "post"; "$script:note"
+  LogClear
+  powershell -ExecutionPolicy Bypass -File $Smoke -User $User -Pass $Pass -Char $Char -LoginPort $LoginPort
+  $cPost = $LASTEXITCODE
+  "SMOKE-post-EXIT=$cPost (expected non-zero: first touch after loss fails clean)"
+  if ($cPost -eq 0) { "UNEXPECTED-GREEN-POST"; $script:fails++ }
+  LogScan "post"; "$script:note"
+  RunSmoke "healed"
+  LogScan "healed"; "$script:note"
 }
 LogOff; StopServers; StopDb
 "FAILURES=$script:fails"
