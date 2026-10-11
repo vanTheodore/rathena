@@ -53,6 +53,10 @@ struct Sql
 	char* host;
 	uint16 port;
 	char* db;
+	// Session charset applied via Sql_SetEncoding (SET NAMES): a fresh
+	// connection starts with server defaults, so the explicit runtime
+	// reconnect must restore it (Sql_P_Reconnect). Null when unset.
+	char* encoding;
 	// True between a successful START TRANSACTION and its COMMIT/ROLLBACK:
 	// retrying a failed statement outside the (server-rolled-back) transaction
 	// would leave it half-applied, so the reconnect path needs to know.
@@ -81,6 +85,7 @@ Sql* Sql_Malloc(void)
 	self->host = nullptr;
 	self->port = 0;
 	self->db = nullptr;
+	self->encoding = nullptr;
 	self->in_transaction = false;
 	// No MYSQL_OPT_RECONNECT: the client's transparent reconnect re-executes the
 	// failed statement and silently discards session state (in-flight
@@ -102,6 +107,7 @@ uint32 Sql_GetError( Sql* self ){
 }
 
 static int32 Sql_P_Keepalive(Sql* self);
+void Sql_Close(Sql* self);
 
 /**
  * Establishes a connection to schema
@@ -222,8 +228,14 @@ int32 Sql_GetColumnNames(Sql* self, const char* table, char* out_buf, size_t buf
 /// Changes the encoding of the connection.
 int32 Sql_SetEncoding(Sql* self, const char* encoding)
 {
-	if( self && Sql_Query(self, "SET NAMES %s", encoding) == 0 )
+	if( self && Sql_Query(self, "SET NAMES %s", encoding) == 0 ){
+		// Remember it for the explicit runtime reconnect, which restores the
+		// session state on the fresh connection. Only a successfully applied
+		// value is stored, so a failed change keeps the last valid one.
+		if( self->encoding != nullptr ) aFree(self->encoding);
+		self->encoding = encoding ? aStrdup(encoding) : nullptr;
 		return SQL_SUCCESS;
+	}
 	return SQL_ERROR;
 }
 
@@ -299,6 +311,24 @@ static int32 Sql_P_Reconnect(Sql* self)
 	StringBuf_Init(&saved);
 	StringBuf_Append(&saved, &self->buf);
 	res = Sql_Connect(self, self->user, self->passwd, self->host, self->port, self->db);
+	if( res == SQL_SUCCESS && self->encoding != nullptr ){
+		// A fresh connection starts with server defaults: restore the session
+		// charset before any subsequent query runs on it. Raw query on purpose:
+		// self->buf holds the stashed pending statement here, and the public
+		// paths would recurse into the retry logic.
+		char query[64];
+		int32 len = safesnprintf(query, sizeof(query), "SET NAMES %s", self->encoding);
+		if( len < 0 || len >= (int32)sizeof(query) || mysql_real_query(&self->handle, query, (unsigned long)len) ){
+			ShowSQL("DB error - failed to restore connection charset, closing handle.\n");
+			if( self->keepalive != INVALID_TIMER )
+			{
+				delete_timer(self->keepalive, Sql_P_KeepaliveTimer);
+				self->keepalive = INVALID_TIMER;
+			}
+			Sql_Close(self);
+			res = SQL_ERROR;
+		}
+	}
 	StringBuf_Clear(&self->buf);
 	StringBuf_Append(&self->buf, &saved);
 	return res; // saved is destroyed here (no explicit dtor: it is a stack object)
@@ -610,6 +640,7 @@ void Sql_Free(Sql* self)
 		if( self->passwd != nullptr ) aFree(self->passwd);
 		if( self->host != nullptr ) aFree(self->host);
 		if( self->db != nullptr ) aFree(self->db);
+		if( self->encoding != nullptr ) aFree(self->encoding);
 		aFree(self);
 	}
 }
