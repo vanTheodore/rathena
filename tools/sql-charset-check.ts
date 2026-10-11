@@ -7,10 +7,14 @@
 // endpoint) and the replacement instance is tracked by PID and killed only
 // via PID-verified taskkill /PID. Game servers are never stopped here: on
 // any abort the tool exits and the operator restarts them manually.
-// Destructive SQL (bounce + fixture DELETE) runs only against disposable
-// test schemas: --char-db/--login-db must match /^[A-Za-z0-9_]+_test$/ AND
+// Destructive SQL (bounce + fixture DELETE) runs only against a verified
+// disposable instance: --char-db/--login-db must match /^[A-Za-z0-9_]+_test$/,
 // the operator must pass --confirm-disposable YES (suffix alone proves
-// nothing about the data inside). Fixture cleanup is additionally scoped to
+// nothing about the data inside), AND the live server's @@datadir/@@port
+// must equal --data-dir/3307 exactly (normalized, never by prefix).
+// NOTE: the bounce restarts the WHOLE MariaDB instance on 127.0.0.1:3307 —
+// every database it serves, not just the two *_test schemas. Fixture cleanup
+// is additionally scoped to
 // the login account used by the run, so colliding names on other accounts
 // are never touched.
 // Flow: control creation with
@@ -76,6 +80,29 @@ function waitDb(tag: string): boolean {
 		if (r.trim() === "1") { console.log(`DB-READY ${tag}`); return true; }
 	}
 	console.log(`ABORT-NODB ${tag}`); fails++; return false;
+}
+// Windows-safe directory compare: separators unified, trailing slashes
+// dropped (roots like C:\ kept), case folded. Exact equality only — a
+// prefix of the expected path never matches.
+function normWinDir(p: string): string {
+	// Canonicalize separators (including doubled ones the server may
+	// report), drop trailing slashes (roots like C:\ kept), fold case.
+	let s = p.replace(/\//g, "\\").replace(/\\+/g, "\\");
+	while (s.length > 3 && s.endsWith("\\")) s = s.slice(0, -1);
+	return s.toUpperCase();
+}
+// Proves the server behind 127.0.0.1:3307 is exactly the disposable instance
+// the operator pointed at. Loopback alone proves nothing: any instance could
+// listen there. Unverifiable (CLI-ERROR, empty) counts as mismatch.
+function verifyDbIdentity(tag: string): boolean {
+	const dd = cli("SELECT @@datadir;").split("\n")[0]?.trim() ?? "";
+	const pt = cli("SELECT @@port;").trim();
+	const ok = /^\d+$/.test(pt) && parseInt(pt) === DB_PORT
+		&& dd !== "" && !dd.startsWith("CLI-ERROR")
+		&& normWinDir(dd) === normWinDir(argv["data-dir"] ?? "");
+	if (ok) { console.log(`DB-IDENTITY-OK ${tag} port=${pt}`); return true; }
+	console.log(`ABORT-DB-IDENTITY-MISMATCH ${tag} port=${pt} datadir=${dd}`);
+	return false;
 }
 class Conn {
 	sock: net.Socket;
@@ -267,6 +294,9 @@ async function main() {
 	}
 	// --db-pass/--pass are never interpolated into SQL (protocol only).
 	if (!waitDb("up")) { console.log("OPERATOR-ACTION restart test DB + servers manually"); console.log(`FAILURES=${fails}`); process.exit(fails); }
+	// Identity before ANY destructive op: a wrong --data-dir (or somebody
+	// else's instance on this port) aborts here, SHUTDOWN never sent.
+	if (!verifyDbIdentity("pre")) { console.log("OPERATOR-ACTION check --data-dir and test instance"); process.exit(2); }
 	// Fixture account must exist (created once by the operator procedure);
 	// a missing fixture is a harness failure, not a server verdict.
 	const fxid = cli(`SELECT account_id FROM \`${argv["login-db"]}\`.\`login\` WHERE userid='${argv["user"]}';`);
@@ -288,15 +318,20 @@ async function main() {
 	const ctl = await createChar(L.chport, L.aid, L.l1, L.l2, nameHex("LatA"), 0);
 	step("2-control-create", ctl.verdict === 0xb6f);
 	L.c.close();
-	// Bounce: port-scoped SHUTDOWN reaches exactly the server on
+	// Bounce: port-scoped SHUTDOWN reaches exactly the verified server on
 	// 127.0.0.1:3307 (never by image name), then boot our own instance and
-	// track it. External game servers are left alone throughout.
+	// track it. SCOPE: this restarts the whole MariaDB instance — every
+	// database it serves, not just the *_test schemas. External game servers
+	// are left alone throughout.
+	console.log("BOUNCE-SHUTDOWN port=3307 scope=whole-instance");
 	cli("SHUTDOWN;");
 	await sleep(8000);
 	ownedDb = spawn(MARIADBD, [`--datadir=${argv["data-dir"]}`, "--bind-address=127.0.0.1",
 		`--port=${DB_PORT}`], { cwd: argv["mariadb-bin"], stdio: "ignore", detached: true });
 	try { ownedDb.unref(); } catch {}
 	if (!waitDb("post")) { killOwnedDb(); console.log(`FAILURES=${fails}`); process.exit(fails); }
+	// The replacement must be our instance too, or the final DELETE stays off.
+	if (!verifyDbIdentity("post")) { killOwnedDb(); process.exit(2); }
 	const up = cli("SHOW GLOBAL STATUS LIKE 'Uptime';").trim().split(/[\t ]+/).pop() ?? "?";
 	if (/^\d+$/.test(up) && parseInt(up) < 180) console.log(`BOUNCE-OK uptime=${up}`);
 	else { console.log(`ABORT-BOUNCE-FAILED uptime=${up}`); fails++; }
