@@ -75,7 +75,23 @@ class Conn {
 		this.sock.on("error", () => {});
 	}
 	async ready() {
-		for (let i = 0; i < 100 && !this.sock.connecting; i++) await sleep(10);
+		// Block until the TCP connection is established (like TcpClient.Connect),
+		// instead of racing it: loopback connects can take seconds when the
+		// server is sluggish, and sends/receives before that silently stall.
+		if (!this.sock.connecting) return;
+		await new Promise<void>((resolve) => {
+			const done = () => {
+				clearTimeout(t);
+				this.sock.off("connect", onC);
+				this.sock.off("error", onE);
+				resolve();
+			};
+			const t = setTimeout(done, 30000);
+			const onC = () => done();
+			const onE = () => done();
+			this.sock.on("connect", onC);
+			this.sock.on("error", onE);
+		});
 	}
 	send(b: Buffer) { this.sock.write(b); }
 	async readExact(n: number, ms: number): Promise<Buffer | null> {
@@ -142,10 +158,10 @@ async function login(): Promise<{ c: Conn, aid: number, l1: number, l2: number, 
 	const user = Buffer.alloc(24); Buffer.from(argv["user"]).copy(user);
 	const pass = Buffer.alloc(24); Buffer.from(argv["pass"]).copy(pass);
 	c.send(Buffer.concat([u16(0x64), u32(CLIENT_VER), user, pass, Buffer.from([0])]));
-	const end = Date.now() + 10000;
+	const end = Date.now() + 25000;
 	let ac = null;
 	while (Date.now() < end) {
-		const p = await c.readPacket(1500);
+		const p = await c.readPacket(4000);
 		if (!p) break;
 		if (p.id === 0xac4 || p.id === 0x83e) { ac = p; break; }
 	}
