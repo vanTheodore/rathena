@@ -46,6 +46,16 @@ SOURCE sql-files/upgrades/upgrade_20261011.sql;
 SHOW CREATE TABLE `login`;
 ```
 
+## Interrupción a mitad (motores mezclados)
+
+Los tres `ALTER` son independientes: si el operador interrumpe entre uno y
+otro, alguna tabla queda temporalmente en MyISAM. Ese estado mixto no crea
+un riesgo nuevo (cada tabla convertida ya revierte; las pendientes se
+comportan como antes, sin FKs entre ellas que romper). Para salir de él, re-ejecutar el upgrade (seguro aunque
+repita una tabla ya convertida: reconstruye sin pérdida, con su ventana de
+lock) o revertir las tres con el ALTER inverso. Ante cualquier duda,
+restaurar `login-backup.sql`.
+
 ## Comprobación posterior
 
 - `ENGINE` + `COUNT(*)` + `AUTO_INCREMENT` idénticos (`SHOW TABLE STATUS`).
