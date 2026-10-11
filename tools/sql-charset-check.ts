@@ -221,6 +221,15 @@ async function selectMap(chport: number, aid: number, l1: number, l2: number,
 	return data.length;
 }
 async function main() {
+	// Destructive ops (bounce + DELETE) are test-only: refuse any database
+	// that does not look like a disposable test schema, before touching
+	// anything. No stopAll here: nothing was started yet.
+	for (const k of ["char-db", "login-db"]) {
+		if (!/_test$/.test(argv[k] ?? "")) {
+			console.log(`ABORT-UNSAFE-TARGET ${k}=${argv[k] ?? ""}`);
+			process.exit(2);
+		}
+	}
 	if (!waitDb("up")) { stopAll(); console.log(`FAILURES=${fails}`); process.exit(fails); }
 	// Fixture account must exist (created once by the operator procedure);
 	// a missing fixture is a harness failure, not a server verdict.
