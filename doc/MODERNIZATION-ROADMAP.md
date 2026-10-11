@@ -263,6 +263,14 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   indistinguible en logs de un fallo de BD. Logging mínimo pendiente (sin
   cambiar la lógica).
 
+**Deuda registrada (2026-10-11, migración login a InnoDB):**
+- Candidato a bug independiente (NO corregido en la migración): el retry de
+  `web_auth_token` (`src/login/account.cpp`, `mmo_auth_tosql`) condiciona el
+  ciclo a error 1062 pero nunca incrementa `i`, por lo que ante 1062
+  persistente no termina en `MAX_RETRIES` (y el aviso de `i == MAX_RETRIES`
+  es inalcanzable). Colisión real casi imposible (token aleatorio), pero el
+  contador muerto debe revisarse en un slice propio.
+
 **Fase 6 — experimento LTO A/B (cerrado): no se adopta** (crash reproducible
 0xC0000374 al salir en map/char; tamaños -11%/-56% pero con regresión —
 ver fase 6). Siguiente accionable sin BD: repetir el baseline de Fase 5 para
