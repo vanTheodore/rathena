@@ -85,7 +85,9 @@ Sql* Sql_Malloc(void)
 	// No MYSQL_OPT_RECONNECT: the client's transparent reconnect re-executes the
 	// failed statement and silently discards session state (in-flight
 	// transactions roll back without anyone knowing). Runtime reconnection is
-	// explicit: Sql_QueryV/Sql_QueryStr reconnect and retry once (S4).
+	// explicit: Sql_QueryV/Sql_QueryStr re-establish the connection but never
+	// re-execute the failed statement (ambiguous loss could otherwise apply a
+	// non-idempotent write twice).
 	return self;
 }
 
@@ -398,20 +400,27 @@ int32 Sql_QueryV(Sql* self, const char* query, va_list args)
 	StringBuf_Vprintf(&self->buf, query, args);
 	if( SQL_ERROR == Sql_P_ExecuteQuery(self) )
 	{
-		// Connection loss: reconnect explicitly and retry the failed statement
-		// once (the client library no longer does it transparently). A failed
-		// reconnect surfaces 2003, which ra_mysql_error_handler counts (fatal
-		// after mysql_reconnect_count) — the contract as before.
-		if( mysql_reconnect_type == 1 && Sql_P_IsConnectionLoss(mysql_errno(&self->handle)) )
+		// Connection loss: re-establish the connection for subsequent
+		// statements, but NEVER re-execute the failed one. After 2006/2013
+		// the server may already have committed it (ambiguous loss) and a
+		// retry would apply a non-idempotent write twice; 2003 from
+		// ExecuteQuery cannot occur in our configuration without the
+		// statement leaving this host (single-statement queries on an
+		// established handle, transparent reconnect disabled), so it is
+		// treated the same. The original error was already reported to
+		// ra_mysql_error_handler by ExecuteQuery; the caller still gets
+		// SQL_ERROR (unknown outcome, never success).
+		uint32 loss = mysql_errno(&self->handle);
+		if( mysql_reconnect_type == 1 && Sql_P_IsConnectionLoss(loss) )
 		{
 			if( self->in_transaction ) {
 				// The server rolled the transaction back when the connection
 				// died; retrying outside it would leave it half-applied —
 				// fail clean and let the caller handle the error.
 				self->in_transaction = false;
-			} else if( SQL_SUCCESS == Sql_P_Reconnect(self) )
-				return Sql_P_ExecuteQuery(self);
-			else
+			} else if( SQL_SUCCESS == Sql_P_Reconnect(self) ) {
+				ShowSQL("DB connection lost during query (error %u); connection re-established, failed statement NOT retried.\n", loss);
+			} else
 				// A failed explicit reconnect surfaces the raw connect errno
 				// (e.g. 2002 refused), but the historical contract counts a
 				// failed reconnect as 2003 — the transparent client reconnect
@@ -437,20 +446,27 @@ int32 Sql_QueryStr(Sql* self, const char* query)
 	StringBuf_AppendStr(&self->buf, query);
 	if( SQL_ERROR == Sql_P_ExecuteQuery(self) )
 	{
-		// Connection loss: reconnect explicitly and retry the failed statement
-		// once (the client library no longer does it transparently). A failed
-		// reconnect surfaces 2003, which ra_mysql_error_handler counts (fatal
-		// after mysql_reconnect_count) — the contract as before.
-		if( mysql_reconnect_type == 1 && Sql_P_IsConnectionLoss(mysql_errno(&self->handle)) )
+		// Connection loss: re-establish the connection for subsequent
+		// statements, but NEVER re-execute the failed one. After 2006/2013
+		// the server may already have committed it (ambiguous loss) and a
+		// retry would apply a non-idempotent write twice; 2003 from
+		// ExecuteQuery cannot occur in our configuration without the
+		// statement leaving this host (single-statement queries on an
+		// established handle, transparent reconnect disabled), so it is
+		// treated the same. The original error was already reported to
+		// ra_mysql_error_handler by ExecuteQuery; the caller still gets
+		// SQL_ERROR (unknown outcome, never success).
+		uint32 loss = mysql_errno(&self->handle);
+		if( mysql_reconnect_type == 1 && Sql_P_IsConnectionLoss(loss) )
 		{
 			if( self->in_transaction ) {
 				// The server rolled the transaction back when the connection
 				// died; retrying outside it would leave it half-applied —
 				// fail clean and let the caller handle the error.
 				self->in_transaction = false;
-			} else if( SQL_SUCCESS == Sql_P_Reconnect(self) )
-				return Sql_P_ExecuteQuery(self);
-			else
+			} else if( SQL_SUCCESS == Sql_P_Reconnect(self) ) {
+				ShowSQL("DB connection lost during query (error %u); connection re-established, failed statement NOT retried.\n", loss);
+			} else
 				// A failed explicit reconnect surfaces the raw connect errno
 				// (e.g. 2002 refused), but the historical contract counts a
 				// failed reconnect as 2003 — the transparent client reconnect
