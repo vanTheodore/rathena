@@ -31,7 +31,9 @@ ningún secreto ni dato personal vive en el repositorio. Solo `-LoginPort`
 (6900), `-LoginHost` (127.0.0.1) y `-ClientVer` (debe coincidir con el
 `PACKETVER` del build) tienen defecto. Los puertos de char y map se
 descubren por protocolo. Éxito = `FAILURES=0` y salida 0; cualquier fallo
-relevante sale distinto de cero.
+relevante sale distinto de cero. `-Char` debe existir ya (evidencia de lista);
+`-NewChar` debe ser fresco en cada corrida verde: repetir el mismo nombre da
+`create-refused` (diagnóstico honesto, salida distinta de cero).
 
 ## Limpieza
 

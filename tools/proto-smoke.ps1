@@ -62,7 +62,11 @@ function SendBytes($s, [byte[]]$p) { $s.Write($p, 0, $p.Length) }
 # Positive evidence for the char list: the 0x6b body must carry at least one
 # entry AND contain the expected name as a 24-byte NUL-padded field. A bare
 # packet ID proves nothing (an empty list also arrives as 0x6b). Returns
-# $false on short/truncated buffers without throwing.
+# $false on short/truncated buffers without throwing. Residual limit: the
+# match is a 24-byte pattern anywhere in the entries region, so only an
+# adversarial name colliding byte-for-byte with another field could fool it;
+# every entry starts with a nonzero binary ID, which rules out textual
+# matches at field starts in practice.
 function ParseCharList([byte[]]$body, [string]$name) {
   if ($body -eq $null -or $body.Length -lt 47) { return $false }
   $regionStart = 23
