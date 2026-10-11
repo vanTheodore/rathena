@@ -21,7 +21,7 @@
 //   bun tools/sql-charset-check.ts --mariadb-bin C:/path/bin \
 //     --data-dir C:/path/data --server-dir C:/path/rathena \
 //     --db-user root --db-pass <db-pass> --char-db <test-db> \
-//     --user <test-user> --pass <test-pass>
+//     --login-db <login-db> --user <test-user> --pass <test-pass>
 import net from "node:net";
 import { spawn, execFileSync } from "node:child_process";
 
@@ -30,7 +30,7 @@ const argv: Args = {};
 for (let i = 2; i < process.argv.length; i += 2)
 	argv[process.argv[i].replace(/^--/, "")] = process.argv[i + 1] ?? "";
 const req = ["mariadb-bin", "data-dir", "server-dir", "db-user", "db-pass",
-	"char-db", "user", "pass"];
+	"char-db", "login-db", "user", "pass"];
 for (const k of req) {
 	if (!argv[k]) {
 		console.log(`ABORT-MISSING-ARG ${k}`);
@@ -222,6 +222,15 @@ async function selectMap(chport: number, aid: number, l1: number, l2: number,
 }
 async function main() {
 	if (!waitDb("up")) { stopAll(); console.log(`FAILURES=${fails}`); process.exit(fails); }
+	// Fixture account must exist (created once by the operator procedure);
+	// a missing fixture is a harness failure, not a server verdict.
+	const fxid = cli(`SELECT account_id FROM ${argv["login-db"]}.\`login\` WHERE userid='${argv["user"]}';`);
+	if (!/^\d+$/.test(fxid.trim())) {
+		console.log(`ABORT-NO-FIXTURE-ACCOUNT ${argv["user"]}`);
+		stopAll();
+		process.exit(2);
+	}
+	console.log(`FIXTURE-OK ${argv["user"]} aid=${fxid.trim()}`);
 	// Control on pristine handles: non-ASCII creation must succeed.
 	const L = await login();
 	step("1-login-accept", L !== null);
