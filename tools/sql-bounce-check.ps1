@@ -77,8 +77,8 @@ function LogScan($tag) {
   $out = & $M @(DbArgs) -N --batch -e "SELECT argument, COUNT(*) FROM mysql.general_log WHERE command_type='Query' AND UPPER(LEFT(TRIM(argument),6)) IN ('INSERT','UPDATE','DELETE','REPLAC') GROUP BY argument HAVING COUNT(*) > 1;" 2>&1
   if ($LASTEXITCODE -ne 0) { $script:note = "ABORT-LOGSCAN $tag"; $script:fails++; return }
   $rows = @($out | Where-Object { "$_".Trim() -ne "" })
-  if ($rows.Count -eq 0) { $script:note = "LOGSCAN-$tag-CLEAN (no write ran twice)"; return }
-  $script:note = "DUP-WRITE $tag:"
+  if ($rows.Count -eq 0) { $script:note = "LOGSCAN-${tag}-CLEAN (no write ran twice)"; return }
+  $script:note = "DUP-WRITE ${tag}:"
   $rows | ForEach-Object { $script:note += "`n  $_" }
   $script:fails += $rows.Count
 }
@@ -97,7 +97,7 @@ function StartDb { Start-Process -FilePath $D -ArgumentList "--datadir=$DataDir"
 function RunSmoke($tag) {
   powershell -ExecutionPolicy Bypass -File $Smoke -User $User -Pass $Pass -Char $Char -LoginPort $LoginPort
   $c = $LASTEXITCODE
-  "SMOKE-$tag-EXIT=$c"
+  "SMOKE-${tag}-EXIT=$c"
   $script:fails += $c
 }
 StopServers; StopDb; Start-Sleep -Seconds 4
