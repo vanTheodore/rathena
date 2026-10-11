@@ -117,8 +117,12 @@ while ((Get-Date) -lt $end) { $p = ReadPkt $s; if ($p -eq $null) { break }; if (
 Step "2b-char-list" ($lst -ne $null -and (ParseCharList $lst.data $Char))
 
 # 3. Create char 0xa39 in slot $Slot, then read the server verdict instead of
-# blindly draining: 0xb6f (accept) vs 0x6e (refuse + error code). No verdict
-# within the window is a FAIL (unknown outcome, never assumed success).
+# blindly draining: 0xb6f (accept) vs 0x6e (refuse + error code). Flush stale
+# auth-phase traffic first (e.g. pincode 0x09a0 may still sit in the stream
+# after the 0x6b loop breaks, and would otherwise be mistaken for the
+# verdict). No verdict within the window is a FAIL (unknown outcome, never
+# assumed success).
+Drain $s 800 | Out-Null
 $mk = (U16 0xa39) + (Str $Char 24) + [byte[]]@($Slot) + (U16 1) + (U16 1) + (U32 0) + [byte[]]@(1)
 SendBytes $s $mk
 $cr = DrainCollect $s 2500
