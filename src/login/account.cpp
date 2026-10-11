@@ -16,6 +16,7 @@
 
 #include "login.hpp" // login_config
 #include "loginchrif.hpp"
+#include "token_retry.hpp" // bounded token-collision retries
 
 /// global defines
 
@@ -674,20 +675,15 @@ static bool mmo_auth_tosql(AccountDB_SQL* db, const struct mmo_account* acc, boo
 		}
 
 		const int32 MAX_RETRIES = 20;
-		int32 i = 0;
-		bool success = false;
-
-		// Retry it for a maximum number of retries
-		do{
-			if( SQL_SUCCESS == Sql_Query( sql_handle, query, db->account_db, WEB_AUTH_TOKEN_LENGTH - 1, acc->account_id ) ){
-				success = true;
-				break;
-			}
-		}while( i < MAX_RETRIES && Sql_GetError( sql_handle ) == 1062 );
+		int32 attempts = 0;
+		bool success = mmo_auth_token_retry(
+			[&]() -> int32 { return Sql_Query( sql_handle, query, db->account_db, WEB_AUTH_TOKEN_LENGTH - 1, acc->account_id ); },
+			[&]() -> uint32 { return Sql_GetError( sql_handle ); },
+			MAX_RETRIES, &attempts );
 
 		if( !success ){
-			if( i == MAX_RETRIES ){
-				ShowError( "Failed to generate a unique web_auth_token with %d retries...\n", i );
+			if( attempts == MAX_RETRIES ){
+				ShowError( "Failed to generate a unique web_auth_token with %d retries...\n", attempts );
 			}else{
 				Sql_ShowDebug( sql_handle );
 			}
