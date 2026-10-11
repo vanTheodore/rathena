@@ -253,6 +253,16 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 
 ## Tarea actual
 
+**Deuda registrada (2026-10-11, slices SQL UAF+retry integrados):**
+- `tools/proto-smoke.ps1`, prueba `2b-char-list`: solo verifica el ID del
+  paquete `0x6b`; una lista vacía o fallida del lado servidor también da PASS.
+  Endurecer implicaría parsear el contenido (nº de chars esperado) — pendiente.
+- Creación de personaje (`char_make_new_char`, `src/char/char.cpp`): los
+  rechazos previos al INSERT (`slot inválido`, `límite de cuenta`, `-1`/`-2`/`-4`)
+  son silenciosos (sin `ShowWarning`/`ShowDebug`); un fallo de validación es
+  indistinguible en logs de un fallo de BD. Logging mínimo pendiente (sin
+  cambiar la lógica).
+
 **Fase 6 — experimento LTO A/B (cerrado): no se adopta** (crash reproducible
 0xC0000374 al salir en map/char; tamaños -11%/-56% pero con regresión —
 ver fase 6). Siguiente accionable sin BD: repetir el baseline de Fase 5 para
