@@ -254,9 +254,9 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 ## Tarea actual
 
 **Deuda registrada (2026-10-11, slices SQL UAF+retry integrados):**
-- `tools/proto-smoke.ps1`, prueba `2b-char-list`: solo verifica el ID del
-  paquete `0x6b`; una lista vacía o fallida del lado servidor también da PASS.
-  Endurecer implicaría parsear el contenido (nº de chars esperado) — pendiente.
+- `tools/proto-smoke.ps1`, prueba `2b-char-list`: RESUELTO en
+  `modernize/smoke-positive` — verifica contenido vía `ParseCharList`
+  (nombre esperado en `0x6b`), no solo el ID.
 - Creación de personaje (`char_make_new_char`, `src/char/char.cpp`): los
   rechazos previos al INSERT (`slot inválido`, `límite de cuenta`, `-1`/`-2`/`-4`)
   son silenciosos (sin `ShowWarning`/`ShowDebug`); un fallo de validación es
