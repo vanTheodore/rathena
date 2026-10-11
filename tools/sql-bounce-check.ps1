@@ -19,8 +19,8 @@
 # or secrets live in this file. -DbPass/-User/-Pass are mandatory precisely
 # so nothing credential-like is embedded. -Char must be alphanumeric
 # (it is interpolated into a cleanup script). Point the servers at a
-# disposable database; never at production data. The account needs three
-# free character slots for the bounce flow (two for -DbDown).
+# disposable database; never at production data. The account needs two
+# free character slots (1 and 2; slot 0 typically holds the fixture char).
 #
 # Prerequisite: the servers must run with mysql_reconnect_type: 1 in their
 # SQL config, otherwise there is no statement-level reconnect to exercise
@@ -84,7 +84,7 @@ function AssertCreates($tag, $wantExact) {
   }
 }
 function CleanupCreates {
-  $list = ($Names | ForEach-Object { "''$_''" }) -join ","
+  $list = ($Names | ForEach-Object { "'$_'" }) -join ","
   $sql = 'DELETE FROM `' + $CharDb + '`.`char` WHERE name IN (' + $list + ');'
   $sql | Out-File (Join-Path $ServerDir "t-cleanup.sql") -Encoding ascii -NoNewline
   Get-Content (Join-Path $ServerDir "t-cleanup.sql") | & $M @(DbArgs) 2>&1 | Select-Object -First 2
@@ -107,8 +107,7 @@ function RunSmoke($tag, $name, $slot) {
   powershell -ExecutionPolicy Bypass -File $Smoke -User $User -Pass $Pass -Char $name -Slot $slot -LoginPort $LoginPort
   $c = $LASTEXITCODE
   "SMOKE-${tag}-EXIT=$c"
-  $script:fails += $c
-  return $c
+  [void]($script:fails += $c)
 }
 StopServers; StopDb; Start-Sleep -Seconds 4
 StartDb
@@ -143,8 +142,8 @@ if ($DbDown) {
   $cPost = $LASTEXITCODE
   "SMOKE-post-EXIT=$cPost (expected non-zero: first touch after loss fails clean)"
   if ($cPost -eq 0) { "UNEXPECTED-GREEN-POST"; $script:fails++ }
-  $Names = @("${Char}1", "${Char}2", "${Char}3")
-  RunSmoke "healed" "${Char}3" 3
+  $Names = @("${Char}1", "${Char}2")
+  RunSmoke "healed" "${Char}2" 2
   AssertCreates "final" $false
 }
 CleanupCreates
