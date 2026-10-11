@@ -56,6 +56,33 @@ function Drain($s, $ms) {
   return $n
 }
 function SendBytes($s, [byte[]]$p) { $s.Write($p, 0, $p.Length) }
+# Positive evidence for the char list: the 0x6b body must carry at least one
+# entry AND contain the expected name as a 24-byte NUL-padded field. A bare
+# packet ID proves nothing (an empty list also arrives as 0x6b). Returns
+# $false on short/truncated buffers without throwing.
+function ParseCharList([byte[]]$body, [string]$name) {
+  if ($body -eq $null -or $body.Length -lt 47) { return $false }
+  $regionStart = 23
+  $regionLen = $body.Length - $regionStart
+  if ($regionLen -lt 24) { return $false }
+  $pat = New-Object byte[] 24
+  $e = [Text.Encoding]::ASCII.GetBytes($name)
+  [Array]::Copy($e, 0, $pat, 0, [Math]::Min($e.Length, 24))
+  for ($i = 0; $i -le ($regionLen - 24); $i++) {
+    $hit = $true
+    for ($j = 0; $j -lt 24; $j++) {
+      if ($body[$regionStart + $i + $j] -ne $pat[$j]) { $hit = $false; break }
+    }
+    if ($hit) { return $true }
+  }
+  return $false
+}
+function DrainCollect($s, $ms) {
+  $end = (Get-Date).AddMilliseconds($ms)
+  $all = New-Object System.Collections.Generic.List[byte]
+  try { while ((Get-Date) -lt $end) { while ($s.DataAvailable) { $b = New-Object byte[] 8192; $r = $s.Read($b, 0, 8192); for ($k = 0; $k -lt $r; $k++) { $all.Add($b[$k]) } }; Start-Sleep -Milliseconds 100 } } catch { }
+  return [byte[]]$all.ToArray()
+}
 function U16($v) { return [BitConverter]::GetBytes([uint16]$v) }
 function U32($v) { return [BitConverter]::GetBytes([uint32]$v) }
 function Str($s, $n) { $b = New-Object byte[] $n; $e = [Text.Encoding]::ASCII.GetBytes($s); [Array]::Copy($e, 0, $b, 0, [Math]::Min($e.Length, $n)); return $b }
@@ -71,7 +98,8 @@ if ($ac -eq $null -or $ac.id -ne 0xac4 -or $ac.len -lt 224) { "ABORT at login st
 $AID = [BitConverter]::ToUInt32($ac.data, 4); $L1 = [BitConverter]::ToUInt32($ac.data, 0); $L2 = [BitConverter]::ToUInt32($ac.data, 8)
 $chip = "{0}.{1}.{2}.{3}" -f $ac.data[60], $ac.data[61], $ac.data[62], $ac.data[63]
 $chport = [BitConverter]::ToUInt16($ac.data, 64)
-"login: AID=$AID L1=$L1 L2=$L2 char=$chip`:$chport"
+"login: AID=$AID char=$chip`:$chport"
+# L1/L2 are session tokens: used in auth packets below, never printed.
 # NB: keep the login connection OPEN (like a real client) until char auth
 # completes: closing it early can disturb the in-memory auth/online state.
 $loginConn = $c
@@ -86,13 +114,22 @@ try { while ($r -lt 4) { $n = $s.Read($echo, $r, 4 - $r); if ($n -le 0) { break 
 Step "2a-auth-echo" ($r -eq 4 -and [BitConverter]::ToUInt32($echo, 0) -eq $AID)
 $lst = $null; $end = (Get-Date).AddSeconds(15)
 while ((Get-Date) -lt $end) { $p = ReadPkt $s; if ($p -eq $null) { break }; if ($p.id -eq 0x6b) { $lst = $p; break } }
-Step "2b-char-list" ($lst -ne $null)
+Step "2b-char-list" ($lst -ne $null -and (ParseCharList $lst.data $Char))
 
-# 3. Create char 0xa39 in slot $Slot. Re-runnable: if the name already exists
-# from a previous run the server refuses and select below proceeds anyway.
+# 3. Create char 0xa39 in slot $Slot, then read the server verdict instead of
+# blindly draining: 0xb6f (accept) vs 0x6e (refuse + error code). No verdict
+# within the window is a FAIL (unknown outcome, never assumed success).
 $mk = (U16 0xa39) + (Str $Char 24) + [byte[]]@($Slot) + (U16 1) + (U16 1) + (U32 0) + [byte[]]@(1)
 SendBytes $s $mk
-Drain $s 2500 | Out-Null
+$cr = DrainCollect $s 2500
+if ($cr.Length -ge 2) {
+  $rid = [BitConverter]::ToUInt16($cr, 0)
+  if ($rid -eq 0xb6f) { Step "3-create-ack" $true }
+  elseif ($rid -eq 0x6e -and $cr.Length -ge 3) { "create-refused error=0x{0:x2}" -f $cr[2]; Step "3-create-ack" $false }
+  else { "create-unexpected reply=0x{0:x4}" -f $rid; Step "3-create-ack" $false }
+} else {
+  Step "3-create-ack" $false
+}
 
 # 4. Select slot $Slot, expect 0xac5 map notify. NOTE: 0xac5 has NO length field
 # (fixed 156 bytes), so it is read by size, not with ReadPkt.
