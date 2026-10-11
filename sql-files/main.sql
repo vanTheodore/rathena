@@ -438,7 +438,7 @@ CREATE TABLE IF NOT EXISTS `global_acc_reg_num` (
   `value` bigint(11) NOT NULL default '0',
   PRIMARY KEY (`account_id`,`key`,`index`),
   KEY `account_id` (`account_id`)
-) ENGINE=MyISAM;
+) ENGINE=InnoDB;
 
 --
 -- Table structure for table `global_acc_reg_str`
@@ -451,7 +451,7 @@ CREATE TABLE IF NOT EXISTS `global_acc_reg_str` (
   `value` varchar(254) NOT NULL default '0',
   PRIMARY KEY (`account_id`,`key`,`index`),
   KEY `account_id` (`account_id`)
-) ENGINE=MyISAM;
+) ENGINE=InnoDB;
 
 --
 -- Table structure for table `guild`
@@ -791,7 +791,7 @@ CREATE TABLE IF NOT EXISTS `login` (
   PRIMARY KEY  (`account_id`),
   KEY `name` (`userid`),
   UNIQUE KEY `web_auth_token_key` (`web_auth_token`)
-) ENGINE=MyISAM AUTO_INCREMENT=2000000; 
+) ENGINE=InnoDB AUTO_INCREMENT=2000000; 
 
 -- added standard accounts for servers, VERY INSECURE!!!
 -- inserted into the table called login which is above
