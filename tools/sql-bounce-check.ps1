@@ -43,16 +43,16 @@ function WaitDb($tag) {
   for ($i = 0; $i -lt 30; $i++) {
     Start-Sleep -Seconds 3
     & $M @(DbArgs) -N -e "SELECT 1;" > $null 2>&1
-    if ($LASTEXITCODE -eq 0) { "DB-READY $tag"; return $true }
+    if ($LASTEXITCODE -eq 0) { $script:note = "DB-READY $tag"; return $true }
   }
-  "ABORT-NODB $tag"; $script:fails++; return $false
+  $script:note = "ABORT-NODB $tag"; $script:fails++; return $false
 }
 # Proves the bounce really happened: a surviving instance keeps its uptime.
 function CheckFresh {
   $row = (& $M @(DbArgs) -N -e "SHOW GLOBAL STATUS LIKE 'Uptime';" 2>$null | Select-Object -Last 1)
   $u = ("$row" -split '\s+')[-1]
-  if ("$u" -match '^\d+$' -and [int]"$u" -lt 180) { "BOUNCE-OK uptime=$u"; return $true }
-  "ABORT-BOUNCE-FAILED uptime=$u"; $script:fails++; return $false
+  if ("$u" -match '^\d+$' -and [int]"$u" -lt 180) { $script:note = "BOUNCE-OK uptime=$u"; return $true }
+  $script:note = "ABORT-BOUNCE-FAILED uptime=$u"; $script:fails++; return $false
 }
 function BootServers {
   $env:PATH = "$MsysBin;$env:PATH"
@@ -73,13 +73,16 @@ function RunSmoke($tag) {
 }
 StopServers; StopDb; Start-Sleep -Seconds 4
 Start-Process -FilePath $D -ArgumentList "--datadir=$DataDir", "--bind-address=127.0.0.1", "--port=$DbPort" -WorkingDirectory $MariadbBin -NoNewWindow
-if (!(WaitDb "pre")) { StopDb; "FAILURES=$script:fails"; exit $script:fails }
+$ok = WaitDb "pre"; "$script:note"
+if (!$ok) { StopDb; "FAILURES=$script:fails"; exit $script:fails }
 BootServers
 RunSmoke "pre"
 StopDb; Start-Sleep -Seconds 8
 Start-Process -FilePath $D -ArgumentList "--datadir=$DataDir", "--bind-address=127.0.0.1", "--port=$DbPort" -WorkingDirectory $MariadbBin -NoNewWindow
-if (!(WaitDb "post")) { StopServers; StopDb; "FAILURES=$script:fails"; exit $script:fails }
-if (!(CheckFresh)) { StopServers; StopDb; "FAILURES=$script:fails"; exit $script:fails }
+$ok = WaitDb "post"; "$script:note"
+if (!$ok) { StopServers; StopDb; "FAILURES=$script:fails"; exit $script:fails }
+$ok = CheckFresh; "$script:note"
+if (!$ok) { StopServers; StopDb; "FAILURES=$script:fails"; exit $script:fails }
 RunSmoke "post"
 StopServers; StopDb
 "FAILURES=$script:fails"
