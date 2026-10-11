@@ -7,7 +7,7 @@
 # preparation, execution and cleanup.
 #
 # Usage:
-#   powershell -ExecutionPolicy Bypass -File tools/proto-smoke.ps1 -User <test-user> -Pass <test-pass> -Char <test-char>
+#   powershell -ExecutionPolicy Bypass -File tools/proto-smoke.ps1 -User <test-user> -Pass <test-pass> -Char <test-char> [-Slot 1]
 # Exit 0 + "FAILURES=0" on success; nonzero exit + FAIL lines on failure.
 #
 # Security: this tool performs NO destructive operation. It opens sockets,
@@ -23,7 +23,8 @@ param(
   [Parameter(Mandatory=$true)][string]$Char,
   [string]$LoginHost = "127.0.0.1",
   [int]$LoginPort = 6900,
-  [int]$ClientVer = 20211103
+  [int]$ClientVer = 20211103,
+  [int]$Slot = 0
 )
 $script:fails = 0
 function Step($name, $cond) { if ($cond) { "PASS $name" } else { "FAIL $name"; $script:fails++ } }
@@ -87,15 +88,15 @@ $lst = $null; $end = (Get-Date).AddSeconds(15)
 while ((Get-Date) -lt $end) { $p = ReadPkt $s; if ($p -eq $null) { break }; if ($p.id -eq 0x6b) { $lst = $p; break } }
 Step "2b-char-list" ($lst -ne $null)
 
-# 3. Create char 0xa39. Re-runnable: if the name already exists from a
-# previous run the server refuses and select below proceeds anyway.
-$mk = (U16 0xa39) + (Str $Char 24) + [byte[]]@(0) + (U16 1) + (U16 1) + (U32 0) + [byte[]]@(1)
+# 3. Create char 0xa39 in slot $Slot. Re-runnable: if the name already exists
+# from a previous run the server refuses and select below proceeds anyway.
+$mk = (U16 0xa39) + (Str $Char 24) + [byte[]]@($Slot) + (U16 1) + (U16 1) + (U32 0) + [byte[]]@(1)
 SendBytes $s $mk
 Drain $s 2500 | Out-Null
 
-# 4. Select slot 0, expect 0xac5 map notify. NOTE: 0xac5 has NO length field
+# 4. Select slot $Slot, expect 0xac5 map notify. NOTE: 0xac5 has NO length field
 # (fixed 156 bytes), so it is read by size, not with ReadPkt.
-SendBytes $s ((U16 0x66) + [byte[]]@(0))
+SendBytes $s ((U16 0x66) + [byte[]]@($Slot))
 $zn = $null; $end = (Get-Date).AddSeconds(15)
 $acc = New-Object byte[] 156; $r = 0
 try { while ($r -lt 156 -and (Get-Date) -lt $end) { if ($s.DataAvailable) { $n = $s.Read($acc, $r, 156 - $r); if ($n -le 0) { break }; $r += $n } else { Start-Sleep -Milliseconds 100 } } } catch { }

@@ -23,7 +23,7 @@ salida limpia dispara en el servidor. Nada más.
 ## Ejecución
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools/proto-smoke.ps1 -User <test-user> -Pass <test-pass> -Char <test-char>
+powershell -ExecutionPolicy Bypass -File tools/proto-smoke.ps1 -User <test-user> -Pass <test-pass> -Char <test-char> [-Slot 1]
 ```
 
 `-User/-Pass/-Char` son obligatorios y no tienen valores por defecto: así
