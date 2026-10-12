@@ -10749,7 +10749,11 @@ void clif_parse_WantToConnection(int32 fd, map_session_data* sd)
 #else
 	WFIFOHEAD(fd,packet_len(0x283));
 	WFIFOW(fd,0) = 0x283;
-	WFIFOL(fd,2) = sd->id;
+	// Byte-buffer slot at an odd offset: memcpy, same bytes.
+	{
+		uint32 sid = (uint32)sd->id;
+		memcpy(WFIFOP(fd,2), &sid, sizeof(sid));
+	}
 	WFIFOSET(fd,packet_len(0x283));
 #endif
 
