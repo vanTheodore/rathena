@@ -809,7 +809,13 @@ int32 chclif_parse_maplogin(int32 fd){
 			chmapif_connectack(fd, 0); //success
 
 			map_server[i].fd = fd;
-			map_server[i].ip = ntohl(RFIFOL(fd,54));
+			{
+				// Offset 54 is never uint32-aligned in a byte buffer: memcpy
+				// into an aligned local, same bytes (0x2af8 read side).
+				uint32 ip = 0;
+				memcpy(&ip, RFIFOP(fd,54), sizeof(ip));
+				map_server[i].ip = ntohl(ip);
+			}
 			map_server[i].port = ntohs(RFIFOW(fd,58));
 			map_server[i].users = 0;
 			map_server[i].maps = {};
