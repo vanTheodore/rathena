@@ -103,8 +103,14 @@ int32 mapif_clan_info( int32 fd ){
 	size_t length = offset + clan_db.size() * sizeof( struct clan );
 
 	WFIFOHEAD( fd, length );
-	WFIFOW( fd, 0 ) = 0x38A0;
-	WFIFOW( fd, 2 ) = static_cast<int16>( length );
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x38A0;
+		uint16 packet_len = static_cast<uint16>( length );
+		memcpy(WFIFOP( fd, 0 ), &op, sizeof(op));
+		memcpy(WFIFOP( fd, 2 ), &packet_len, sizeof(packet_len));
+	}
 
 	for( const auto& pair : clan_db ){
 		std::shared_ptr<struct clan> clan = pair.second;
