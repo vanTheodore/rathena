@@ -3651,7 +3651,12 @@ bool intif_storage_request( const map_session_data* sd, enum storage_type type, 
 		return false;
 
 	WFIFOHEAD(inter_fd, 13);
-	WFIFOW(inter_fd, 0) = 0x308a;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// the opcode store uses memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x308a;
+		memcpy(WFIFOP(inter_fd, 0), &op, sizeof(op));
+	}
 	WFIFOB(inter_fd, 2) = type;
 	// Byte-buffer slots at odd offsets: memcpy, same bytes.
 	{
