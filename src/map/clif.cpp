@@ -10626,11 +10626,16 @@ static int32 clif_parse_WantToConnection_sub(int32 fd)
 	// Figure out, when it happens, that only part of the packet is
 	// received, or fix the function to be able to deal with that
 	// case.
+	// Byte-buffer reads: field offsets come from packet_db and are often
+	// odd, so memcpy into aligned locals (same values).
+	uint32 aid = 0, cid = 0;
+	memcpy(&aid, RFIFOP(fd, packet_db[cmd].pos[0]), sizeof(aid));
+	memcpy(&cid, RFIFOP(fd, packet_db[cmd].pos[1]), sizeof(cid));
 	if( packet_len != packet_db[cmd].len )
 		return 1; /* wrong length */
-	else if( (value=(int32)RFIFOL(fd, packet_db[cmd].pos[0])) < START_ACCOUNT_NUM || value > END_ACCOUNT_NUM )
+	else if( (value=(int32)aid) < START_ACCOUNT_NUM || value > END_ACCOUNT_NUM )
 		return 2; /* invalid account_id */
-	else if( (value=(int32)RFIFOL(fd, packet_db[cmd].pos[1])) <= 0 )
+	else if( (value=(int32)cid) <= 0 )
 		return 3; /* invalid char_id */
 	/*                   RFIFOL(fd, packet_db[cmd].pos[2]) - don't care about login_id1 */
 	/*                   RFIFOL(fd, packet_db[cmd].pos[3]) - don't care about client_tick */
