@@ -1749,7 +1749,11 @@ int32 chrif_parse(int32 fd) {
 	}
 
 	while ( RFIFOREST(fd) >= 2 ) {
-		int32 cmd = RFIFOW(fd,0);
+		// Byte-buffer reads: the read position advances by consumed packet
+		// lengths (often odd), so even plain uint16 loads use memcpy.
+		uint16 cmd16 = 0;
+		memcpy(&cmd16, RFIFOP(fd,0), sizeof(cmd16));
+		int32 cmd = cmd16;
 		if (cmd < 0x2af8 || cmd >= 0x2af8 + ARRAYLENGTH(packet_len_table) || packet_len_table[cmd-0x2af8] == 0) {
 			int32 r = intif_parse(fd); // Passed on to the intif
 
@@ -1764,7 +1768,9 @@ int32 chrif_parse(int32 fd) {
 		if ( ( packet_len = packet_len_table[cmd-0x2af8] ) == -1) { // dynamic-length packet, second WORD holds the length
 			if (RFIFOREST(fd) < 4)
 				return 0;
-			packet_len = RFIFOW(fd,2);
+			uint16 dynlen = 0;
+			memcpy(&dynlen, RFIFOP(fd,2), sizeof(dynlen));
+			packet_len = dynlen;
 		}
 
 		if ((int32)RFIFOREST(fd) < packet_len)
