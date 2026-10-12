@@ -640,11 +640,14 @@ void chrif_authreq(map_session_data *sd, bool autotrade) {
 
 	WFIFOHEAD(char_fd,20);
 	WFIFOW(char_fd,0) = 0x2b26;
-	WFIFOL(char_fd,2) = sd->status.account_id;
-	WFIFOL(char_fd,6) = sd->status.char_id;
-	WFIFOL(char_fd,10) = sd->login_id1;
+	uint32 u_aid = sd->status.account_id, u_cid = sd->status.char_id;
+	uint32 u_l1 = sd->login_id1;
+	uint32 u_nip = htonl(session[sd->fd]->client_addr);
+	memcpy(WFIFOP(char_fd,2), &u_aid, 4);
+	memcpy(WFIFOP(char_fd,6), &u_cid, 4);
+	memcpy(WFIFOP(char_fd,10), &u_l1, 4);
+	memcpy(WFIFOP(char_fd,15), &u_nip, 4);
 	WFIFOB(char_fd,14) = sd->status.sex;
-	WFIFOL(char_fd,15) = htonl(session[sd->fd]->client_addr);
 	WFIFOB(char_fd,19) = autotrade;
 	WFIFOSET(char_fd,20);
 	chrif_sd_to_auth(sd, ST_LOGIN);
