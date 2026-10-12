@@ -1029,8 +1029,15 @@ void inter_Storage_sendInfo(int32 fd) {
 
 	// Send storage table information
 	WFIFOHEAD(fd, len);
-	WFIFOW(fd, 0) = 0x388c;
-	WFIFOW( fd, 2 ) = static_cast<int16>( len );
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x388c;
+		uint16 packet_len = static_cast<uint16>( len );
+		memcpy(WFIFOP(fd, 0), &op, sizeof(op));
+		memcpy(WFIFOP(fd, 2), &packet_len, sizeof(packet_len));
+	}
+	offset = 4;
 	offset = 4;
 	for( auto storage : interServerDb ){
 		memcpy(WFIFOP(fd, offset), storage.second.get(), size);
