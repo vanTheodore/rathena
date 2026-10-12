@@ -13780,6 +13780,11 @@ uint32 JobDatabase::calc_basesp( const uint16 level, const std::shared_ptr<s_job
 		base_sp += floor( ( base_sp / 2 ) + 0.5 );
 	}
 
+	// A negative result has no meaning as base SP; clamping avoids both the
+	// UB conversion and the unsigned wrap (2^31 on x86-64).
+	if( base_sp < 0. )
+		base_sp = 0.;
+
 	return static_cast<uint32>( base_sp );
 }
 
