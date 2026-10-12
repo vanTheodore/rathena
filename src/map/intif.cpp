@@ -531,8 +531,12 @@ int32 intif_request_registry(map_session_data *sd, int32 flag)
 
 	WFIFOHEAD(inter_fd,13);
 	WFIFOW(inter_fd,0) = 0x3005;
-	WFIFOL(inter_fd,2) = sd->status.account_id;
-	WFIFOL(inter_fd,6) = sd->status.char_id;
+	// Byte-buffer slots at odd offsets: memcpy, same bytes.
+	{
+		uint32 aid = sd->status.account_id, cid = sd->status.char_id;
+		memcpy(WFIFOP(inter_fd,2), &aid, sizeof(aid));
+		memcpy(WFIFOP(inter_fd,6), &cid, sizeof(cid));
+	}
 	WFIFOB(inter_fd,10) = (flag&1?1:0); //Request Acc Reg 2 (from login-serv))
 	WFIFOB(inter_fd,11) = (flag&2?1:0); //Request Acc Reg (from char-serv)
 	WFIFOB(inter_fd,12) = (flag&4?1:0); //Request Char Reg
