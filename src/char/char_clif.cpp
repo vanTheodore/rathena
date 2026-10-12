@@ -834,9 +834,12 @@ int32 chclif_parse_reqtoconnect(int32 fd, struct char_session_data* sd,uint32 ip
 	if( RFIFOREST(fd) < 17 ) // request to connect
 		return 0;
 	else {
-		uint32 account_id = RFIFOL(fd,2);
-		uint32 login_id1 = RFIFOL(fd,6);
-		uint32 login_id2 = RFIFOL(fd,10);
+		// Byte-buffer reads at odd read positions: memcpy into aligned
+		// locals, same values.
+		uint32 account_id = 0, login_id1 = 0, login_id2 = 0;
+		memcpy(&account_id, RFIFOP(fd,2), sizeof(account_id));
+		memcpy(&login_id1, RFIFOP(fd,6), sizeof(login_id1));
+		memcpy(&login_id2, RFIFOP(fd,10), sizeof(login_id2));
 		int32 sex = RFIFOB(fd,16);
 		RFIFOSKIP(fd,17);
 
