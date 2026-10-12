@@ -3653,8 +3653,12 @@ bool intif_storage_request( const map_session_data* sd, enum storage_type type, 
 	WFIFOHEAD(inter_fd, 13);
 	WFIFOW(inter_fd, 0) = 0x308a;
 	WFIFOB(inter_fd, 2) = type;
-	WFIFOL(inter_fd, 3) = sd->status.account_id;
-	WFIFOL(inter_fd, 7) = sd->status.char_id;
+	// Byte-buffer slots at odd offsets: memcpy, same bytes.
+	{
+		uint32 aid = sd->status.account_id, cid = sd->status.char_id;
+		memcpy(WFIFOP(inter_fd, 3), &aid, sizeof(aid));
+		memcpy(WFIFOP(inter_fd, 7), &cid, sizeof(cid));
+	}
 	WFIFOB(inter_fd, 11) = stor_id;
 	WFIFOB(inter_fd, 12) = mode;
 	WFIFOSET(inter_fd, 13);
