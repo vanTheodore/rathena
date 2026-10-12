@@ -1803,7 +1803,14 @@ int32 chrif_parse(int32 fd) {
 			case 0x2af9: chrif_connectack(fd); break;
 			case 0x2afb: chrif_sendmapack(fd); break;
 			case 0x2afd: chrif_authok(fd); break;
-			case 0x2b00: map_setusers(RFIFOL(fd,2)); chrif_keepalive(fd); break;
+			// Byte-buffer read at an odd read position: memcpy, same value.
+		case 0x2b00: {
+			uint32 users = 0;
+			memcpy(&users, RFIFOP(fd,2), sizeof(users));
+			map_setusers(users);
+			chrif_keepalive(fd);
+			break;
+		}
 			case 0x2b03: clif_charselectok(RFIFOL(fd,2), RFIFOB(fd,6)); break;
 			case 0x2b04: chrif_recvmap(fd); break;
 			case 0x2b06: chrif_changemapserverack( RFIFOL( fd, 2 ), RFIFOL( fd, 6 ), RFIFOL( fd, 10 ), RFIFOL( fd, 14 ), RFIFOCP( fd, 18 ), RFIFOW( fd, 18 + MAP_NAME_LENGTH_EXT ), RFIFOW( fd, 18 + MAP_NAME_LENGTH_EXT + 2 ), RFIFOL( fd, 18 + MAP_NAME_LENGTH_EXT + 4 ), RFIFOW( fd, 18 + MAP_NAME_LENGTH_EXT + 8 ) ); break;
