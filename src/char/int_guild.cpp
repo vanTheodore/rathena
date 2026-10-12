@@ -1167,8 +1167,14 @@ int32 mapif_guild_castle_dataload(int32 fd, int32 sz, int32 *castle_ids)
 	int32 i;
 
 	WFIFOHEAD(fd, len);
-	WFIFOW(fd, 0) = 0x3840;
-	WFIFOW(fd, 2) = len;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3840;
+		uint16 packet_len = (uint16)len;
+		memcpy(WFIFOP(fd, 0), &op, sizeof(op));
+		memcpy(WFIFOP(fd, 2), &packet_len, sizeof(packet_len));
+	}
 	for (i = 0; i < num; i++) {
 		std::shared_ptr<struct guild_castle> gc = inter_guildcastle_fromsql( *(castle_ids++) );
 		memcpy( WFIFOP( fd, 4 + i * sizeof( struct guild_castle ) ), gc.get(), sizeof( struct guild_castle ) );
