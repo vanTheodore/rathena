@@ -99,9 +99,15 @@ int32 logchrif_parse_reqauth(int32 fd, int32 id,char* ip){
 			// send ack
 			WFIFOHEAD(fd,21);
 			WFIFOW(fd,0) = 0x2713;
-			WFIFOL(fd,2) = account_id;
-			WFIFOL(fd,6) = login_id1;
-			WFIFOL(fd,10) = login_id2;
+			// Byte-buffer slots at odd offsets: memcpy keeps the bytes
+			// identical without unaligned stores (same values).
+			{
+				uint32 rid = (uint32)request_id;
+				memcpy(WFIFOP(fd,2), &account_id, sizeof(account_id));
+				memcpy(WFIFOP(fd,6), &login_id1, sizeof(login_id1));
+				memcpy(WFIFOP(fd,10), &login_id2, sizeof(login_id2));
+				memcpy(WFIFOP(fd,16), &rid, sizeof(rid));
+			}
 			WFIFOB(fd,14) = sex;
 			WFIFOB(fd,15) = 0;// ok
 			WFIFOL(fd,16) = request_id;
@@ -114,9 +120,13 @@ int32 logchrif_parse_reqauth(int32 fd, int32 id,char* ip){
 			ShowStatus("Char-server '%s': authentication of the account %d REFUSED (ip: %s).\n", ch_server[id].name, account_id, ip);
 			WFIFOHEAD(fd,21);
 			WFIFOW(fd,0) = 0x2713;
-			WFIFOL(fd,2) = account_id;
-			WFIFOL(fd,6) = login_id1;
-			WFIFOL(fd,10) = login_id2;
+			{
+				uint32 rid = (uint32)request_id;
+				memcpy(WFIFOP(fd,2), &account_id, sizeof(account_id));
+				memcpy(WFIFOP(fd,6), &login_id1, sizeof(login_id1));
+				memcpy(WFIFOP(fd,10), &login_id2, sizeof(login_id2));
+				memcpy(WFIFOP(fd,16), &rid, sizeof(rid));
+			}
 			WFIFOB(fd,14) = sex;
 			WFIFOB(fd,15) = 1;// auth failed
 			WFIFOL(fd,16) = request_id;
