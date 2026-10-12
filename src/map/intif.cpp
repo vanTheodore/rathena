@@ -4,6 +4,7 @@
 #include "intif.hpp"
 
 #include <cstdlib>
+#include <vector>
 
 #include <common/malloc.hpp>
 #include <common/mmo.hpp>
@@ -1863,7 +1864,17 @@ int32 intif_parse_GuildMessage(int32 fd)
  */
 int32 intif_parse_GuildCastleDataLoad(int32 fd)
 {
-	return guild_castledataloadack(RFIFOW(fd,2), (struct guild_castle *)RFIFOP(fd,4));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	// The castle array is copied into an aligned local buffer (same bytes)
+	// because the parser walks its int32/uint16 members.
+	uint16 packet_len = 0;
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+	int32 count = ((int32)packet_len - 4) / (int32)sizeof(struct guild_castle);
+	if( count <= 0 )
+		return guild_castledataloadack(packet_len, (struct guild_castle *)RFIFOP(fd,4));
+	std::vector<struct guild_castle> castles((size_t)count);
+	memcpy(castles.data(), RFIFOP(fd,4), (size_t)count * sizeof(struct guild_castle));
+	return guild_castledataloadack(packet_len, castles.data());
 }
 
 /**
