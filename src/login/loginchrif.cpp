@@ -585,8 +585,10 @@ int32 logchrif_parse_req_global_accreg(int32 fd){
 		return 0;
 	else{
 		AccountDB* accounts = login_get_accounts_db();
-		uint32 account_id = RFIFOL(fd,2);
-		uint32 char_id = RFIFOL(fd,6);
+		// Byte-buffer reads at odd read positions: memcpy, same values.
+		uint32 account_id = 0, char_id = 0;
+		memcpy(&account_id, RFIFOP(fd,2), sizeof(account_id));
+		memcpy(&char_id, RFIFOP(fd,6), sizeof(char_id));
 		RFIFOSKIP(fd,10);
 
 		mmo_send_global_accreg(accounts,fd,account_id,char_id);
