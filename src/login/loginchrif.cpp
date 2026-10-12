@@ -527,7 +527,10 @@ int32 logchrif_parse_requnbanacc(int32 fd, int32 id, char* ip){
 int32 logchrif_parse_setacconline(int32 fd, int32 id){
 	if( RFIFOREST(fd) < 6 )
 		return 0;
-	login_add_online_user(id, RFIFOL(fd,2));
+	// Byte-buffer read at an odd read position: memcpy, same value.
+	uint32 aid = 0;
+	memcpy(&aid, RFIFOP(fd,2), sizeof(aid));
+	login_add_online_user(id, aid);
 	RFIFOSKIP(fd,6);
 	return 1;
 }
@@ -541,7 +544,9 @@ int32 logchrif_parse_setacconline(int32 fd, int32 id){
 int32 logchrif_parse_setaccoffline(int32 fd){
 	if( RFIFOREST(fd) < 6 )
 		return 0;
-	login_remove_online_user(RFIFOL(fd,2));
+	uint32 aid = 0;
+	memcpy(&aid, RFIFOP(fd,2), sizeof(aid));
+	login_remove_online_user(aid);
 	RFIFOSKIP(fd,6);
 	return 1;
 }
