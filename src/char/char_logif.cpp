@@ -355,11 +355,17 @@ int32 chlogif_parse_reqaccdata(int32 fd){
 	struct char_session_data* sd;
 
 	// find the authenticated session with this account id
-	ARR_FIND( 0, fd_max, u_fd, session[u_fd] && (sd = (struct char_session_data*)session[u_fd]->session_data) && sd->auth && sd->account_id == RFIFOL(fd,2) );
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 want_aid = 0;
+	memcpy(&want_aid, RFIFOP(fd,2), sizeof(want_aid));
+	ARR_FIND( 0, fd_max, u_fd, session[u_fd] && (sd = (struct char_session_data*)session[u_fd]->session_data) && sd->auth && sd->account_id == want_aid );
 	if( u_fd < fd_max )
 	{
+		uint32 exp = 0, pinchg = 0;
+		memcpy(&exp, RFIFOP(fd,46), sizeof(exp));
+		memcpy(&pinchg, RFIFOP(fd,68), sizeof(pinchg));
 		memcpy(sd->email, RFIFOP(fd,6), 40);
-		sd->expiration_time = (time_t)RFIFOL(fd,46);
+		sd->expiration_time = (time_t)exp;
 		sd->group_id = RFIFOB(fd,50);
 		sd->char_slots = RFIFOB(fd,51);
 		if( sd->char_slots > MAX_CHARS ) {
@@ -369,7 +375,7 @@ int32 chlogif_parse_reqaccdata(int32 fd){
 			sd->char_slots = MIN_CHARS;/* cap to minimum */
 		safestrncpy(sd->birthdate, RFIFOCP(fd,52), sizeof(sd->birthdate));
 		safestrncpy(sd->pincode, RFIFOCP(fd,63), sizeof(sd->pincode));
-		sd->pincode_change = (time_t)RFIFOL(fd,68);
+		sd->pincode_change = (time_t)pinchg;
 		sd->isvip = RFIFOB(fd,72);
 		sd->chars_vip = RFIFOB(fd,73);
 		sd->chars_billing = RFIFOB(fd,74);
