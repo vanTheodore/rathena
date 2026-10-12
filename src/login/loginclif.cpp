@@ -411,7 +411,13 @@ static int32 logclif_parse_reqcharconnec(int32 fd, struct login_session_data *sd
 		if( login_config.use_md5_passwds )
 			MD5_String(sd->passwd, sd->passwd);
 		sd->passwdenc = 0;
-		server_ip = ntohl(RFIFOL(fd,54));
+		{
+			// Offset 54 is never uint32-aligned in a byte buffer: memcpy
+			// into an aligned local, same bytes (0x2710 read side).
+			uint32 ip = 0;
+			memcpy(&ip, RFIFOP(fd,54), sizeof(ip));
+			server_ip = ntohl(ip);
+		}
 		server_port = ntohs(RFIFOW(fd,58));
 		safestrncpy(server_name, RFIFOCP(fd,60), 20);
 		type = RFIFOW(fd,82);

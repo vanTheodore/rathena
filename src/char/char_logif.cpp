@@ -105,12 +105,18 @@ TIMER_FUNC(chlogif_send_acc_tologin){
 			std::shared_ptr<struct online_char_data> character = pair.second;
 
 			if( character->server > -1 ){
-				WFIFOL( login_fd, 8 + i * 4 ) = character->account_id;
+				// Byte-buffer slot: alignment depends on the fifo write
+				// position too, so memcpy (same bytes, no unaligned store).
+				uint32 account_id = (uint32)character->account_id;
+				memcpy(WFIFOP(login_fd, 8 + i * 4), &account_id, sizeof(account_id));
 				i++;
 			}
 		}
 		WFIFOW(login_fd,2) = 8+ i*4;
-		WFIFOL(login_fd,4) = i;
+		{
+			uint32 count = (uint32)i;
+			memcpy(WFIFOP(login_fd,4), &count, sizeof(count));
+		}
 		WFIFOSET(login_fd,WFIFOW(login_fd,2));
 		return 1;
 	}
@@ -123,7 +129,11 @@ void chlogif_send_usercount(int32 users){
 	// send number of user to login server
 	WFIFOHEAD(login_fd,6);
 	WFIFOW(login_fd,0) = 0x2714;
-	WFIFOL(login_fd,2) = users;
+	{
+		// Offset 2 is never uint32-aligned: memcpy, same bytes.
+		uint32 nusers = (uint32)users;
+		memcpy(WFIFOP(login_fd,2), &nusers, sizeof(nusers));
+	}
 	WFIFOSET(login_fd,6);
 }
 
@@ -824,8 +834,14 @@ TIMER_FUNC(chlogif_check_connect_logserver){
 	WFIFOW(login_fd,0) = 0x2710;
 	memcpy(WFIFOP(login_fd,2), charserv_config.userid, 24);
 	memcpy(WFIFOP(login_fd,26), charserv_config.passwd, 24);
-	WFIFOL(login_fd,50) = 0;
-	WFIFOL(login_fd,54) = htonl(charserv_config.char_ip);
+	// Unaligned uint32 slots in a byte buffer: memcpy keeps the bytes
+	// identical without an unaligned store (UBSan alignment).
+	{
+		uint32 zero = 0;
+		uint32 ip = htonl(charserv_config.char_ip);
+		memcpy(WFIFOP(login_fd,50), &zero, sizeof(zero));
+		memcpy(WFIFOP(login_fd,54), &ip, sizeof(ip));
+	}
 	WFIFOW(login_fd,58) = htons(charserv_config.char_port);
 	memcpy(WFIFOP(login_fd,60), charserv_config.server_name, 20);
 	WFIFOW(login_fd,80) = 0;
