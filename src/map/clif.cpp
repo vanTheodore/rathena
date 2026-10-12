@@ -6696,8 +6696,14 @@ void clif_displaymessage(const int32 fd, const char* mes)
 
 			if (len > 0) { // don't send a void message (it's not displaying on the client chat). @help can send void line.
 				WFIFOHEAD(fd, 5 + len);
-				WFIFOW(fd,0) = 0x8e;
-				WFIFOW(fd,2) = 5 + len; // 4 + len + nullptr teminate
+				// Byte-buffer slots: the fifo write position can be odd-sized,
+				// so even plain uint16 stores use memcpy (same bytes).
+				{
+					uint16 op = 0x8e;
+					uint16 packet_len = (uint16)(5 + len); // 4 + len + nullptr teminate
+					memcpy(WFIFOP(fd,0), &op, sizeof(op));
+					memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+				}
 				safestrncpy(WFIFOCP(fd,4), line, len + 1);
 				WFIFOSET(fd, 5 + len);
 			}
