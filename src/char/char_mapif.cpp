@@ -1013,11 +1013,17 @@ int32 chmapif_parse_reqauth(int32 fd, int32 id){
 		struct mmo_charstatus char_dat;
 		bool autotrade;
 
-		account_id = RFIFOL(fd,2);
-		char_id    = RFIFOL(fd,6);
-		login_id1  = RFIFOL(fd,10);
+		// Byte-buffer reads at odd read positions: memcpy into aligned
+		// locals, same values.
+		memcpy(&account_id, RFIFOP(fd,2), sizeof(account_id));
+		memcpy(&char_id, RFIFOP(fd,6), sizeof(char_id));
+		memcpy(&login_id1, RFIFOP(fd,10), sizeof(login_id1));
 		sex        = RFIFOB(fd,14);
-		ip         = ntohl(RFIFOL(fd,15));
+		{
+			uint32 nip = 0;
+			memcpy(&nip, RFIFOP(fd,15), sizeof(nip));
+			ip = ntohl(nip);
+		}
 		autotrade  = RFIFOB(fd,19) != 0;
 		RFIFOSKIP(fd,20);
 
