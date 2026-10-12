@@ -73,12 +73,16 @@ int32 logchrif_parse_reqauth(int32 fd, int32 id,char* ip){
 	if( RFIFOREST(fd) < 23 )
 		return 0;
 	else{
-		uint32 account_id = RFIFOL(fd,2);
-		uint32 login_id1 = RFIFOL(fd,6);
-		uint32 login_id2 = RFIFOL(fd,10);
+		// Byte-buffer reads at odd read positions: memcpy into aligned
+		// locals, same values.
+		uint32 account_id = 0, login_id1 = 0, login_id2 = 0, req = 0;
+		memcpy(&account_id, RFIFOP(fd,2), sizeof(account_id));
+		memcpy(&login_id1, RFIFOP(fd,6), sizeof(login_id1));
+		memcpy(&login_id2, RFIFOP(fd,10), sizeof(login_id2));
 		uint8 sex = RFIFOB(fd,14);
 		//uint32 ip_ = ntohl(RFIFOL(fd,15));
-		int32 request_id = RFIFOL(fd,19);
+		memcpy(&req, RFIFOP(fd,19), sizeof(req));
+		int32 request_id = (int32)req;
 		RFIFOSKIP(fd,23);
 
 		struct auth_node* node = login_get_auth_node( account_id );
