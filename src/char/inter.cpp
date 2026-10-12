@@ -1335,12 +1335,16 @@ int32 mapif_parse_Registry(int32 fd)
 // Request the value of all registries.
 int32 mapif_parse_RegistryRequest(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 account_id = 0, char_id = 0;
+	memcpy(&account_id, RFIFOP(fd,2), sizeof(account_id));
+	memcpy(&char_id, RFIFOP(fd,6), sizeof(char_id));
 	//Load Char Registry
-	if (RFIFOB(fd,12)) mapif_account_reg_reply(fd,RFIFOL(fd,2),RFIFOL(fd,6),3);
+	if (RFIFOB(fd,12)) mapif_account_reg_reply(fd,account_id,char_id,3);
 	//Load Account Registry
-	if (RFIFOB(fd,11)) mapif_account_reg_reply(fd,RFIFOL(fd,2),RFIFOL(fd,6),2);
+	if (RFIFOB(fd,11)) mapif_account_reg_reply(fd,account_id,char_id,2);
 	//Ask Login Server for Account2 values.
-	if (RFIFOB(fd,10)) chlogif_request_accreg2(RFIFOL(fd,2),RFIFOL(fd,6));
+	if (RFIFOB(fd,10)) chlogif_request_accreg2(account_id,char_id);
 	return 1;
 }
 
