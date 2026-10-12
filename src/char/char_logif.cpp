@@ -239,8 +239,9 @@ void chlogif_request_accreg2(uint32 account_id, uint32 char_id){
 		return;
 	WFIFOHEAD(login_fd,10);
 	WFIFOW(login_fd,0) = 0x272e;
-	WFIFOL(login_fd,2) = account_id;
-	WFIFOL(login_fd,6) = char_id;
+	// Byte-buffer slots at odd offsets: memcpy, same bytes.
+	memcpy(WFIFOP(login_fd,2), &account_id, sizeof(account_id));
+	memcpy(WFIFOP(login_fd,6), &char_id, sizeof(char_id));
 	WFIFOSET(login_fd,10);
 }
 
@@ -249,7 +250,10 @@ void chlogif_send_reqaccdata(int32 fd, struct char_session_data *sd){
 		return;
 	WFIFOHEAD(fd,6);
 	WFIFOW(fd,0) = 0x2716;
-	WFIFOL(fd,2) = sd->account_id;
+	{
+		uint32 aid = sd->account_id;
+		memcpy(WFIFOP(fd,2), &aid, sizeof(aid));
+	}
 	WFIFOSET(fd,6);
 }
 
@@ -258,7 +262,10 @@ void chlogif_send_setacconline(int32 aid){
 		return;
 	WFIFOHEAD(login_fd,6);
 	WFIFOW(login_fd,0) = 0x272b;
-	WFIFOL(login_fd,2) = aid;
+	{
+		uint32 auid = (uint32)aid;
+		memcpy(WFIFOP(login_fd,2), &auid, sizeof(auid));
+	}
 	WFIFOSET(login_fd,6);
 }
 
