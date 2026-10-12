@@ -665,19 +665,32 @@ void chrif_authok(int32 fd) {
 	bool changing_mapservers;
 	TBL_PC* sd;
 
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	// The charstatus blob is copied whole into an aligned local because the
+	// parser reads its int32 members below. Same bytes, same values.
+	uint16 packet_len = 0;
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+
 	//Check if both servers agree on the struct's size
-	if( RFIFOW(fd,2) - 25 != sizeof(struct mmo_charstatus) ) {
-		ShowError("chrif_authok: Data size mismatch! %d != %" PRIuPTR "\n", RFIFOW(fd,2) - 25, sizeof(struct mmo_charstatus));
+	if( packet_len - 25 != sizeof(struct mmo_charstatus) ) {
+		ShowError("chrif_authok: Data size mismatch! %d != %" PRIuPTR "\n", packet_len - 25, sizeof(struct mmo_charstatus));
 		return;
 	}
 
-	account_id = RFIFOL(fd,4);
-	login_id1 = RFIFOL(fd,8);
-	login_id2 = RFIFOL(fd,12);
-	expiration_time = (time_t)(int32)RFIFOL(fd,16);
-	group_id = RFIFOL(fd,20);
+	struct mmo_charstatus status_local;
+	memcpy(&account_id, RFIFOP(fd,4), sizeof(account_id));
+	memcpy(&login_id1, RFIFOP(fd,8), sizeof(login_id1));
+	memcpy(&login_id2, RFIFOP(fd,12), sizeof(login_id2));
+	{
+		uint32 exp = 0, grp = 0;
+		memcpy(&exp, RFIFOP(fd,16), sizeof(exp));
+		memcpy(&grp, RFIFOP(fd,20), sizeof(grp));
+		expiration_time = (time_t)(int32)exp;
+		group_id = grp;
+	}
 	changing_mapservers = (RFIFOB(fd,24)) > 0;
-	status = (struct mmo_charstatus*)RFIFOP(fd,25);
+	memcpy(&status_local, RFIFOP(fd,25), sizeof(status_local));
+	status = &status_local;
 	char_id = status->char_id;
 
 	//Check if we don't already have player data in our server
