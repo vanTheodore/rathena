@@ -355,8 +355,14 @@ int32 chrif_connect(int32 fd) {
 	WFIFOW(fd,0) = 0x2af8;
 	memcpy(WFIFOP(fd,2), userid, NAME_LENGTH);
 	memcpy(WFIFOP(fd,26), passwd, NAME_LENGTH);
-	WFIFOL(fd,50) = 0;
-	WFIFOL(fd,54) = htonl(clif_getip());
+	// Unaligned uint32 slots in a byte buffer: memcpy keeps the bytes
+	// identical without an unaligned store (UBSan alignment).
+	{
+		uint32 zero = 0;
+		uint32 ip = htonl(clif_getip());
+		memcpy(WFIFOP(fd,50), &zero, sizeof(zero));
+		memcpy(WFIFOP(fd,54), &ip, sizeof(ip));
+	}
 	WFIFOW(fd,58) = htons(clif_getport());
 	WFIFOSET(fd,60);
 
