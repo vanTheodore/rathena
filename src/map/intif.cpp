@@ -2058,8 +2058,14 @@ void intif_request_questlog(map_session_data *sd)
 		return;
 	
 	WFIFOHEAD(inter_fd,6);
-	WFIFOW(inter_fd,0) = 0x3060;
-	WFIFOL(inter_fd,2) = sd->status.char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3060;
+		uint32 cid = sd->status.char_id;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(inter_fd,2), &cid, sizeof(cid));
+	}
 	WFIFOSET(inter_fd,6);
 }
 
@@ -2069,7 +2075,12 @@ void intif_request_questlog(map_session_data *sd)
  */
 void intif_parse_questlog(int32 fd)
 {
-	uint32 char_id = RFIFOL(fd,4), num_received = (RFIFOW(fd,2) - 8) / sizeof(struct quest);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 char_id = 0;
+	uint16 packet_len = 0;
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+	memcpy(&char_id, RFIFOP(fd,4), sizeof(char_id));
+	uint32 num_received = (packet_len - 8) / sizeof(struct quest);
 	TBL_PC *sd = map_charid2sd(char_id);
 
 	if(!sd) // User not online anymore
