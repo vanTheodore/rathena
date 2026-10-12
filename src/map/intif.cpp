@@ -2332,8 +2332,13 @@ int32 intif_Mail_requestinbox(uint32 char_id, unsigned char flag, enum mail_inbo
 		return 0;
 
 	WFIFOHEAD(inter_fd,8);
-	WFIFOW(inter_fd,0) = 0x3048;
-	WFIFOL(inter_fd,2) = char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3048;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(inter_fd,2), &char_id, sizeof(char_id));
+	}
 	WFIFOB(inter_fd,6) = flag;
 	WFIFOB(inter_fd,7) = type;
 	WFIFOSET(inter_fd,8);
