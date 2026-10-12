@@ -203,14 +203,20 @@ int32 logchrif_send_accdata(int32 fd, uint32 aid) {
 
 	WFIFOHEAD(fd,75);
 	WFIFOW(fd,0) = 0x2717;
-	WFIFOL(fd,2) = aid;
+	// Byte-buffer slots at odd offsets: memcpy keeps the bytes identical
+	// without unaligned stores (same values).
+	{
+		uint32 exp = (uint32)expiration_time;
+		uint32 pinchg = (uint32)acc.pincode_change;
+		memcpy(WFIFOP(fd,2), &aid, sizeof(aid));
+		memcpy(WFIFOP(fd,46), &exp, sizeof(exp));
+		memcpy(WFIFOP(fd,68), &pinchg, sizeof(pinchg));
+	}
 	safestrncpy(WFIFOCP(fd,6), email, 40);
-	WFIFOL(fd,46) = (uint32)expiration_time;
 	WFIFOB(fd,50) = (unsigned char)group_id;
 	WFIFOB(fd,51) = char_slots;
 	safestrncpy(WFIFOCP(fd,52), birthdate, 10+1);
 	safestrncpy(WFIFOCP(fd,63), pincode, 4+1 );
-	WFIFOL(fd,68) = (uint32)acc.pincode_change;
 	WFIFOB(fd,72) = isvip;
 	WFIFOB(fd,73) = char_vip;
 	WFIFOB(fd,74) = char_billing;
