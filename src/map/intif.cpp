@@ -3695,7 +3695,18 @@ int32 intif_clan_requestclans(){
 }
 
 void intif_parse_clans( int32 fd ){
-	clan_load_clandata( ( RFIFOW(fd, 2) - 4 ) / sizeof( struct clan ), (struct clan*)RFIFOP(fd,4) );
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	// The clan array is copied into an aligned local buffer as well: the
+	// loader passes its elements to memcpy, whose pointer operands carry
+	// alignment too. Same bytes, no unaligned access.
+	uint16 packet_len = 0;
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+	int32 count = ((int32)packet_len - 4) / (int32)sizeof(struct clan);
+	if( count <= 0 )
+		return clan_load_clandata(count, (struct clan*)RFIFOP(fd,4));
+	std::vector<struct clan> clans((size_t)count);
+	memcpy(clans.data(), RFIFOP(fd,4), (size_t)count * sizeof(struct clan));
+	return clan_load_clandata(count, clans.data());
 }
 
 int32 intif_clan_message( int32 clan_id, uint32 account_id, const char *mes, size_t len ){
