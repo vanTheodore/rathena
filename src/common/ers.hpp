@@ -61,13 +61,13 @@
 
 /**
  * Entries are aligned to ERS_ALIGNED bytes in the blocks of entries.
- * By default it aligns to one byte, using the "natural order" of the entries.
- * This should NEVER be set to zero or less.
- * If greater than one, some memory can be wasted. This should never be needed
- * but is here just in case some alignment issues arise.
+ * 8 by default: chunked entries after the first would otherwise sit at
+ * addresses the compiler may assume are pointer-aligned, which is undefined
+ * behavior (caught by UBSan as misaligned ers_list access). If greater than
+ * one, some memory can be wasted. This should NEVER be set to zero or less.
  */
 #ifndef ERS_ALIGNED
-#	define ERS_ALIGNED 1
+#	define ERS_ALIGNED 8
 #endif /* not ERS_ALIGN_ENTRY */
 
 enum ERSOptions {
