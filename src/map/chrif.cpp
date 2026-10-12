@@ -1222,7 +1222,10 @@ int32 chrif_recvfamelist(int32 fd) {
 	memset (chemist_fame_list, 0, sizeof(chemist_fame_list));
 	memset (taekwon_fame_list, 0, sizeof(taekwon_fame_list));
 
-	size = RFIFOW(fd, 6); //Blacksmith block size
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 blacksmith_size = 0, alchemist_size = 0, total_len = 0;
+	memcpy(&blacksmith_size, RFIFOP(fd, 6), sizeof(blacksmith_size));
+	size = blacksmith_size; //Blacksmith block size
 
 	for (num = 0; len < size && num < MAX_FAME_LIST; num++) {
 		memcpy(&smith_fame_list[num], RFIFOP(fd,len), sizeof(struct fame_list));
@@ -1231,7 +1234,8 @@ int32 chrif_recvfamelist(int32 fd) {
 
 	total += num;
 
-	size = RFIFOW(fd, 4); //Alchemist block size
+	memcpy(&alchemist_size, RFIFOP(fd, 4), sizeof(alchemist_size));
+	size = alchemist_size; //Alchemist block size
 
 	for (num = 0; len < size && num < MAX_FAME_LIST; num++) {
 		memcpy(&chemist_fame_list[num], RFIFOP(fd,len), sizeof(struct fame_list));
@@ -1240,7 +1244,8 @@ int32 chrif_recvfamelist(int32 fd) {
 
 	total += num;
 
-	size = RFIFOW(fd, 2); //Total packet length
+	memcpy(&total_len, RFIFOP(fd, 2), sizeof(total_len));
+	size = total_len; //Total packet length
 
 	for (num = 0; len < size && num < MAX_FAME_LIST; num++) {
 		memcpy(&taekwon_fame_list[num], RFIFOP(fd,len), sizeof(struct fame_list));
