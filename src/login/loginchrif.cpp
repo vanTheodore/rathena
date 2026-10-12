@@ -251,7 +251,10 @@ int32 logchrif_parse_reqaccdata(int32 fd, int32 id, char *ip){
 	if( RFIFOREST(fd) < 6 )
 		return 0;
 	else {
-		uint32 aid = RFIFOL(fd,2);
+		// Byte-buffer read at an odd read position: memcpy into an aligned
+		// local, same value.
+		uint32 aid = 0;
+		memcpy(&aid, RFIFOP(fd,2), sizeof(aid));
 		RFIFOSKIP(fd,6);
 		if( logchrif_send_accdata(fd,aid) < 0 )
 			ShowNotice("Char-server '%s': account %d NOT found (ip: %s).\n", ch_server[id].name, aid, ip);
