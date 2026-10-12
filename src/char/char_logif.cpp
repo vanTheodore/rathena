@@ -282,7 +282,11 @@ void chlogif_send_setaccoffline(int32 fd, int32 aid){
 		return;
 	WFIFOHEAD(fd,6);
 	WFIFOW(fd,0) = 0x272c;
-	WFIFOL(fd,2) = aid;
+	{
+		// Byte-buffer slot at an odd offset: memcpy, same bytes.
+		uint32 auid = (uint32)aid;
+		memcpy(WFIFOP(fd,2), &auid, sizeof(auid));
+	}
 	WFIFOSET(fd,6);
 }
 
