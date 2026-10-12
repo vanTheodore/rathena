@@ -3764,7 +3764,13 @@ int32 intif_parse_clan_onlinecount( int32 fd ){
 int32 intif_parse(int32 fd)
 {
 	int32 packet_len, cmd;
-	cmd = RFIFOW(fd,0);
+	// Byte-buffer reads: the read position advances by consumed packet
+	// lengths (often odd), so even plain uint16 loads use memcpy.
+	{
+		uint16 cmd16 = 0;
+		memcpy(&cmd16, RFIFOP(fd,0), sizeof(cmd16));
+		cmd = cmd16;
+	}
 	// Verify ID of the packet
 	if(cmd<0x3800 || cmd>=0x3800+ARRAYLENGTH(packet_len_table) ||
 		packet_len_table[cmd-0x3800]==0){
@@ -3775,7 +3781,9 @@ int32 intif_parse(int32 fd)
 	if(packet_len==-1){
 		if(RFIFOREST(fd)<4)
 			return 2;
-		packet_len = RFIFOW(fd,2);
+		uint16 dynlen = 0;
+		memcpy(&dynlen, RFIFOP(fd,2), sizeof(dynlen));
+		packet_len = dynlen;
 	}
 	if((int32)RFIFOREST(fd)<packet_len){
 		return 2;
