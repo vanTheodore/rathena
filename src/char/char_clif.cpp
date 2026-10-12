@@ -890,12 +890,18 @@ int32 chclif_parse_reqtoconnect(int32 fd, struct char_session_data* sd,uint32 ip
 			if (session_isValid(login_fd)) { // don't send request if no login-server
 				WFIFOHEAD(login_fd,23);
 				WFIFOW(login_fd,0) = 0x2712; // ask login-server to authentify an account
-				WFIFOL(login_fd,2) = sd->account_id;
-				WFIFOL(login_fd,6) = sd->login_id1;
-				WFIFOL(login_fd,10) = sd->login_id2;
+				// Byte-buffer slots at odd offsets: memcpy keeps the bytes
+				// identical without unaligned stores (same values).
+				{
+					uint32 aid = sd->account_id, l1 = sd->login_id1, l2 = sd->login_id2;
+					uint32 nip = htonl(ipl), cfd = (uint32)fd;
+					memcpy(WFIFOP(login_fd,2), &aid, sizeof(aid));
+					memcpy(WFIFOP(login_fd,6), &l1, sizeof(l1));
+					memcpy(WFIFOP(login_fd,10), &l2, sizeof(l2));
+					memcpy(WFIFOP(login_fd,15), &nip, sizeof(nip));
+					memcpy(WFIFOP(login_fd,19), &cfd, sizeof(cfd));
+				}
 				WFIFOB(login_fd,14) = sd->sex;
-				WFIFOL(login_fd,15) = htonl(ipl);
-				WFIFOL(login_fd,19) = fd;
 				WFIFOSET(login_fd,23);
 			} else { // if no login-server, we must refuse connection
 				chclif_reject(fd, 0); // rejected from server
