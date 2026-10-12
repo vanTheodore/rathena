@@ -3597,18 +3597,22 @@ static void intif_parse_StorageSaved(int32 fd)
  * Receive storage information
  **/
 void intif_parse_StorageInfo_recv(int32 fd) {
-	int32 size = sizeof(struct s_storage_table), count = (RFIFOW(fd, 2) - 4) / size;
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 packet_len = 0;
+	memcpy(&packet_len, RFIFOP(fd, 2), sizeof(packet_len));
+	int32 size = sizeof(struct s_storage_table), count = ((int32)packet_len - 4) / size;
 
 	storage_db.clear();
 
 	for( int32 i = 0; i < count; i++ ){
-		struct s_storage_table* ptr = (struct s_storage_table*)RFIFOP( fd, 4 + size * i );
+		struct s_storage_table raw;
+		memcpy(&raw, RFIFOP( fd, 4 + size * i ), sizeof(raw));
 		std::shared_ptr<struct s_storage_table> storage = std::make_shared<struct s_storage_table>();
 
-		safestrncpy( storage->name, ptr->name, sizeof( storage->name ) );
-		safestrncpy( storage->table, ptr->table, sizeof( storage->table ) );
-		storage->max_num = ptr->max_num;
-		storage->id = ptr->id;
+		safestrncpy( storage->name, raw.name, sizeof( storage->name ) );
+		safestrncpy( storage->table, raw.table, sizeof( storage->table ) );
+		storage->max_num = raw.max_num;
+		storage->id = raw.id;
 
 		storage_db[storage->id] = storage;
 	}
