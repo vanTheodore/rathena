@@ -610,7 +610,10 @@ int32 chlogif_parse_askkick(int32 fd){
 	if (RFIFOREST(fd) < 6)
 		return 0;
 	else {
-		uint32 aid = RFIFOL(fd,2);
+		// Byte-buffer read at an odd read position: memcpy into an aligned
+		// local, same value.
+		uint32 aid = 0;
+		memcpy(&aid, RFIFOP(fd,2), sizeof(aid));
 		RFIFOSKIP(fd,6);
 
 		std::shared_ptr<struct online_char_data> character = util::umap_find( char_get_onlinedb(), aid );
