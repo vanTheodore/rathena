@@ -10658,10 +10658,19 @@ void clif_parse_WantToConnection(int32 fd, map_session_data* sd)
 
 	cmd = RFIFOW(fd, 0);
 	// TODO: shuffle packet
-	account_id = RFIFOL(fd, packet_db[cmd].pos[0]);
-	char_id = RFIFOL(fd, packet_db[cmd].pos[1]);
-	login_id1 = RFIFOL(fd, packet_db[cmd].pos[2]);
-	client_tick = RFIFOL(fd, packet_db[cmd].pos[3]);
+	// Byte-buffer reads: field offsets come from packet_db and the read
+	// position is often odd, so memcpy into aligned locals (same values).
+	{
+		uint32 aid = 0, cid = 0, l1 = 0, tick = 0;
+		memcpy(&aid, RFIFOP(fd, packet_db[cmd].pos[0]), sizeof(aid));
+		memcpy(&cid, RFIFOP(fd, packet_db[cmd].pos[1]), sizeof(cid));
+		memcpy(&l1, RFIFOP(fd, packet_db[cmd].pos[2]), sizeof(l1));
+		memcpy(&tick, RFIFOP(fd, packet_db[cmd].pos[3]), sizeof(tick));
+		account_id = aid;
+		char_id = cid;
+		login_id1 = l1;
+		client_tick = tick;
+	}
 	sex = RFIFOB(fd, packet_db[cmd].pos[4]);
 
 	err = clif_parse_WantToConnection_sub(fd);
