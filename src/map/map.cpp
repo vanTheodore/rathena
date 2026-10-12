@@ -3637,10 +3637,12 @@ int32 map_eraseipport(uint16 mapindex, uint32 ip, uint16 port)
 /*==========================================
  * [Shinryo]: Init the mapcache
  *------------------------------------------*/
-static char *map_init_mapcache(FILE *fp)
+static char *map_init_mapcache(FILE *fp, size_t *out_size)
 {
 	size_t size = 0;
 	char *buffer;
+
+	*out_size = 0;
 
 	// No file open? Return..
 	nullpo_ret(fp);
@@ -3662,6 +3664,7 @@ static char *map_init_mapcache(FILE *fp)
 		return nullptr;
 	}
 
+	*out_size = size;
 	return buffer;
 }
 
@@ -3669,40 +3672,56 @@ static char *map_init_mapcache(FILE *fp)
  * Map cache reading
  * [Shinryo]: Optimized some behaviour to speed this up
  *==========================================*/
-int32 map_readfromcache(struct map_data *m, char *buffer, char *decode_buffer)
+int32 map_readfromcache(struct map_data *m, char *buffer, size_t bufsize, char *decode_buffer)
 {
 	int32 i;
-	struct map_cache_main_header *header = (struct map_cache_main_header *)buffer;
-	struct map_cache_map_info *info = nullptr;
-	char *p = buffer + sizeof(struct map_cache_main_header);
+	struct map_cache_main_header header;
+	struct map_cache_map_info info;
+	size_t off;
 
-	for(i = 0; i < header->map_count; i++) {
-		info = (struct map_cache_map_info *)p;
+	// The whole main header must be present.
+	if( bufsize < sizeof(header) )
+		return 0;
+	// File bytes are not guaranteed aligned and entries have variable
+	// length: copy headers into aligned locals, never cast the buffer.
+	// The on-disk format is unchanged.
+	memcpy(&header, buffer, sizeof(header));
+	off = sizeof(header);
 
-		if( strcmp(m->name, info->name) == 0 )
+	for(i = 0; i < header.map_count; i++) {
+		// Entry header must fit (off <= bufsize holds at every step).
+		if( bufsize - off < sizeof(info) )
+			return 0; // Truncated file: reject, never overread.
+		memcpy(&info, buffer + off, sizeof(info));
+		// ...as must its payload: rejects negative lengths and offset
+		// overflow as well.
+		if( info.len < 0 || (size_t)info.len > bufsize - off - sizeof(info) )
+			return 0; // Corrupt file: reject cleanly.
+		// Bounded compare: a corrupt name may lack its NUL terminator.
+		if( strncmp(m->name, info.name, sizeof(info.name)) == 0 )
 			break; // Map found
 
 		// Jump to next entry..
-		p += sizeof(struct map_cache_map_info) + info->len;
+		off += sizeof(info) + (size_t)info.len;
 	}
 
-	if( info && i < header->map_count ) {
+	if( i < header.map_count ) {
 		unsigned long size, xy;
 
-		if( info->xs <= 0 || info->ys <= 0 )
+		if( info.xs <= 0 || info.ys <= 0 )
 			return 0;// Invalid
 
-		m->xs = info->xs;
-		m->ys = info->ys;
-		size = (unsigned long)info->xs*(unsigned long)info->ys;
+		m->xs = info.xs;
+		m->ys = info.ys;
+		size = (unsigned long)info.xs*(unsigned long)info.ys;
 
 		if(size > MAX_MAP_SIZE) {
-			ShowWarning("map_readfromcache: %s exceeded MAX_MAP_SIZE of %d\n", info->name, MAX_MAP_SIZE);
+			ShowWarning("map_readfromcache: %.*s exceeded MAX_MAP_SIZE of %d\n", (int)sizeof(info.name), info.name, MAX_MAP_SIZE);
 			return 0; // Say not found to remove it from list.. [Shinryo]
 		}
 
 		// TO-DO: Maybe handle the scenario, if the decoded buffer isn't the same size as expected? [Shinryo]
-		decode_zip(decode_buffer, &size, p+sizeof(struct map_cache_map_info), info->len);
+		decode_zip(decode_buffer, &size, buffer + off + sizeof(struct map_cache_map_info), info.len);
 
 		CREATE(m->cell, struct mapcell, size);
 
@@ -3913,6 +3932,9 @@ int32 map_readallmaps (void)
 	FILE* fp;
 	// Has the uncompressed gat data of all maps, so just one allocation has to be made
 	std::vector<char *> map_cache_buffer = {};
+	// Physical size of each buffer above: the reader bounds-checks every
+	// access against it, so a corrupt cache is rejected, never overread.
+	std::vector<size_t> map_cache_size = {};
 
 	if( enable_grf )
 		ShowStatus("Loading maps (using GRF files)...\n");
@@ -3933,7 +3955,9 @@ int32 map_readallmaps (void)
 			}
 
 			// Init mapcache data. [Shinryo]
-			map_cache_buffer.push_back(map_init_mapcache(fp));
+			size_t cache_size = 0;
+			map_cache_buffer.push_back(map_init_mapcache(fp, &cache_size));
+			map_cache_size.push_back(cache_size);
 
 			if( !map_cache_buffer.back() ) {
 				ShowFatalError( "Failed to initialize mapcache data (%s)..\n", mapdat.c_str());
@@ -3965,8 +3989,8 @@ int32 map_readallmaps (void)
 			success = map_readgat(mapdata) != 0;
 		}else{
 			// try to load the map
-			for (const auto &cache : map_cache_buffer) {
-				if ((success = map_readfromcache(mapdata, cache, map_cache_decode_buffer)) != 0)
+			for (size_t c = 0; c < map_cache_buffer.size(); c++) {
+				if ((success = map_readfromcache(mapdata, map_cache_buffer[c], map_cache_size[c], map_cache_decode_buffer)) != 0)
 					break;
 			}
 		}
