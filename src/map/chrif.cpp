@@ -1632,8 +1632,11 @@ void chrif_parse_ack_vipActive(int32 fd) {
 int32 chrif_bsdata_request(uint32 char_id) {
 	chrif_check(-1);
 	WFIFOHEAD(char_fd,6);
-	WFIFOW(char_fd,0) = 0x2b2d;
-	WFIFOL(char_fd,2) = char_id;
+	{
+		uint16 op = 0x2b2d;
+		memcpy(WFIFOP(char_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(char_fd,2), &char_id, sizeof(char_id));
+	}
 	WFIFOSET(char_fd,6);
 	return 0;
 }
