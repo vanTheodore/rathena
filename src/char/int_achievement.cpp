@@ -333,7 +333,11 @@ int32 mapif_parse_achievement_reward(int32 fd){
  */
 int32 inter_achievement_parse_frommap(int32 fd)
 {
-	switch (RFIFOW(fd, 0)) {
+	// Byte-buffer read: the read position advances by consumed packet
+	// lengths (often odd), so even the plain uint16 opcode load uses memcpy.
+	uint16 achievement_op = 0;
+	memcpy(&achievement_op, RFIFOP(fd,0), sizeof(achievement_op));
+	switch ((int32)achievement_op) {
 		case 0x3062: mapif_parse_achievement_load(fd); break;
 		case 0x3063: mapif_parse_achievement_save(fd); break;
 		case 0x3064: mapif_parse_achievement_reward(fd); break;
