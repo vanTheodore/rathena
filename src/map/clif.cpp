@@ -21860,20 +21860,35 @@ void clif_achievement_list_all( map_session_data *sd )
 	int32 *info = achievement_level(sd, true);
 
 	WFIFOHEAD(fd,len);
-	WFIFOW(fd, 0) = 0xa23;
-	WFIFOW(fd, 2) = len;
-	WFIFOL(fd, 4) = count; // Amount of achievements the player has in their list (started/completed)
-	WFIFOL(fd, 8) = sd->achievement_data.total_score; // Top number
-	WFIFOW(fd, 12) = sd->achievement_data.level; // Achievement Level (gold circle)
-	WFIFOL(fd, 14) = info[0]; // Achievement EXP (left number in bar)
-	WFIFOL(fd, 18) = info[1]; // Achievement EXP TNL (right number in bar)
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0xa23;
+		uint16 plen = (uint16)len;
+		uint32 ucount = (uint32)count;
+		uint32 score = (uint32)sd->achievement_data.total_score;
+		uint16 level = (uint16)sd->achievement_data.level;
+		uint32 exp0 = (uint32)info[0];
+		uint32 exp1 = (uint32)info[1];
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &plen, sizeof(plen));
+		memcpy(WFIFOP(fd,4), &ucount, sizeof(ucount));
+		memcpy(WFIFOP(fd,8), &score, sizeof(score));
+		memcpy(WFIFOP(fd,12), &level, sizeof(level));
+		memcpy(WFIFOP(fd,14), &exp0, sizeof(exp0));
+		memcpy(WFIFOP(fd,18), &exp1, sizeof(exp1));
+	}
 
 	for (int32 i = 0; i < count; i++) {
-		WFIFOL(fd, i * 50 + 22) = (uint32)sd->achievement_data.achievements[i].achievement_id;
+		uint32 aid = (uint32)sd->achievement_data.achievements[i].achievement_id;
+		memcpy(WFIFOP(fd, i * 50 + 22), &aid, sizeof(aid));
 		WFIFOB(fd, i * 50 + 26) = (uint32)sd->achievement_data.achievements[i].completed > 0;
-		for (int32 j = 0; j < MAX_ACHIEVEMENT_OBJECTIVES; j++) 
-			WFIFOL(fd, (i * 50) + 27 + (j * 4)) = (uint32)sd->achievement_data.achievements[i].count[j];
-		WFIFOL(fd, i * 50 + 67) = (uint32)sd->achievement_data.achievements[i].completed;
+		for (int32 j = 0; j < MAX_ACHIEVEMENT_OBJECTIVES; j++) {
+			uint32 cnt = (uint32)sd->achievement_data.achievements[i].count[j];
+			memcpy(WFIFOP(fd, (i * 50) + 27 + (j * 4)), &cnt, sizeof(cnt));
+		}
+		uint32 completed = (uint32)sd->achievement_data.achievements[i].completed;
+		memcpy(WFIFOP(fd, i * 50 + 67), &completed, sizeof(completed));
 		WFIFOB(fd, i * 50 + 71) = sd->achievement_data.achievements[i].rewarded > 0;
 	}
 	WFIFOSET(fd, len);
@@ -21896,17 +21911,29 @@ void clif_achievement_update( map_session_data *sd, const achievement *ach, int3
 	int32 *info = achievement_level(sd, true);
 
 	WFIFOHEAD(fd, packet_len(0xa24));
-	WFIFOW(fd, 0) = 0xa24;
-	WFIFOL(fd, 2) = sd->achievement_data.total_score; // Total Achievement Points (top of screen)
-	WFIFOW(fd, 6) = sd->achievement_data.level; // Achievement Level (gold circle)
-	WFIFOL(fd, 8) = info[0]; // Achievement EXP (left number in bar)
-	WFIFOL(fd, 12) = info[1]; // Achievement EXP TNL (right number in bar)
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0xa24;
+		uint32 score = (uint32)sd->achievement_data.total_score; // Total Achievement Points (top of screen)
+		uint16 level = (uint16)sd->achievement_data.level; // Achievement Level (gold circle)
+		uint32 exp0 = (uint32)info[0]; // Achievement EXP (left number in bar)
+		uint32 exp1 = (uint32)info[1]; // Achievement EXP TNL (right number in bar)
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &score, sizeof(score));
+		memcpy(WFIFOP(fd,6), &level, sizeof(level));
+		memcpy(WFIFOP(fd,8), &exp0, sizeof(exp0));
+		memcpy(WFIFOP(fd,12), &exp1, sizeof(exp1));
+	}
 	if (ach) {
-		WFIFOL(fd, 16) = ach->achievement_id; // Achievement ID
+		uint32 aid = (uint32)ach->achievement_id; // Achievement ID
+		memcpy(WFIFOP(fd,16), &aid, sizeof(aid));
 		WFIFOB(fd, 20) = ach->completed > 0; // Is it complete?
-		for (int32 i = 0; i < MAX_ACHIEVEMENT_OBJECTIVES; i++)
-			WFIFOL(fd, 21 + (i * 4)) = (uint32)ach->count[i]; // 1~10 pre-reqs
-		WFIFOL(fd, 61) = (uint32)ach->completed; // Epoch time
+		for (int32 i = 0; i < MAX_ACHIEVEMENT_OBJECTIVES; i++) {
+			uint32 cnt = (uint32)ach->count[i]; // 1~10 pre-reqs
+			memcpy(WFIFOP(fd, 21 + (i * 4)), &cnt, sizeof(cnt));
+		}
+		uint32 completed = (uint32)ach->completed; // Epoch time
+		memcpy(WFIFOP(fd,61), &completed, sizeof(completed));
 		WFIFOB(fd, 65) = ach->rewarded > 0; // Got reward?
 	} else
 		memset(WFIFOP(fd, 16), 0, 40);
