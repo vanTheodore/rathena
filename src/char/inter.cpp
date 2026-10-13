@@ -454,10 +454,18 @@ void inter_to_fd(int32 fd, int32 u_fd, int32 aid, char* msg, ...) {
 
 	WFIFOHEAD(fd,12 + len);
 
-	WFIFOW(fd,0) = 0x3807;
-	WFIFOW(fd,2) = 12 + (uint16)len;
-	WFIFOL(fd,4) = u_fd;
-	WFIFOL(fd,8) = aid;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3807;
+		uint16 packet_len = (uint16)(12 + len);
+		uint32 v_ufd = (uint32)u_fd;
+		uint32 v_aid = (uint32)aid;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+		memcpy(WFIFOP(fd,4), &v_ufd, sizeof(v_ufd));
+		memcpy(WFIFOP(fd,8), &v_aid, sizeof(v_aid));
+	}
 	safestrncpy(WFIFOCP(fd,12), msg_out, len);
 
 	WFIFOSET(fd,12 + len);
@@ -474,9 +482,16 @@ void inter_to_fd(int32 fd, int32 u_fd, int32 aid, char* msg, ...) {
  */
 void mapif_acc_info_ack(int32 fd, int32 u_fd, int32 acc_id, const char* acc_name){
 	WFIFOHEAD(fd,10 + NAME_LENGTH);
-	WFIFOW(fd,0) = 0x3808;
-	WFIFOL(fd,2) = u_fd;
-	WFIFOL(fd,6) = acc_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3808;
+		uint32 v_ufd = (uint32)u_fd;
+		uint32 v_acc = (uint32)acc_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &v_ufd, sizeof(v_ufd));
+		memcpy(WFIFOP(fd,6), &v_acc, sizeof(v_acc));
+	}
 	safestrncpy(WFIFOCP(fd,10),acc_name,NAME_LENGTH);
 	WFIFOSET(fd,10 + NAME_LENGTH);
 }
@@ -487,7 +502,12 @@ void mapif_acc_info_ack(int32 fd, int32 u_fd, int32 acc_id, const char* acc_name
  * @param fd : map-serv link
  */
 void mapif_parse_accinfo(int32 fd) {
-	int32 u_fd = RFIFOL(fd,2), u_aid = RFIFOL(fd,6), u_group = RFIFOL(fd,10);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 vu_fd = 0, vu_aid = 0, vu_group = 0;
+	memcpy(&vu_fd, RFIFOP(fd,2), sizeof(vu_fd));
+	memcpy(&vu_aid, RFIFOP(fd,6), sizeof(vu_aid));
+	memcpy(&vu_group, RFIFOP(fd,10), sizeof(vu_group));
+	int32 u_fd = (int32)vu_fd, u_aid = (int32)vu_aid, u_group = (int32)vu_group;
 	char query[NAME_LENGTH], query_esq[NAME_LENGTH*2+1];
 	uint32 account_id = 0;
 	char *data;
@@ -677,13 +697,19 @@ int32 inter_accreg_fromsql(uint32 account_id, uint32 char_id, int32 fd, int32 ty
 	}
 
 	WFIFOHEAD(fd, 60000 + 300);
-	WFIFOW(fd, 0) = 0x3804;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3804;
+		uint16 cnt = 0;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,4), &account_id, sizeof(account_id));
+		memcpy(WFIFOP(fd,8), &char_id, sizeof(char_id));
+		memcpy(WFIFOP(fd,14), &cnt, sizeof(cnt));
+	}
 	// 0x2 = length, set prior to being sent
-	WFIFOL(fd, 4) = account_id;
-	WFIFOL(fd, 8) = char_id;
 	WFIFOB(fd, 12) = 0; // var type (only set when all vars have been sent, regardless of type)
 	WFIFOB(fd, 13) = 1; // is string type
-	WFIFOW(fd, 14) = 0; // count
 	plen = 16;
 
 	/**
@@ -704,7 +730,10 @@ int32 inter_accreg_fromsql(uint32 account_id, uint32 char_id, int32 fd, int32 ty
 
 		Sql_GetData(sql_handle, 1, &data, nullptr);
 
-		WFIFOL(fd, plen) = (uint32)atol(data);
+		{
+			uint32 v = (uint32)atol(data);
+			memcpy(WFIFOP(fd,plen), &v, sizeof(v));
+		}
 		plen += 4;
 
 		Sql_GetData(sql_handle, 2, &data, nullptr);
@@ -716,26 +745,41 @@ int32 inter_accreg_fromsql(uint32 account_id, uint32 char_id, int32 fd, int32 ty
 		safestrncpy(WFIFOCP(fd,plen), data, len);
 		plen += static_cast<decltype(plen)>( len );
 
-		WFIFOW(fd, 14) += 1;
+		{
+			uint16 cnt = 0;
+			memcpy(&cnt, WFIFOP(fd,14), sizeof(cnt));
+			cnt += 1;
+			memcpy(WFIFOP(fd,14), &cnt, sizeof(cnt));
+		}
 
 		if( plen > 60000 ) {
-			WFIFOW(fd, 2) = plen;
+			{
+				uint16 packet_len = (uint16)plen;
+				memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+			}
 			WFIFOSET(fd, plen);
 
 			// prepare follow up
 			WFIFOHEAD(fd, 60000 + 300);
-			WFIFOW(fd, 0) = 0x3804;
+			{
+				uint16 op = 0x3804;
+				uint16 cnt = 0;
+				memcpy(WFIFOP(fd,0), &op, sizeof(op));
+				memcpy(WFIFOP(fd,4), &account_id, sizeof(account_id));
+				memcpy(WFIFOP(fd,8), &char_id, sizeof(char_id));
+				memcpy(WFIFOP(fd,14), &cnt, sizeof(cnt));
+			}
 			// 0x2 = length, set prior to being sent
-			WFIFOL(fd, 4) = account_id;
-			WFIFOL(fd, 8) = char_id;
 			WFIFOB(fd, 12) = 0; // var type (only set when all vars have been sent, regardless of type)
 			WFIFOB(fd, 13) = 1; // is string type
-			WFIFOW(fd, 14) = 0; // count
 			plen = 16;
 		}
 	}
 
-	WFIFOW(fd, 2) = plen;
+	{
+		uint16 packet_len = (uint16)plen;
+		memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+	}
 	WFIFOSET(fd, plen);
 
 	Sql_FreeResult(sql_handle);
@@ -757,13 +801,18 @@ int32 inter_accreg_fromsql(uint32 account_id, uint32 char_id, int32 fd, int32 ty
 	}
 
 	WFIFOHEAD(fd, 60000 + 300);
-	WFIFOW(fd, 0) = 0x3804;
+	// Same treatment for the second (int) phase header.
+	{
+		uint16 op = 0x3804;
+		uint16 cnt = 0;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,4), &account_id, sizeof(account_id));
+		memcpy(WFIFOP(fd,8), &char_id, sizeof(char_id));
+		memcpy(WFIFOP(fd,14), &cnt, sizeof(cnt));
+	}
 	// 0x2 = length, set prior to being sent
-	WFIFOL(fd, 4) = account_id;
-	WFIFOL(fd, 8) = char_id;
 	WFIFOB(fd, 12) = 0; // var type (only set when all vars have been sent, regardless of type)
 	WFIFOB(fd, 13) = 0; // is int32 type
-	WFIFOW(fd, 14) = 0; // count
 	plen = 16;
 
 	/**
@@ -784,7 +833,10 @@ int32 inter_accreg_fromsql(uint32 account_id, uint32 char_id, int32 fd, int32 ty
 
 		Sql_GetData(sql_handle, 1, &data, nullptr);
 
-		WFIFOL(fd, plen) = (uint32)atol(data);
+		{
+			uint32 v = (uint32)atol(data);
+			memcpy(WFIFOP(fd,plen), &v, sizeof(v));
+		}
 		plen += 4;
 
 		Sql_GetData(sql_handle, 2, &data, nullptr);
@@ -792,27 +844,42 @@ int32 inter_accreg_fromsql(uint32 account_id, uint32 char_id, int32 fd, int32 ty
 		WFIFOQ(fd, plen) = strtoll(data,nullptr,10);
 		plen += 8;
 
-		WFIFOW(fd, 14) += 1;
+		{
+			uint16 cnt = 0;
+			memcpy(&cnt, WFIFOP(fd,14), sizeof(cnt));
+			cnt += 1;
+			memcpy(WFIFOP(fd,14), &cnt, sizeof(cnt));
+		}
 
 		if( plen > 60000 ) {
-			WFIFOW(fd, 2) = plen;
+			{
+				uint16 packet_len = (uint16)plen;
+				memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+			}
 			WFIFOSET(fd, plen);
 
 			/* prepare follow up */
 			WFIFOHEAD(fd, 60000 + 300);
-			WFIFOW(fd, 0) = 0x3804;
+			{
+				uint16 op = 0x3804;
+				uint16 cnt = 0;
+				memcpy(WFIFOP(fd,0), &op, sizeof(op));
+				memcpy(WFIFOP(fd,4), &account_id, sizeof(account_id));
+				memcpy(WFIFOP(fd,8), &char_id, sizeof(char_id));
+				memcpy(WFIFOP(fd,14), &cnt, sizeof(cnt));
+			}
 			/* 0x2 = length, set prior to being sent */
-			WFIFOL(fd, 4) = account_id;
-			WFIFOL(fd, 8) = char_id;
 			WFIFOB(fd, 12) = 0;/* var type (only set when all vars have been sent, regardless of type) */
 			WFIFOB(fd, 13) = 0;/* is int32 type */
-			WFIFOW(fd, 14) = 0;/* count */
 			plen = 16;
 		}
 	}
 
 	WFIFOB(fd, 12) = type;
-	WFIFOW(fd, 2) = plen;
+	{
+		uint16 packet_len = (uint16)plen;
+		memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+	}
 	WFIFOSET(fd, plen);
 
 	Sql_FreeResult(sql_handle);
@@ -1106,8 +1173,13 @@ int32 mapif_disconnectplayer(int32 fd, uint32 account_id, uint32 char_id, int32 
 	if (session_isValid(fd))
 	{
 		WFIFOHEAD(fd,7);
-		WFIFOW(fd,0) = 0x2b1f;
-		WFIFOL(fd,2) = account_id;
+		// Byte-buffer slots: the fifo write position can be odd-sized, so even
+		// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+		{
+			uint16 op = 0x2b1f;
+			memcpy(WFIFOP(fd,0), &op, sizeof(op));
+			memcpy(WFIFOP(fd,2), &account_id, sizeof(account_id));
+		}
 		WFIFOB(fd,6) = reason;
 		WFIFOSET(fd,7);
 		return 0;
@@ -1137,7 +1209,17 @@ void check_ttl_wisdata(){
 // broadcast sending
 int32 mapif_parse_broadcast(int32 fd)
 {
-	mapif_broadcast(RFIFOP(fd,16), RFIFOW(fd,2), RFIFOL(fd,4), RFIFOW(fd,8), RFIFOW(fd,10), RFIFOW(fd,12), RFIFOW(fd,14), fd);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 packet_len = 0;
+	uint32 fontColor = 0;
+	uint16 fontType = 0, fontSize = 0, fontAlign = 0, fontY = 0;
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+	memcpy(&fontColor, RFIFOP(fd,4), sizeof(fontColor));
+	memcpy(&fontType, RFIFOP(fd,8), sizeof(fontType));
+	memcpy(&fontSize, RFIFOP(fd,10), sizeof(fontSize));
+	memcpy(&fontAlign, RFIFOP(fd,12), sizeof(fontAlign));
+	memcpy(&fontY, RFIFOP(fd,14), sizeof(fontY));
+	mapif_broadcast(RFIFOP(fd,16), (int32)packet_len, (unsigned long)fontColor, (int16)fontType, (int16)fontSize, (int16)fontAlign, (int16)fontY, fd);
 	return 0;
 }
 
@@ -1151,9 +1233,12 @@ int32 mapif_parse_broadcast(int32 fd)
 int32 mapif_parse_broadcast_item(int32 fd) {
 	unsigned char buf[11 + NAME_LENGTH*2];
 
-	memcpy(WBUFP(buf, 0), RFIFOP(fd, 0), RFIFOW(fd,2));
+	// Byte-buffer length at an odd read position: memcpy, same value.
+	uint16 packet_len = 0;
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+	memcpy(WBUFP(buf, 0), RFIFOP(fd, 0), packet_len);
 	WBUFW(buf, 0) = 0x3809;
-	chmapif_sendallwos(fd, buf, RFIFOW(fd,2));
+	chmapif_sendallwos(fd, buf, packet_len);
 
 	return 0;
 }
@@ -1182,10 +1267,13 @@ int32 mapif_parse_WisRequest(int32 fd)
 
 	if ( fd <= 0 ) {return 0;} // check if we have a valid fd
 
-	if( RFIFOW( fd, 2 ) - headersize >= WHISPER_MESSAGE_SIZE ){
+	// Byte-buffer length at an odd read position: memcpy, same value.
+	uint16 packet_len = 0;
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+	if( (int32)packet_len - headersize >= WHISPER_MESSAGE_SIZE ){
 		ShowWarning("inter: Wis message size too long.\n");
 		return 0;
-	} else if (RFIFOW(fd,2)-headersize <= 0) { // normaly, impossible, but who knows...
+	} else if ((int32)packet_len-headersize <= 0) { // normaly, impossible, but who knows...
 		ShowError("inter: Wis message doesn't exist.\n");
 		return 0;
 	}
@@ -1223,8 +1311,12 @@ int32 mapif_parse_WisRequest(int32 fd)
 
 			wd->id = ++wisid;
 			wd->fd = fd;
-			wd->len= RFIFOW(fd,2)-headersize;
-			wd->gmlvl = RFIFOL(fd,4);
+			wd->len= (int32)packet_len-headersize;
+		{
+			uint32 gmlvl = 0;
+			memcpy(&gmlvl, RFIFOP(fd,4), sizeof(gmlvl));
+			wd->gmlvl = (int32)gmlvl;
+		}
 			safestrncpy(wd->src, RFIFOCP(fd,8), NAME_LENGTH);
 			safestrncpy(wd->dst, RFIFOCP(fd,8+NAME_LENGTH), NAME_LENGTH);
 			safestrncpy(wd->msg, RFIFOCP(fd,8+2*NAME_LENGTH), wd->len);
@@ -1247,7 +1339,12 @@ int32 mapif_parse_WisReply(int32 fd)
 	int32 id;
 	uint8 flag;
 
-	id = RFIFOL(fd,2);
+	// Byte-buffer read at an odd read position: memcpy, same value.
+	{
+		uint32 tmp = 0;
+		memcpy(&tmp, RFIFOP(fd,2), sizeof(tmp));
+		id = (int32)tmp;
+	}
 	flag = RFIFOB(fd,6);
 	std::shared_ptr<struct WisData> wd = util::umap_find( wis_db, id );
 
@@ -1268,9 +1365,12 @@ int32 mapif_parse_WisToGM(int32 fd)
 {
 	unsigned char buf[2048]; // 0x3003/0x3803 <packet_len>.w <wispname>.24B <permission>.L <message>.?B
 
-	memcpy(WBUFP(buf,0), RFIFOP(fd,0), RFIFOW(fd,2));
+	// Byte-buffer length at an odd read position: memcpy, same value.
+	uint16 packet_len = 0;
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+	memcpy(WBUFP(buf,0), RFIFOP(fd,0), packet_len);
 	WBUFW(buf, 0) = 0x3803;
-	chmapif_sendall(buf, RFIFOW(fd,2));
+	chmapif_sendall(buf, packet_len);
 
 	return 0;
 }
@@ -1278,8 +1378,12 @@ int32 mapif_parse_WisToGM(int32 fd)
 // Save account_reg into sql (type=2)
 int32 mapif_parse_Registry(int32 fd)
 {
-	uint32 account_id = RFIFOL(fd, 4), char_id = RFIFOL(fd, 8);
-	uint16 count = RFIFOW(fd, 12);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 account_id = 0, char_id = 0;
+	uint16 count = 0;
+	memcpy(&account_id, RFIFOP(fd,4), sizeof(account_id));
+	memcpy(&char_id, RFIFOP(fd,8), sizeof(char_id));
+	memcpy(&count, RFIFOP(fd,12), sizeof(count));
 
 	if( count ) {
 		int32 cursor = 14, i;
@@ -1294,7 +1398,8 @@ int32 mapif_parse_Registry(int32 fd)
 			std::string key( src_key, lenkey );
 			cursor += static_cast<decltype(cursor)>( lenkey + 1 );
 
-			uint32  index = RFIFOL(fd, cursor);
+			uint32  index = 0;
+			memcpy(&index, RFIFOP(fd,cursor), sizeof(index));
 			cursor += 4;
 
 			switch (RFIFOB(fd, cursor++)) {
@@ -1351,9 +1456,14 @@ int32 mapif_parse_RegistryRequest(int32 fd)
 void mapif_namechange_ack(int32 fd, uint32 account_id, uint32 char_id, int32 type, int32 flag, char *name)
 {
 	WFIFOHEAD(fd, NAME_LENGTH+13);
-	WFIFOW(fd, 0) = 0x3806;
-	WFIFOL(fd, 2) = account_id;
-	WFIFOL(fd, 6) = char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3806;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &account_id, sizeof(account_id));
+		memcpy(WFIFOP(fd,6), &char_id, sizeof(char_id));
+	}
 	WFIFOB(fd,10) = type;
 	WFIFOB(fd,11) = flag;
 	memcpy(WFIFOP(fd, 12), name, NAME_LENGTH);
@@ -1367,8 +1477,9 @@ int32 mapif_parse_NameChangeRequest(int32 fd)
 	char* name;
 	int32 i;
 
-	account_id = RFIFOL(fd,2);
-	char_id = RFIFOL(fd,6);
+	// Byte-buffer reads at odd read positions: memcpy, same values.
+	memcpy(&account_id, RFIFOP(fd,2), sizeof(account_id));
+	memcpy(&char_id, RFIFOP(fd,6), sizeof(char_id));
 	type = RFIFOB(fd,10);
 	name = RFIFOCP(fd,11);
 
