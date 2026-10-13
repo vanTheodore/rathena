@@ -98,7 +98,10 @@ int32 logchrif_parse_reqauth(int32 fd, int32 id,char* ip){
 
 			// send ack
 			WFIFOHEAD(fd,21);
-			WFIFOW(fd,0) = 0x2713;
+			{
+				uint16 op = 0x2713;
+				memcpy(WFIFOP(fd,0), &op, sizeof(op));
+			}
 			// Byte-buffer slots at odd offsets: memcpy keeps the bytes
 			// identical without unaligned stores (same values).
 			{
@@ -110,7 +113,11 @@ int32 logchrif_parse_reqauth(int32 fd, int32 id,char* ip){
 			}
 			WFIFOB(fd,14) = sex;
 			WFIFOB(fd,15) = 0;// ok
-			WFIFOL(fd,16) = request_id;
+			{
+				uint32 v32 = 0;
+				v32 = request_id;
+				memcpy(WFIFOP(fd,16), &v32, sizeof(v32));
+			}
 			WFIFOB(fd,20) = node->clienttype;
 			WFIFOSET(fd,21);
 
@@ -119,7 +126,10 @@ int32 logchrif_parse_reqauth(int32 fd, int32 id,char* ip){
 		}else{// authentication not found
 			ShowStatus("Char-server '%s': authentication of the account %d REFUSED (ip: %s).\n", ch_server[id].name, account_id, ip);
 			WFIFOHEAD(fd,21);
-			WFIFOW(fd,0) = 0x2713;
+			{
+				uint16 op_1 = 0x2713;
+				memcpy(WFIFOP(fd,0), &op_1, sizeof(op_1));
+			}
 			{
 				uint32 rid = (uint32)request_id;
 				memcpy(WFIFOP(fd,2), &account_id, sizeof(account_id));
@@ -129,7 +139,11 @@ int32 logchrif_parse_reqauth(int32 fd, int32 id,char* ip){
 			}
 			WFIFOB(fd,14) = sex;
 			WFIFOB(fd,15) = 1;// auth failed
-			WFIFOL(fd,16) = request_id;
+			{
+				uint32 v32_1 = 0;
+				v32_1 = request_id;
+				memcpy(WFIFOP(fd,16), &v32_1, sizeof(v32_1));
+			}
 			WFIFOB(fd,20) = 0;
 			WFIFOSET(fd,21);
 		}
@@ -205,7 +219,10 @@ int32 logchrif_send_accdata(int32 fd, uint32 aid) {
 	}
 
 	WFIFOHEAD(fd,75);
-	WFIFOW(fd,0) = 0x2717;
+	{
+		uint16 op = 0x2717;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+	}
 	// Byte-buffer slots at odd offsets: memcpy keeps the bytes identical
 	// without unaligned stores (same values).
 	{
@@ -237,12 +254,25 @@ int32 logchrif_send_accdata(int32 fd, uint32 aid) {
 int32 logchrif_sendvipdata(int32 fd, struct mmo_account* acc, unsigned char flag, int32 mapfd) {
 #ifdef VIP_ENABLE
 	WFIFOHEAD(fd,19);
-	WFIFOW(fd,0) = 0x2743;
-	WFIFOL(fd,2) = acc->account_id;
-	WFIFOL(fd,6) = (int32)acc->vip_time;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x2743;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		v32 = acc->account_id;
+		memcpy(WFIFOP(fd,2), &v32, sizeof(v32));
+		v32 = (int32)acc->vip_time;
+		memcpy(WFIFOP(fd,6), &v32, sizeof(v32));
+	}
 	WFIFOB(fd,10) = flag;
-	WFIFOL(fd,11) = acc->group_id; //new group id
-	WFIFOL(fd,15) = mapfd; //link to mapserv
+	{
+		uint32 v32_1 = 0;
+		v32_1 = acc->group_id;
+		memcpy(WFIFOP(fd,11), &v32_1, sizeof(v32_1)); //new group id
+		v32_1 = mapfd;
+		memcpy(WFIFOP(fd,15), &v32_1, sizeof(v32_1));
+	} //link to mapserv
 	WFIFOSET(fd,19);
 	logchrif_send_accdata(fd,acc->account_id); //refresh char with new setting
 #endif
@@ -279,7 +309,12 @@ int32 logchrif_parse_reqaccdata(int32 fd, int32 id, char *ip){
 int32 logchrif_parse_keepalive(int32 fd){
 	RFIFOSKIP(fd,2);
 	WFIFOHEAD(fd,2);
-	WFIFOW(fd,0) = 0x2718;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x2718;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+	}
 	WFIFOSET(fd,2);
 	return 1;
 }
@@ -301,7 +336,9 @@ int32 logchrif_parse_reqchangemail(int32 fd, int32 id, char* ip){
 		char actual_email[40];
 		char new_email[40];
 
-		uint32 account_id = RFIFOL(fd,2);
+		// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+		uint32 account_id = 0;
+		memcpy(&account_id, RFIFOP(fd,2), sizeof(account_id));
 		safestrncpy(actual_email, RFIFOCP(fd,6), 40);
 		safestrncpy(new_email, RFIFOCP(fd,46), 40);
 		RFIFOSKIP(fd, 86);
@@ -340,8 +377,11 @@ int32 logchrif_parse_requpdaccstate(int32 fd, int32 id, char* ip){
 	else{
 		struct mmo_account acc;
 
-		uint32 account_id = RFIFOL(fd,2);
-		uint32 state = RFIFOL(fd,6);
+		// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+		uint32 account_id = 0;
+		memcpy(&account_id, RFIFOP(fd,2), sizeof(account_id));
+		uint32 state = 0;
+		memcpy(&state, RFIFOP(fd,6), sizeof(state));
 		AccountDB* accounts = login_get_accounts_db();
 
 		RFIFOSKIP(fd,10);
@@ -386,8 +426,12 @@ int32 logchrif_parse_reqbanacc(int32 fd, int32 id, char* ip){
 		struct mmo_account acc;
 		AccountDB* accounts = login_get_accounts_db();
 
-		uint32 account_id = RFIFOL(fd,2);
-		int32 timediff = RFIFOL(fd,6);
+		// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+		uint32 account_id = 0;
+		memcpy(&account_id, RFIFOP(fd,2), sizeof(account_id));
+		uint32 rl6 = 0;
+		memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+		int32 timediff = (int32)rl6;
 		RFIFOSKIP(fd,10);
 
 		if( !accounts->load_num(accounts, &acc, account_id) )
@@ -439,7 +483,9 @@ int32 logchrif_parse_reqchgsex(int32 fd, int32 id, char* ip){
 		struct mmo_account acc;
 		AccountDB* accounts = login_get_accounts_db();
 
-		uint32 account_id = RFIFOL(fd,2);
+		// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+		uint32 account_id = 0;
+		memcpy(&account_id, RFIFOP(fd,2), sizeof(account_id));
 		RFIFOSKIP(fd,6);
 
 		if( !accounts->load_num(accounts, &acc, account_id) )
@@ -474,18 +520,26 @@ int32 logchrif_parse_reqchgsex(int32 fd, int32 id, char* ip){
  * @return 0 not enough info transmitted, 1 success
  */
 int32 logchrif_parse_upd_global_accreg(int32 fd, int32 id, char* ip){
-	if( RFIFOREST(fd) < 4 || RFIFOREST(fd) < RFIFOW(fd,2) )
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	// (rw2 is read only once enough bytes arrived, like the short-circuit below.)
+	uint16 rw2 = 0;
+	if( RFIFOREST(fd) >= 4 )
+		memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	if( RFIFOREST(fd) < 4 || RFIFOREST(fd) < rw2 )
 		return 0;
 	else{
 		struct mmo_account acc;
 		AccountDB* accounts = login_get_accounts_db();
-		uint32 account_id = RFIFOL(fd,4);
+		uint32 account_id = 0;
+		memcpy(&account_id, RFIFOP(fd,4), sizeof(account_id));
+		uint32 rl8 = 0;
+		memcpy(&rl8, RFIFOP(fd,8), sizeof(rl8));
 
 		if( !accounts->load_num(accounts, &acc, account_id) )
 			ShowStatus("Char-server '%s': receiving (from the char-server) of account_reg2 (account: %d not found, ip: %s).\n", ch_server[id].name, account_id, ip);
 		else
-			mmo_save_global_accreg(accounts,fd,account_id,RFIFOL(fd, 8));
-		RFIFOSKIP(fd,RFIFOW(fd,2));
+			mmo_save_global_accreg(accounts,fd,account_id,rl8);
+		RFIFOSKIP(fd,rw2);
 	}
 	return 1;
 }
@@ -504,7 +558,9 @@ int32 logchrif_parse_requnbanacc(int32 fd, int32 id, char* ip){
 		struct mmo_account acc;
 		AccountDB* accounts = login_get_accounts_db();
 
-		uint32 account_id = RFIFOL(fd,2);
+		// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+		uint32 account_id = 0;
+		memcpy(&account_id, RFIFOP(fd,2), sizeof(account_id));
 		RFIFOSKIP(fd,6);
 
 		if( !accounts->load_num(accounts, &acc, account_id) )
@@ -562,18 +618,26 @@ int32 logchrif_parse_setaccoffline(int32 fd){
  * @return 0 not enough info transmitted, 1 success
  */
 int32 logchrif_parse_updonlinedb(int32 fd, int32 id){
-	if (RFIFOREST(fd) < 4 || RFIFOREST(fd) < RFIFOW(fd,2))
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	// (rw2 is read only once enough bytes arrived, like the short-circuit below.)
+	uint16 rw2 = 0;
+	if (RFIFOREST(fd) >= 4)
+		memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	if (RFIFOREST(fd) < 4 || RFIFOREST(fd) < rw2)
 		return 0;
 	else{
 		//Set all chars from this char-server offline first
 		login_online_db_setoffline( id );
 
-		for( uint32 i = 0, users = RFIFOW(fd, 4); i < users; i++) {
-			uint32 aid = RFIFOL(fd,6+i*4);
+		uint16 rw4 = 0;
+		memcpy(&rw4, RFIFOP(fd,4), sizeof(rw4));
+		for( uint32 i = 0, users = rw4; i < users; i++) {
+			uint32 aid = 0;
+			memcpy(&aid, RFIFOP(fd,6+i*4), sizeof(aid));
 
 			login_add_online_user( id, aid );
 		}
-		RFIFOSKIP(fd,RFIFOW(fd,2));
+		RFIFOSKIP(fd,rw2);
 	}
 	return 1;
 }
@@ -608,7 +672,10 @@ int32 logchrif_parse_req_global_accreg(int32 fd){
 int32 logchrif_parse_updcharip(int32 fd, int32 id){
 	if( RFIFOREST(fd) < 6 )
 		return 0;
-	ch_server[id].ip = ntohl(RFIFOL(fd,2));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	ch_server[id].ip = ntohl(rl2);
 	ShowInfo("Updated IP of Server #%d to %d.%d.%d.%d.\n",id, CONVIP(ch_server[id].ip));
 	RFIFOSKIP(fd,6);
 	return 1;
@@ -637,10 +704,13 @@ int32 logchrif_parse_updpincode(int32 fd){
 	if( RFIFOREST(fd) < 8 + PINCODE_LENGTH+1 )
 		return 0;
 	else{
+		// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+		uint32 rl4 = 0;
+		memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
 		struct mmo_account acc;
 		AccountDB* accounts = login_get_accounts_db();
 
-		if( accounts->load_num(accounts, &acc, RFIFOL(fd,4) ) ){
+		if( accounts->load_num(accounts, &acc, rl4 ) ){
 			strncpy( acc.pincode, RFIFOCP(fd,8), PINCODE_LENGTH+1 );
 			acc.pincode_change = time( nullptr );
 			accounts->save(accounts, &acc, false);
@@ -659,9 +729,12 @@ int32 logchrif_parse_pincode_authfail(int32 fd){
 	if( RFIFOREST(fd) < 6 )
 		return 0;
 	else{
+		// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+		uint32 rl2 = 0;
+		memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
 		struct mmo_account acc;
 		AccountDB* accounts = login_get_accounts_db();
-		if( accounts->load_num(accounts, &acc, RFIFOL(fd,2) ) ){
+		if( accounts->load_num(accounts, &acc, rl2 ) ){
 			struct online_login_data* ld = login_get_online_user( acc.account_id );
 
 			if( ld == nullptr ){
@@ -691,12 +764,17 @@ int32 logchrif_parse_reqvipdata(int32 fd) {
 	if( RFIFOREST(fd) < 15 )
 		return 0;
 	else { //request vip info
+		// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+		uint32 rl2 = 0, rl7 = 0, rl11 = 0;
+		memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+		memcpy(&rl7, RFIFOP(fd,7), sizeof(rl7));
+		memcpy(&rl11, RFIFOP(fd,11), sizeof(rl11));
 		struct mmo_account acc;
 		AccountDB* accounts = login_get_accounts_db();
-		int32 aid = RFIFOL(fd,2);
+		int32 aid = (int32)rl2;
 		int8 flag = RFIFOB(fd,6);
-		int32 timediff = RFIFOL(fd,7);
-		int32 mapfd = RFIFOL(fd,11);
+		int32 timediff = (int32)rl7;
+		int32 mapfd = (int32)rl11;
 		RFIFOSKIP(fd,15);
 		
 		if( accounts->load_num(accounts, &acc, aid ) ) {
@@ -759,7 +837,13 @@ int32 logchrif_parse_accinfo(int32 fd) {
 	if( RFIFOREST(fd) < 18 )
 		return 0;
 	else {
-		int32 map_fd = RFIFOL(fd, 2), u_fd = RFIFOL(fd, 6), u_aid = RFIFOL(fd, 10), account_id = RFIFOL(fd, 14);
+		// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+		uint32 rl2 = 0, rl6 = 0, rl10 = 0, rl14 = 0;
+		memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+		memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+		memcpy(&rl10, RFIFOP(fd,10), sizeof(rl10));
+		memcpy(&rl14, RFIFOP(fd,14), sizeof(rl14));
+		int32 map_fd = (int32)rl2, u_fd = (int32)rl6, u_aid = (int32)rl10, account_id = (int32)rl14;
 		AccountDB* accounts = login_get_accounts_db();
 		struct mmo_account acc;
 		RFIFOSKIP(fd,18);
@@ -769,15 +853,29 @@ int32 logchrif_parse_accinfo(int32 fd) {
 			int32 len = 122 + NAME_LENGTH;
 			//ShowInfo("Found account info for %d, requested by %d\n", account_id, u_aid);
 			WFIFOHEAD(fd, len);
-			WFIFOW(fd, 0) = 0x2721;
-			WFIFOL(fd, 2) = map_fd;
-			WFIFOL(fd, 6) = u_fd;
-			WFIFOL(fd, 10) = u_aid;
-			WFIFOL(fd, 14) = account_id;
+			{
+				uint32 v32 = 0;
+				uint16 op = 0x2721;
+				memcpy(WFIFOP(fd,0), &op, sizeof(op));
+				v32 = map_fd;
+				memcpy(WFIFOP(fd,2), &v32, sizeof(v32));
+				v32 = u_fd;
+				memcpy(WFIFOP(fd,6), &v32, sizeof(v32));
+				v32 = u_aid;
+				memcpy(WFIFOP(fd,10), &v32, sizeof(v32));
+				v32 = account_id;
+				memcpy(WFIFOP(fd,14), &v32, sizeof(v32));
+			}
 			WFIFOB(fd, 18) = true; // success
-			WFIFOL(fd, 19) = acc.group_id;
-			WFIFOL(fd, 23) = acc.logincount;
-			WFIFOL(fd, 27) = acc.state;
+			{
+				uint32 v32_1 = 0;
+				v32_1 = acc.group_id;
+				memcpy(WFIFOP(fd,19), &v32_1, sizeof(v32_1));
+				v32_1 = acc.logincount;
+				memcpy(WFIFOP(fd,23), &v32_1, sizeof(v32_1));
+				v32_1 = acc.state;
+				memcpy(WFIFOP(fd,27), &v32_1, sizeof(v32_1));
+			}
 			safestrncpy(WFIFOCP(fd, 31), acc.email, 40);
 			safestrncpy(WFIFOCP(fd, 71), acc.last_ip, 16);
 			safestrncpy(WFIFOCP(fd, 87), acc.lastlogin, 24);
@@ -788,11 +886,19 @@ int32 logchrif_parse_accinfo(int32 fd) {
 		else {
 			//ShowInfo("Cannot found account info for %d, requested by %d\n", account_id, u_aid);
 			WFIFOHEAD(fd, 19);
-			WFIFOW(fd, 0) = 0x2721;
-			WFIFOL(fd, 2) = map_fd;
-			WFIFOL(fd, 6) = u_fd;
-			WFIFOL(fd, 10) = u_aid;
-			WFIFOL(fd, 14) = account_id;
+			{
+				uint32 v32_2 = 0;
+				uint16 op_1 = 0x2721;
+				memcpy(WFIFOP(fd,0), &op_1, sizeof(op_1));
+				v32_2 = map_fd;
+				memcpy(WFIFOP(fd,2), &v32_2, sizeof(v32_2));
+				v32_2 = u_fd;
+				memcpy(WFIFOP(fd,6), &v32_2, sizeof(v32_2));
+				v32_2 = u_aid;
+				memcpy(WFIFOP(fd,10), &v32_2, sizeof(v32_2));
+				v32_2 = account_id;
+				memcpy(WFIFOP(fd,14), &v32_2, sizeof(v32_2));
+			}
 			WFIFOB(fd, 18) = false; // failed
 			WFIFOSET(fd, 19);
 		}
@@ -831,7 +937,9 @@ int32 logchrif_parse(int32 fd){
 
 	while( RFIFOREST(fd) >= 2 ){
 		int32 next = 1; // 0: avoid processing followup packets (prev was probably incomplete) packet, 1: Continue parsing
-		uint16 command = RFIFOW(fd,0);
+		// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+		uint16 command = 0;
+		memcpy(&command, RFIFOP(fd,0), sizeof(command));
 		switch( command ){
 			case 0x2712: next = logchrif_parse_reqauth(fd, cid, ip); break;
 			case 0x2714: next = logchrif_parse_ackusercount(fd, cid); break;
