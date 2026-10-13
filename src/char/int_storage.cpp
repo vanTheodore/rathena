@@ -539,7 +539,11 @@ bool mapif_parse_StorageSave(int32 fd) {
  *------------------------------------------*/
 bool inter_storage_parse_frommap(int32 fd)
 {
-	switch(RFIFOW(fd,0)){
+	// Byte-buffer read: the read position advances by consumed packet
+	// lengths (often odd), so even the plain uint16 opcode load uses memcpy.
+	uint16 op = 0;
+	memcpy(&op, RFIFOP(fd,0), sizeof(op));
+	switch((int32)op){
 		case 0x3018: mapif_parse_LoadGuildStorage(fd); break;
 		case 0x3019: mapif_parse_SaveGuildStorage(fd); break;
 #ifdef BOUND_ITEMS
