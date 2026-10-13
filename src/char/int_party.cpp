@@ -810,7 +810,11 @@ int32 mapif_parse_PartyShareLevel(int32 fd,uint32 share_lvl)
 //	1 : ok
 int32 inter_party_parse_frommap(int32 fd)
 {
-	switch(RFIFOW(fd,0)) {
+	// Byte-buffer read: the read position advances by consumed packet
+	// lengths (often odd), so even the plain uint16 opcode load uses memcpy.
+	uint16 op = 0;
+	memcpy(&op, RFIFOP(fd,0), sizeof(op));
+	switch((int32)op) {
 	case 0x3020: mapif_parse_CreateParty(fd, RFIFOCP(fd,4), RFIFOB(fd,28), RFIFOB(fd,29), (struct party_member*)RFIFOP(fd,30)); break;
 	case 0x3021: mapif_parse_PartyInfo(fd, RFIFOL(fd,2), RFIFOL(fd,6)); break;
 	case 0x3022: mapif_parse_PartyAddMember(fd, RFIFOL(fd,4), (struct party_member*)RFIFOP(fd,8)); break;
