@@ -455,8 +455,9 @@ bool mapif_parse_StorageLoad(int32 fd) {
 	bool res = true;
 
 	type = RFIFOB(fd,2);
-	aid = RFIFOL(fd,3);
-	cid = RFIFOL(fd,7);
+	// Byte-buffer reads at odd offsets: memcpy into aligned locals.
+	memcpy(&aid, RFIFOP(fd,3), sizeof(aid));
+	memcpy(&cid, RFIFOP(fd,7), sizeof(cid));
 	stor_id = RFIFOB(fd,11);
 
 	memset(&stor, 0, sizeof(struct s_storage));
