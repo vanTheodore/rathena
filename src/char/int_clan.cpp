@@ -132,9 +132,10 @@ static int32 mapif_parse_clan_request( int32 fd ){
 
 static int32 mapif_parse_clan_message( int32 fd ){
 	unsigned char buf[500];
-	uint16 len;
+	uint16 len = 0;
 
-	len = RFIFOW(fd,2);
+	// Byte-buffer read at an odd read position: memcpy, same value.
+	memcpy(&len, RFIFOP(fd,2), sizeof(len));
 
 	WBUFW(buf,0) = 0x38A1;
 	memcpy( WBUFP(buf,2), RFIFOP(fd,2), len-2 );
@@ -155,7 +156,10 @@ static void mapif_clan_refresh_onlinecount( int32 fd, std::shared_ptr<struct cla
 }
 
 static void mapif_parse_clan_member_left( int32 fd ){
-	std::shared_ptr<struct clan> clan = util::umap_find( clan_db, static_cast<int32>( RFIFOL( fd, 2 ) ) );
+	// Byte-buffer read at an odd read position: memcpy, same value.
+	uint32 clan_id = 0;
+	memcpy(&clan_id, RFIFOP(fd,2), sizeof(clan_id));
+	std::shared_ptr<struct clan> clan = util::umap_find( clan_db, static_cast<int32>( clan_id ) );
 
 	// Unknown clan
 	if( clan == nullptr ){
@@ -170,7 +174,10 @@ static void mapif_parse_clan_member_left( int32 fd ){
 }
 
 static void mapif_parse_clan_member_joined( int32 fd ){
-	std::shared_ptr<struct clan> clan = util::umap_find( clan_db, static_cast<int32>( RFIFOL( fd, 2 ) ) );
+	// Byte-buffer read at an odd read position: memcpy, same value.
+	uint32 clan_id = 0;
+	memcpy(&clan_id, RFIFOP(fd,2), sizeof(clan_id));
+	std::shared_ptr<struct clan> clan = util::umap_find( clan_db, static_cast<int32>( clan_id ) );
 
 	// Unknown clan
 	if( clan == nullptr ){
