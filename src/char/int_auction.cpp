@@ -486,7 +486,11 @@ void mapif_parse_Auction_bid(int32 fd)
  *------------------------------------------*/
 int32 inter_auction_parse_frommap(int32 fd)
 {
-	switch(RFIFOW(fd,0))
+	// Byte-buffer read: the read position advances by consumed packet
+	// lengths (often odd), so even the plain uint16 opcode load uses memcpy.
+	uint16 auction_op = 0;
+	memcpy(&auction_op, RFIFOP(fd,0), sizeof(auction_op));
+	switch((int32)auction_op)
 	{
 		case 0x3050: mapif_parse_Auction_requestlist(fd); break;
 		case 0x3051: mapif_parse_Auction_register(fd); break;
