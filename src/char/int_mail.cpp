@@ -728,7 +728,11 @@ void mapif_parse_Mail_receiver_check( int32 fd ){
  *------------------------------------------*/
 int32 inter_mail_parse_frommap(int32 fd)
 {
-	switch(RFIFOW(fd,0))
+	// Byte-buffer read: the read position advances by consumed packet
+	// lengths (often odd), so even the plain uint16 opcode load uses memcpy.
+	uint16 mail_op = 0;
+	memcpy(&mail_op, RFIFOP(fd,0), sizeof(mail_op));
+	switch((int32)mail_op)
 	{
 		case 0x3048: mapif_parse_Mail_requestinbox(fd); break;
 		case 0x3049: mapif_parse_Mail_read(fd); break;
