@@ -182,8 +182,14 @@ bool mapif_achievement_update(uint32 char_id, struct achievement* ad)
  */
 void mapif_achievement_save( int32 fd, uint32 char_id, bool success ){
 	WFIFOHEAD(fd, 7);
-	WFIFOW(fd, 0) = 0x3863;
-	WFIFOL(fd, 2) = char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3863;
+		uint32 cid = char_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &cid, sizeof(cid));
+	}
 	WFIFOB(fd, 6) = success;
 	WFIFOSET(fd, 7);
 }
@@ -195,8 +201,12 @@ void mapif_achievement_save( int32 fd, uint32 char_id, bool success ){
  */
 int32 mapif_parse_achievement_save(int32 fd)
 {
-	int32 i, j, k, old_n, new_n = (RFIFOW(fd, 2) - 8) / sizeof(struct achievement);
-	uint32 char_id = RFIFOL(fd, 4);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 packet_len = 0;
+	uint32 char_id = 0;
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+	memcpy(&char_id, RFIFOP(fd,4), sizeof(char_id));
+	int32 i, j, k, old_n, new_n = (packet_len - 8) / sizeof(struct achievement);
 	struct achievement *old_ad = nullptr, *new_ad = nullptr;
 	bool success = true;
 
