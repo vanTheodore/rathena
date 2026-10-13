@@ -147,7 +147,10 @@ int32 logchrif_parse_ackusercount(int32 fd, int32 id){
 	if( RFIFOREST(fd) < 6 )
 		return 0;
 	else{
-		int32 users = RFIFOL(fd,2);
+		// Byte-buffer read at an odd read position: memcpy, same value.
+		uint32 nusers = 0;
+		memcpy(&nusers, RFIFOP(fd,2), sizeof(nusers));
+		int32 users = (int32)nusers;
 		RFIFOSKIP(fd,6);
 		// how many users on world? (update)
 		if( ch_server[id].users != users ){
