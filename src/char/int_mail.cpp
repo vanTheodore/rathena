@@ -332,18 +332,28 @@ void mapif_Mail_sendinbox(int32 fd, uint32 char_id, unsigned char flag, enum mai
 
 	//FIXME: dumping the whole structure like this is unsafe [ultramage]
 	WFIFOHEAD(fd, sizeof(md) + 10);
-	WFIFOW(fd,0) = 0x3848;
-	WFIFOW(fd,2) = sizeof(md) + 10;
-	WFIFOL(fd,4) = char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3848;
+		uint16 packet_len = sizeof(md) + 10;
+		uint32 cid = char_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+		memcpy(WFIFOP(fd,4), &cid, sizeof(cid));
+	}
 	WFIFOB(fd,8) = flag;
 	WFIFOB(fd,9) = type;
 	memcpy(WFIFOP(fd,10),&md,sizeof(md));
-	WFIFOSET(fd,WFIFOW(fd,2));
+	WFIFOSET(fd,sizeof(md) + 10);
 }
 
 void mapif_parse_Mail_requestinbox(int32 fd)
 {
-	mapif_Mail_sendinbox(fd, RFIFOL(fd,2), RFIFOB(fd,6), (mail_inbox_type)RFIFOB(fd,7));
+	// Byte-buffer read at an odd read position: memcpy, same value.
+	uint32 char_id = 0;
+	memcpy(&char_id, RFIFOP(fd,2), sizeof(char_id));
+	mapif_Mail_sendinbox(fd, char_id, RFIFOB(fd,6), (mail_inbox_type)RFIFOB(fd,7));
 }
 
 /*==========================================
