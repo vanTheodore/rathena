@@ -190,7 +190,11 @@ static void mapif_parse_clan_member_joined( int32 fd ){
 //	1 : ok
 //  0 : error
 int32 inter_clan_parse_frommap( int32 fd ){
-	switch(RFIFOW(fd,0)) {
+	// Byte-buffer read: the read position advances by consumed packet
+	// lengths (often odd), so even the plain uint16 opcode load uses memcpy.
+	uint16 clan_op = 0;
+	memcpy(&clan_op, RFIFOP(fd,0), sizeof(clan_op));
+	switch((int32)clan_op) {
 		case 0x30A0:
 			mapif_parse_clan_request( fd );
 			return 1;
