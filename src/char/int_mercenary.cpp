@@ -260,7 +260,10 @@ void inter_mercenary_sql_final(void)
  *------------------------------------------*/
 int32 inter_mercenary_parse_frommap(int32 fd)
 {
-	uint16 cmd = RFIFOW(fd,0);
+	// Byte-buffer read: the read position advances by consumed packet
+	// lengths (often odd), so even the plain uint16 opcode load uses memcpy.
+	uint16 cmd = 0;
+	memcpy(&cmd, RFIFOP(fd,0), sizeof(cmd));
 
 	switch( cmd )
 	{
