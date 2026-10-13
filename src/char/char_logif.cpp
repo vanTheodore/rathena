@@ -31,8 +31,13 @@ void chlogif_on_disconnect(void);
 void chlogif_pincode_notifyLoginPinError( uint32 account_id ){
 	if ( chlogif_isconnected() ){
 		WFIFOHEAD(login_fd,6);
-		WFIFOW(login_fd,0) = 0x2739;
-		WFIFOL(login_fd,2) = account_id;
+		// Byte-buffer slots: the fifo write position can be odd-sized, so even
+		// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+		{
+			uint16 op = 0x2739;
+			memcpy(WFIFOP(login_fd,0), &op, sizeof(op));
+			memcpy(WFIFOP(login_fd,2), &account_id, sizeof(account_id));
+		}
 		WFIFOSET(login_fd,6);
 	}
 }
@@ -41,9 +46,15 @@ void chlogif_pincode_notifyLoginPinUpdate( uint32 account_id, char* pin ){
 	if ( chlogif_isconnected() ){
 		int32 size = 8 + PINCODE_LENGTH+1;
 		WFIFOHEAD(login_fd,size);
-		WFIFOW(login_fd,0) = 0x2738;
-		WFIFOW(login_fd,2) = size;
-		WFIFOL(login_fd,4) = account_id;
+		// Byte-buffer slots: the fifo write position can be odd-sized, so even
+		// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+		{
+			uint16 op = 0x2738;
+			uint16 packet_len = (uint16)size;
+			memcpy(WFIFOP(login_fd,0), &op, sizeof(op));
+			memcpy(WFIFOP(login_fd,2), &packet_len, sizeof(packet_len));
+			memcpy(WFIFOP(login_fd,4), &account_id, sizeof(account_id));
+		}
 		strncpy( WFIFOCP(login_fd,8), pin, PINCODE_LENGTH+1 );
 		WFIFOSET(login_fd,size);
 	}
@@ -100,7 +111,12 @@ TIMER_FUNC(chlogif_send_acc_tologin){
 		int32 i = 0;
 
 		WFIFOHEAD(login_fd,8+users*4);
-		WFIFOW(login_fd,0) = 0x272d;
+		// Byte-buffer slots: the fifo write position can be odd-sized, so even
+		// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+		{
+			uint16 op = 0x272d;
+			memcpy(WFIFOP(login_fd,0), &op, sizeof(op));
+		}
 		for( const auto& pair : char_get_onlinedb() ){
 			std::shared_ptr<struct online_char_data> character = pair.second;
 
@@ -112,12 +128,13 @@ TIMER_FUNC(chlogif_send_acc_tologin){
 				i++;
 			}
 		}
-		WFIFOW(login_fd,2) = 8+ i*4;
 		{
+			uint16 packet_len = (uint16)(8 + i * 4);
 			uint32 count = (uint32)i;
+			memcpy(WFIFOP(login_fd,2), &packet_len, sizeof(packet_len));
 			memcpy(WFIFOP(login_fd,4), &count, sizeof(count));
 		}
-		WFIFOSET(login_fd,WFIFOW(login_fd,2));
+		WFIFOSET(login_fd,8 + i * 4);
 		return 1;
 	}
 	return 0;
@@ -128,10 +145,12 @@ void chlogif_send_usercount(int32 users){
 		return;
 	// send number of user to login server
 	WFIFOHEAD(login_fd,6);
-	WFIFOW(login_fd,0) = 0x2714;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
 	{
-		// Offset 2 is never uint32-aligned: memcpy, same bytes.
+		uint16 op = 0x2714;
 		uint32 nusers = (uint32)users;
+		memcpy(WFIFOP(login_fd,0), &op, sizeof(op));
 		memcpy(WFIFOP(login_fd,2), &nusers, sizeof(nusers));
 	}
 	WFIFOSET(login_fd,6);
@@ -152,7 +171,12 @@ TIMER_FUNC(chlogif_broadcast_user_count){
 	{
 		// send number of user to login server
 		WFIFOHEAD(login_fd,6);
-		WFIFOW(login_fd,0) = 0x2714;
+		// Byte-buffer slots: the fifo write position can be odd-sized, so even
+		// plain uint16 opcode stores use memcpy (same bytes, no unaligned store).
+		{
+			uint16 op = 0x2714;
+			memcpy(WFIFOP(login_fd,0), &op, sizeof(op));
+		}
 		// Byte-buffer slot at an odd offset: memcpy, same bytes.
 		{
 			uint32 nusers = (uint32)users;
@@ -176,17 +200,27 @@ TIMER_FUNC(chlogif_broadcast_user_count){
 void chlogif_upd_global_accreg(uint32 account_id, uint32 char_id) {
 	if ( chlogif_isconnected() ){
 		WFIFOHEAD(login_fd, 60000 + 300);
-		WFIFOW(login_fd, 0) = 0x2728;
-		WFIFOW(login_fd, 2) = 14;
-		WFIFOL(login_fd, 4) = account_id;
-		WFIFOL(login_fd, 8) = char_id;
-		WFIFOW(login_fd, 12) = 0; // count
+		// Byte-buffer slots: the fifo write position can be odd-sized, so even
+		// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+		{
+			uint16 op = 0x2728;
+			uint16 packet_len = 14;
+			uint16 cnt = 0;
+			memcpy(WFIFOP(login_fd,0), &op, sizeof(op));
+			memcpy(WFIFOP(login_fd,2), &packet_len, sizeof(packet_len));
+			memcpy(WFIFOP(login_fd,4), &account_id, sizeof(account_id));
+			memcpy(WFIFOP(login_fd,8), &char_id, sizeof(char_id));
+			memcpy(WFIFOP(login_fd,12), &cnt, sizeof(cnt));
+		}
 	}
 }
 
 void chlogif_prepsend_global_accreg(void) {
 	if ( chlogif_isconnected() ){
-		WFIFOSET(login_fd, WFIFOW(login_fd,2));
+		// Byte-buffer read-back of the length slot: memcpy, same value.
+		uint16 packet_len = 0;
+		memcpy(&packet_len, WFIFOP(login_fd,2), sizeof(packet_len));
+		WFIFOSET(login_fd, packet_len);
 	}
 }
 
@@ -194,7 +228,14 @@ void chlogif_send_global_accreg(const char *key, uint32 index, int64 int_value, 
 	if (!chlogif_isconnected())
 		return;
 
-	int16 nlen = WFIFOW( login_fd, 2 );
+	// Byte-buffer read/write positions can be odd-sized, so even plain
+	// uint16/uint32 fifo accesses use memcpy (same bytes, no unaligned access).
+	int16 nlen = 0;
+	{
+		uint16 vlen = 0;
+		memcpy(&vlen, WFIFOP(login_fd,2), sizeof(vlen));
+		nlen = (int16)vlen;
+	}
 	size_t len;
 
 	len = strlen(key)+1;
@@ -205,7 +246,10 @@ void chlogif_send_global_accreg(const char *key, uint32 index, int64 int_value, 
 	safestrncpy(WFIFOCP(login_fd,nlen), key, len);
 	nlen += static_cast<decltype(nlen)>( len );
 
-	WFIFOL(login_fd, nlen) = index;
+	{
+		uint32 v_index = index;
+		memcpy(WFIFOP(login_fd,nlen), &v_index, sizeof(v_index));
+	}
 	nlen += 4;
 
 	if( is_string ) {
@@ -231,11 +275,22 @@ void chlogif_send_global_accreg(const char *key, uint32 index, int64 int_value, 
 		}
 	}
 
-	WFIFOW(login_fd,12) += 1;
-	WFIFOW(login_fd, 2) = nlen;
+	{
+		uint16 cnt = 0;
+		memcpy(&cnt, WFIFOP(login_fd,12), sizeof(cnt));
+		cnt += 1;
+		memcpy(WFIFOP(login_fd,12), &cnt, sizeof(cnt));
+	}
+	{
+		uint16 vlen = (uint16)nlen;
+		memcpy(WFIFOP(login_fd,2), &vlen, sizeof(vlen));
+	}
 
-	if( WFIFOW(login_fd, 2) > 60000 ) {
-		int32 account_id = WFIFOL(login_fd,4), char_id = WFIFOL(login_fd,8);
+	if( nlen > 60000 ) {
+		uint32 uaid = 0, ucid = 0;
+		memcpy(&uaid, WFIFOP(login_fd,4), sizeof(uaid));
+		memcpy(&ucid, WFIFOP(login_fd,8), sizeof(ucid));
+		int32 account_id = (int32)uaid, char_id = (int32)ucid;
 
 		chlogif_prepsend_global_accreg();
 		chlogif_upd_global_accreg(account_id, char_id); // prepare next
@@ -246,7 +301,12 @@ void chlogif_request_accreg2(uint32 account_id, uint32 char_id){
 	if (!chlogif_isconnected())
 		return;
 	WFIFOHEAD(login_fd,10);
-	WFIFOW(login_fd,0) = 0x272e;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x272e;
+		memcpy(WFIFOP(login_fd,0), &op, sizeof(op));
+	}
 	// Byte-buffer slots at odd offsets: memcpy, same bytes.
 	memcpy(WFIFOP(login_fd,2), &account_id, sizeof(account_id));
 	memcpy(WFIFOP(login_fd,6), &char_id, sizeof(char_id));
@@ -257,7 +317,12 @@ void chlogif_send_reqaccdata(int32 fd, struct char_session_data *sd){
 	if (!chlogif_isconnected())
 		return;
 	WFIFOHEAD(fd,6);
-	WFIFOW(fd,0) = 0x2716;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x2716;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+	}
 	{
 		uint32 aid = sd->account_id;
 		memcpy(WFIFOP(fd,2), &aid, sizeof(aid));
@@ -269,7 +334,12 @@ void chlogif_send_setacconline(int32 aid){
 	if (!chlogif_isconnected())
 		return;
 	WFIFOHEAD(login_fd,6);
-	WFIFOW(login_fd,0) = 0x272b;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x272b;
+		memcpy(WFIFOP(login_fd,0), &op, sizeof(op));
+	}
 	{
 		uint32 auid = (uint32)aid;
 		memcpy(WFIFOP(login_fd,2), &auid, sizeof(auid));
@@ -281,7 +351,12 @@ void chlogif_send_setallaccoffline(int32 fd){
 	if (!chlogif_isconnected())
 		return;
 	WFIFOHEAD(fd,2);
-	WFIFOW(fd,0) = 0x2737;
+	// Byte-buffer slot: the fifo write position can be odd-sized, so even
+	// the plain uint16 opcode store uses memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x2737;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+	}
 	WFIFOSET(fd,2);
 }
 
@@ -289,7 +364,12 @@ void chlogif_send_setaccoffline(int32 fd, int32 aid){
 	if (!chlogif_isconnected())
 		return;
 	WFIFOHEAD(fd,6);
-	WFIFOW(fd,0) = 0x272c;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x272c;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+	}
 	{
 		// Byte-buffer slot at an odd offset: memcpy, same bytes.
 		uint32 auid = (uint32)aid;
@@ -510,7 +590,9 @@ int32 chlogif_parse_ackchangesex(int32 fd)
 		return 0;
 	else {
 		unsigned char buf[7];
-		uint32 acc = RFIFOL(fd,2);
+		// Byte-buffer read at an odd read position: memcpy, same value.
+		uint32 acc = 0;
+		memcpy(&acc, RFIFOP(fd,2), sizeof(acc));
 		int32 sex = RFIFOB(fd,6);
 		RFIFOSKIP(fd,7);
 
@@ -539,7 +621,8 @@ int32 chlogif_parse_ackchangesex(int32 fd)
 
 		// notify all mapservers about this change
 		WBUFW(buf,0) = 0x2b0d;
-		WBUFL(buf,2) = acc;
+		// Stack buffer at an unaligned offset: memcpy, same bytes.
+		memcpy(buf+2, &acc, sizeof(acc));
 		WBUFB(buf,6) = sex;
 		chmapif_sendall(buf, 7);
 	}
@@ -584,19 +667,31 @@ int32 chlogif_parse_ackchangecharsex(int32 char_id, int32 sex)
 
 	// notify all mapservers about this change
 	WBUFW(buf,0) = 0x2b0d;
-	WBUFL(buf,2) = account_id;
+	// Stack buffer at an unaligned offset: memcpy, same bytes.
+	{
+		uint32 v_aid = (uint32)account_id;
+		memcpy(buf+2, &v_aid, sizeof(v_aid));
+	}
 	WBUFB(buf,6) = sex;
 	chmapif_sendall(buf, 7);
 	return 0;
 }
 
 int32 chlogif_parse_ack_global_accreg(int32 fd){
-	if (RFIFOREST(fd) < 4 || RFIFOREST(fd) < RFIFOW(fd,2))
+	if (RFIFOREST(fd) < 4)
+		return 0;
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 packet_len = 0;
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+	if (RFIFOREST(fd) < packet_len)
 		return 0;
 	else { //Receive account_reg2 registry, forward to map servers.
-		RFIFOW(fd,0) = 0x3804;
-		chmapif_sendall(RFIFOP(fd,0), RFIFOW(fd,2));
-		RFIFOSKIP(fd, RFIFOW(fd,2));
+		{
+			uint16 op = 0x3804;
+			memcpy(RFIFOP(fd,0), &op, sizeof(op));
+		}
+		chmapif_sendall(RFIFOP(fd,0), packet_len);
+		RFIFOSKIP(fd, packet_len);
 	}
 	return 1;
 }
@@ -606,14 +701,22 @@ int32 chlogif_parse_accbannotification(int32 fd){
 		return 0;
 	else { // send to all map-servers to disconnect the player
 		unsigned char buf[11];
+		// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+		uint32 acc = 0, ban_val = 0;
+		memcpy(&acc, RFIFOP(fd,2), sizeof(acc));
+		memcpy(&ban_val, RFIFOP(fd,7), sizeof(ban_val));
 		WBUFW(buf,0) = 0x2b14;
-		WBUFL(buf,2) = RFIFOL(fd,2);
+		memcpy(buf+2, &acc, sizeof(acc));
 		WBUFB(buf,6) = RFIFOB(fd,6); // 0: change of statut, 1: ban
-		WBUFL(buf,7) = RFIFOL(fd,7); // status or final date of a banishment
+		memcpy(buf+7, &ban_val, sizeof(ban_val)); // status or final date of a banishment
 		chmapif_sendall(buf, 11);
 	}
 	// disconnect player if online on char-server
-	char_disconnect_player(RFIFOL(fd,2));
+	{
+		uint32 acc = 0;
+		memcpy(&acc, RFIFOP(fd,2), sizeof(acc));
+		char_disconnect_player(acc);
+	}
 	RFIFOSKIP(fd,11);
 	return 1;
 }
@@ -680,8 +783,14 @@ int32 chlogif_parse_updip(int32 fd){
 		ShowInfo("Updating IP for [%s].\n", charserv_config.char_ip_str);
 		// notify login server about the change
 		WFIFOHEAD(fd,6);
-		WFIFOW(fd,0) = 0x2736;
-		WFIFOL(fd,2) = htonl(charserv_config.char_ip);
+		// Byte-buffer slots: the fifo write position can be odd-sized, so even
+		// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+		{
+			uint16 op = 0x2736;
+			uint32 ip = htonl(charserv_config.char_ip);
+			memcpy(WFIFOP(fd,0), &op, sizeof(op));
+			memcpy(WFIFOP(fd,2), &ip, sizeof(ip));
+		}
 		WFIFOSET(fd,6);
 	}
 
@@ -698,11 +807,17 @@ int32 chlogif_parse_vipack(int32 fd) {
 	if (RFIFOREST(fd) < 19)
 		return 0;
 	else {
-		uint32 aid = RFIFOL(fd,2); //aid
-		uint32 vip_time = RFIFOL(fd,6); //vip_time
+		// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+		uint32 aid = 0; //aid
+		uint32 vip_time = 0; //vip_time
+		memcpy(&aid, RFIFOP(fd,2), sizeof(aid));
+		memcpy(&vip_time, RFIFOP(fd,6), sizeof(vip_time));
 		uint8 flag = RFIFOB(fd,10);
-		uint32 groupid = RFIFOL(fd,11); //new group id
-		int32 mapfd = RFIFOL(fd,15); //link to mapserv for ack
+		uint32 groupid = 0; //new group id
+		memcpy(&groupid, RFIFOP(fd,11), sizeof(groupid));
+		uint32 umapfd = 0; //link to mapserv for ack
+		memcpy(&umapfd, RFIFOP(fd,15), sizeof(umapfd));
+		int32 mapfd = (int32)umapfd;
 		RFIFOSKIP(fd,19);
 
 		// If it was triggered from login-server and not requested from a specific map-server
@@ -739,11 +854,20 @@ int32 chlogif_reqvipdata(uint32 aid, uint8 flag, int32 timediff, int32 mapfd) {
 	loginif_check(-1);
 #ifdef VIP_ENABLE
 	WFIFOHEAD(login_fd,15);
-	WFIFOW(login_fd,0) = 0x2742;
-	WFIFOL(login_fd,2) = aid; //aid
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x2742;
+		memcpy(WFIFOP(login_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(login_fd,2), &aid, sizeof(aid));
+	}
 	WFIFOB(login_fd,6) = flag; //flag
-	WFIFOL(login_fd,7) = timediff; //req_inc_duration
-	WFIFOL(login_fd,11) = mapfd; //req_inc_duration
+	{
+		uint32 v_timediff = (uint32)timediff;
+		uint32 v_mapfd = (uint32)mapfd;
+		memcpy(WFIFOP(login_fd,7), &v_timediff, sizeof(v_timediff)); //req_inc_duration
+		memcpy(WFIFOP(login_fd,11), &v_mapfd, sizeof(v_mapfd)); //req_inc_duration
+	}
 	WFIFOSET(login_fd,15);
 #endif
 	return 0;
@@ -757,11 +881,20 @@ int32 chlogif_req_accinfo(int32 fd, int32 u_fd, int32 u_aid, int32 account_id) {
 	loginif_check(-1);
 	//ShowInfo("%d request account info for %d\n", u_aid, account_id);
 	WFIFOHEAD(login_fd,18);
-	WFIFOW(login_fd,0) = 0x2720;
-	WFIFOL(login_fd,2) = fd;
-	WFIFOL(login_fd,6) = u_fd;
-	WFIFOL(login_fd,10) = u_aid;
-	WFIFOL(login_fd,14) = account_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x2720;
+		uint32 v_fd = (uint32)fd;
+		uint32 v_ufd = (uint32)u_fd;
+		uint32 v_uaid = (uint32)u_aid;
+		uint32 v_aid = (uint32)account_id;
+		memcpy(WFIFOP(login_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(login_fd,2), &v_fd, sizeof(v_fd));
+		memcpy(WFIFOP(login_fd,6), &v_ufd, sizeof(v_ufd));
+		memcpy(WFIFOP(login_fd,10), &v_uaid, sizeof(v_uaid));
+		memcpy(WFIFOP(login_fd,14), &v_aid, sizeof(v_aid));
+	}
 	WFIFOSET(login_fd,18);
 	return 1;
 }
@@ -776,13 +909,25 @@ int32 chlogif_parse_AccInfoAck(int32 fd) {
 	else {
 		bool success = RFIFOB(fd, 18) != 0;
 
+		// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+		uint32 r_mapfd = 0, r_ufd = 0, r_uaid = 0, r_aid = 0;
+		memcpy(&r_mapfd, RFIFOP(fd,2), sizeof(r_mapfd));
+		memcpy(&r_ufd, RFIFOP(fd,6), sizeof(r_ufd));
+		memcpy(&r_uaid, RFIFOP(fd,10), sizeof(r_uaid));
+		memcpy(&r_aid, RFIFOP(fd,14), sizeof(r_aid));
 		if( !success ){
-			mapif_accinfo_ack( success, RFIFOL( fd, 2 ), RFIFOL( fd, 6 ), RFIFOL( fd, 10 ), RFIFOL( fd, 14 ), -1, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr );
+			mapif_accinfo_ack( success, (int32)r_mapfd, (int32)r_ufd, (int32)r_uaid, (int32)r_aid, -1, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr );
 			RFIFOSKIP(fd,19);
 			return 1;
 		}
 
-		mapif_accinfo_ack( success, RFIFOL( fd, 2 ), RFIFOL( fd, 6 ), RFIFOL( fd, 10 ), RFIFOL( fd, 14 ), RFIFOL( fd, 19 ), RFIFOL( fd, 23 ), RFIFOL( fd, 27 ), RFIFOCP( fd, 31 ), RFIFOCP( fd, 71 ), RFIFOCP( fd, 87 ), RFIFOCP( fd, 111 ), RFIFOCP( fd, 122 ) );
+		{
+			uint32 g1 = 0, g2 = 0, g3 = 0;
+			memcpy(&g1, RFIFOP(fd,19), sizeof(g1));
+			memcpy(&g2, RFIFOP(fd,23), sizeof(g2));
+			memcpy(&g3, RFIFOP(fd,27), sizeof(g3));
+			mapif_accinfo_ack( success, (int32)r_mapfd, (int32)r_ufd, (int32)r_uaid, (int32)r_aid, (int32)g1, (int32)g2, (int32)g3, RFIFOCP( fd, 31 ), RFIFOCP( fd, 71 ), RFIFOCP( fd, 87 ), RFIFOCP( fd, 111 ), RFIFOCP( fd, 122 ) );
+		}
 		RFIFOSKIP(fd,122+NAME_LENGTH);
 	}
 	return 1;
@@ -809,7 +954,12 @@ int32 chlogif_parse(int32 fd) {
 			return 0;
 		} else if( session[fd]->flag.ping != 2 ) { /* we haven't sent ping out yet */
 			WFIFOHEAD(fd,2);// sends a ping packet to login server (will receive pong 0x2718)
-			WFIFOW(fd,0) = 0x2719;
+			// Byte-buffer slot: the fifo write position can be odd-sized, so even
+			// the plain uint16 opcode store uses memcpy (same bytes, no unaligned store).
+			{
+				uint16 op = 0x2719;
+				memcpy(WFIFOP(fd,0), &op, sizeof(op));
+			}
 			WFIFOSET(fd,2);
 
 			session[fd]->flag.ping = 2;
@@ -821,7 +971,10 @@ int32 chlogif_parse(int32 fd) {
 		//  0: Avoid processing followup packets (prev was probably incomplete) packet
 		//  1: Continue parsing
 		int32 next = 1;
-		uint16 command = RFIFOW(fd,0);
+		// Byte-buffer read: the read position advances by consumed packet
+		// lengths (often odd), so even the plain uint16 opcode load uses memcpy.
+		uint16 command = 0;
+		memcpy(&command, RFIFOP(fd,0), sizeof(command));
 		switch( command ) {
 			case 0x2711: next = chlogif_parse_ackconnect(fd); break;
 			case 0x2713: next = chlogif_parse_ackaccreq(fd); break;
@@ -863,7 +1016,12 @@ TIMER_FUNC(chlogif_check_connect_logserver){
 	realloc_fifo(login_fd, FIFOSIZE_SERVERLINK, FIFOSIZE_SERVERLINK);
 
 	WFIFOHEAD(login_fd,86);
-	WFIFOW(login_fd,0) = 0x2710;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x2710;
+		memcpy(WFIFOP(login_fd,0), &op, sizeof(op));
+	}
 	memcpy(WFIFOP(login_fd,2), charserv_config.userid, 24);
 	memcpy(WFIFOP(login_fd,26), charserv_config.passwd, 24);
 	// Unaligned uint32 slots in a byte buffer: memcpy keeps the bytes
@@ -874,11 +1032,19 @@ TIMER_FUNC(chlogif_check_connect_logserver){
 		memcpy(WFIFOP(login_fd,50), &zero, sizeof(zero));
 		memcpy(WFIFOP(login_fd,54), &ip, sizeof(ip));
 	}
-	WFIFOW(login_fd,58) = htons(charserv_config.char_port);
+	{
+		uint16 port = htons(charserv_config.char_port);
+		memcpy(WFIFOP(login_fd,58), &port, sizeof(port));
+	}
 	memcpy(WFIFOP(login_fd,60), charserv_config.server_name, 20);
-	WFIFOW(login_fd,80) = 0;
-	WFIFOW(login_fd,82) = charserv_config.char_maintenance;
-	WFIFOW(login_fd,84) = charserv_config.char_new_display; //only display (New) if they want to [Kevin]
+	{
+		uint16 zero = 0;
+		uint16 maint = (uint16)charserv_config.char_maintenance;
+		uint16 newdisp = (uint16)charserv_config.char_new_display;
+		memcpy(WFIFOP(login_fd,80), &zero, sizeof(zero));
+		memcpy(WFIFOP(login_fd,82), &maint, sizeof(maint));
+		memcpy(WFIFOP(login_fd,84), &newdisp, sizeof(newdisp)); //only display (New) if they want to [Kevin]
+	}
 	WFIFOSET(login_fd,86);
 
 	return 1;
