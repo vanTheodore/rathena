@@ -149,7 +149,10 @@ void inter_elemental_sql_final(void) {
  * Inter Packets
  *------------------------------------------*/
 int32 inter_elemental_parse_frommap(int32 fd) {
-	uint16 cmd = RFIFOW(fd,0);
+	// Byte-buffer read: the read position advances by consumed packet
+	// lengths (often odd), so even the plain uint16 opcode load uses memcpy.
+	uint16 cmd = 0;
+	memcpy(&cmd, RFIFOP(fd,0), sizeof(cmd));
 
 	switch( cmd ) {
 		case 0x307c: mapif_parse_elemental_create(fd, (struct s_elemental*)RFIFOP(fd,4)); break;
