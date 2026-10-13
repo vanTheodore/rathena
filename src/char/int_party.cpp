@@ -365,17 +365,26 @@ int32 party_check_empty( std::shared_ptr<struct party_data> p ){
 int32 mapif_party_created(int32 fd,uint32 account_id,uint32 char_id,struct party *p)
 {
 	WFIFOHEAD(fd, 39);
-	WFIFOW(fd,0)=0x3820;
-	WFIFOL(fd,2)=account_id;
-	WFIFOL(fd,6)=char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3820;
+		uint32 aid = account_id;
+		uint32 cid = char_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &aid, sizeof(aid));
+		memcpy(WFIFOP(fd,6), &cid, sizeof(cid));
+	}
 	if(p!=nullptr){
 		WFIFOB(fd,10)=0;
-		WFIFOL(fd,11)=p->party_id;
+		int32 pid = p->party_id;
+		memcpy(WFIFOP(fd,11), &pid, sizeof(pid));
 		memcpy(WFIFOP(fd,15),p->name,NAME_LENGTH);
 		ShowInfo("int_party: Party created (%d - %s)\n",p->party_id,p->name);
 	}else{
 		WFIFOB(fd,10)=1;
-		WFIFOL(fd,11)=0;
+		uint32 pid_zero = 0;
+		memcpy(WFIFOP(fd,11), &pid_zero, sizeof(pid_zero));
 		memset(WFIFOP(fd,15),0,NAME_LENGTH);
 	}
 	WFIFOSET(fd,39);
@@ -387,10 +396,17 @@ int32 mapif_party_created(int32 fd,uint32 account_id,uint32 char_id,struct party
 void mapif_party_noinfo(int32 fd, int32 party_id, uint32 char_id)
 {
 	WFIFOHEAD(fd, 12);
-	WFIFOW(fd,0) = 0x3821;
-	WFIFOW(fd,2) = 12;
-	WFIFOL(fd,4) = char_id;
-	WFIFOL(fd,8) = party_id;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x3821;
+		uint16 packet_len = 12;
+		uint32 cid = char_id;
+		int32 pid = party_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+		memcpy(WFIFOP(fd,4), &cid, sizeof(cid));
+		memcpy(WFIFOP(fd,8), &pid, sizeof(pid));
+	}
 	WFIFOSET(fd,12);
 	ShowWarning("int_party: info not found (party_id=%d char_id=%d)\n", party_id, char_id);
 }
@@ -413,10 +429,17 @@ void mapif_party_info(int32 fd, struct party* p, uint32 char_id)
 //Whether or not additional party members
 int32 mapif_party_memberadded(int32 fd, int32 party_id, uint32 account_id, uint32 char_id, int32 flag) {
 	WFIFOHEAD(fd, 15);
-	WFIFOW(fd,0) = 0x3822;
-	WFIFOL(fd,2) = party_id;
-	WFIFOL(fd,6) = account_id;
-	WFIFOL(fd,10) = char_id;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x3822;
+		int32 pid = party_id;
+		uint32 aid = account_id;
+		uint32 cid = char_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &pid, sizeof(pid));
+		memcpy(WFIFOP(fd,6), &aid, sizeof(aid));
+		memcpy(WFIFOP(fd,10), &cid, sizeof(cid));
+	}
 	WFIFOB(fd,14) = flag;
 	WFIFOSET(fd,15);
 
@@ -816,15 +839,77 @@ int32 inter_party_parse_frommap(int32 fd)
 	memcpy(&op, RFIFOP(fd,0), sizeof(op));
 	switch((int32)op) {
 	case 0x3020: mapif_parse_CreateParty(fd, RFIFOCP(fd,4), RFIFOB(fd,28), RFIFOB(fd,29), (struct party_member*)RFIFOP(fd,30)); break;
-	case 0x3021: mapif_parse_PartyInfo(fd, RFIFOL(fd,2), RFIFOL(fd,6)); break;
-	case 0x3022: mapif_parse_PartyAddMember(fd, RFIFOL(fd,4), (struct party_member*)RFIFOP(fd,8)); break;
-	case 0x3023: mapif_parse_PartyChangeOption(fd, RFIFOL(fd,2), RFIFOL(fd,6), RFIFOW(fd,10), RFIFOW(fd,12)); break;
-	case 0x3024: mapif_parse_PartyLeave(fd, RFIFOL(fd,2), RFIFOL(fd,6), RFIFOL(fd,10), RFIFOCP(fd,14), (enum e_party_member_withdraw)RFIFOB(fd,14+NAME_LENGTH)); break;
-	case 0x3025: mapif_parse_PartyChangeMap( fd, RFIFOL( fd, 2 ), RFIFOL( fd, 6 ), RFIFOL( fd, 10 ), RFIFOB( fd, 14 ), RFIFOW( fd, 15 ), RFIFOCP( fd, 17 ) ); break;
-	case 0x3026: mapif_parse_BreakParty(fd, RFIFOL(fd,2)); break;
-	case 0x3027: mapif_parse_PartyMessage(fd, RFIFOL(fd,4), RFIFOL(fd,8), RFIFOCP(fd,12), RFIFOW(fd,2)-12); break;
-	case 0x3029: mapif_parse_PartyLeaderChange(fd, RFIFOL(fd,2), RFIFOL(fd,6), RFIFOL(fd,10)); break;
-	case 0x302A: mapif_parse_PartyShareLevel(fd, RFIFOL(fd,2)); break;
+	case 0x3021: {
+		// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+		uint32 party_id_tmp = 0, char_id_tmp = 0;
+		memcpy(&party_id_tmp, RFIFOP(fd,2), sizeof(party_id_tmp));
+		memcpy(&char_id_tmp, RFIFOP(fd,6), sizeof(char_id_tmp));
+		mapif_parse_PartyInfo(fd, (int32)party_id_tmp, char_id_tmp);
+		break;
+	}
+	case 0x3022: {
+		uint32 party_id_tmp = 0;
+		memcpy(&party_id_tmp, RFIFOP(fd,4), sizeof(party_id_tmp));
+		mapif_parse_PartyAddMember(fd, (int32)party_id_tmp, (struct party_member*)RFIFOP(fd,8));
+		break;
+	}
+	case 0x3023: {
+		uint32 party_id_tmp = 0, account_id_tmp = 0;
+		uint16 exp_tmp = 0, item_tmp = 0;
+		memcpy(&party_id_tmp, RFIFOP(fd,2), sizeof(party_id_tmp));
+		memcpy(&account_id_tmp, RFIFOP(fd,6), sizeof(account_id_tmp));
+		memcpy(&exp_tmp, RFIFOP(fd,10), sizeof(exp_tmp));
+		memcpy(&item_tmp, RFIFOP(fd,12), sizeof(item_tmp));
+		mapif_parse_PartyChangeOption(fd, (int32)party_id_tmp, account_id_tmp, (int32)exp_tmp, (int32)item_tmp);
+		break;
+	}
+	case 0x3024: {
+		uint32 party_id_tmp = 0, account_id_tmp = 0, char_id_tmp = 0;
+		memcpy(&party_id_tmp, RFIFOP(fd,2), sizeof(party_id_tmp));
+		memcpy(&account_id_tmp, RFIFOP(fd,6), sizeof(account_id_tmp));
+		memcpy(&char_id_tmp, RFIFOP(fd,10), sizeof(char_id_tmp));
+		mapif_parse_PartyLeave(fd, (int32)party_id_tmp, account_id_tmp, char_id_tmp, RFIFOCP(fd,14), (enum e_party_member_withdraw)RFIFOB(fd,14+NAME_LENGTH));
+		break;
+	}
+	case 0x3025: {
+		uint32 party_id_tmp = 0, account_id_tmp = 0, char_id_tmp = 0;
+		uint16 lv_tmp = 0;
+		memcpy(&party_id_tmp, RFIFOP(fd,2), sizeof(party_id_tmp));
+		memcpy(&account_id_tmp, RFIFOP(fd,6), sizeof(account_id_tmp));
+		memcpy(&char_id_tmp, RFIFOP(fd,10), sizeof(char_id_tmp));
+		memcpy(&lv_tmp, RFIFOP(fd,15), sizeof(lv_tmp));
+		mapif_parse_PartyChangeMap(fd, (int32)party_id_tmp, account_id_tmp, char_id_tmp, RFIFOB(fd,14), lv_tmp, RFIFOCP(fd,17));
+		break;
+	}
+	case 0x3026: {
+		uint32 party_id_tmp = 0;
+		memcpy(&party_id_tmp, RFIFOP(fd,2), sizeof(party_id_tmp));
+		mapif_parse_BreakParty(fd, (int32)party_id_tmp);
+		break;
+	}
+	case 0x3027: {
+		uint32 party_id_tmp = 0, account_id_tmp = 0;
+		uint16 packet_len = 0;
+		memcpy(&party_id_tmp, RFIFOP(fd,4), sizeof(party_id_tmp));
+		memcpy(&account_id_tmp, RFIFOP(fd,8), sizeof(account_id_tmp));
+		memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+		mapif_parse_PartyMessage(fd, (int32)party_id_tmp, account_id_tmp, RFIFOCP(fd,12), (int32)packet_len-12);
+		break;
+	}
+	case 0x3029: {
+		uint32 party_id_tmp = 0, account_id_tmp = 0, char_id_tmp = 0;
+		memcpy(&party_id_tmp, RFIFOP(fd,2), sizeof(party_id_tmp));
+		memcpy(&account_id_tmp, RFIFOP(fd,6), sizeof(account_id_tmp));
+		memcpy(&char_id_tmp, RFIFOP(fd,10), sizeof(char_id_tmp));
+		mapif_parse_PartyLeaderChange(fd, (int32)party_id_tmp, account_id_tmp, char_id_tmp);
+		break;
+	}
+	case 0x302A: {
+		uint32 share_lv = 0;
+		memcpy(&share_lv, RFIFOP(fd,2), sizeof(share_lv));
+		mapif_parse_PartyShareLevel(fd, share_lv);
+		break;
+	}
 	default:
 		return 0;
 	}
