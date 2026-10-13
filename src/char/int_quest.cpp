@@ -128,10 +128,14 @@ bool mapif_quest_update(uint32 char_id, struct quest qd) {
  * @see inter_parse_frommap
  */
 int32 mapif_parse_quest_save(int32 fd) {
-	uint32 char_id = RFIFOL(fd,4);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 char_id = 0;
+	uint16 packet_len = 0;
+	memcpy(&char_id, RFIFOP(fd,4), sizeof(char_id));
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
 	struct quest *old_qd = nullptr, *new_qd = nullptr;
 	bool success = true;
-	size_t old_n, new_n = ( RFIFOW( fd, 2 ) - 8 ) / sizeof( struct quest );
+	size_t old_n, new_n = ( packet_len - 8 ) / sizeof( struct quest );
 
 	if( new_n > 0 )
 		new_qd = (struct quest*)RFIFOP(fd,8);
@@ -167,8 +171,14 @@ int32 mapif_parse_quest_save(int32 fd) {
 
 	//Send ack
 	WFIFOHEAD(fd,7);
-	WFIFOW(fd,0) = 0x3861;
-	WFIFOL(fd,2) = char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3861;
+		uint32 cid = char_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &cid, sizeof(cid));
+	}
 	WFIFOB(fd,6) = success ? 1 : 0;
 	WFIFOSET(fd,7);
 
@@ -185,14 +195,21 @@ int32 mapif_parse_quest_save(int32 fd) {
  * @see inter_parse_frommap
  */
 int32 mapif_parse_quest_load(int32 fd) {
-	uint32 char_id = RFIFOL(fd,2);
+	// Byte-buffer read at an odd read position: memcpy, same value.
+	uint32 char_id = 0;
+	memcpy(&char_id, RFIFOP(fd,2), sizeof(char_id));
 	size_t num_quests;
 	struct quest* tmp_questlog = mapif_quests_fromsql( char_id, num_quests );
 
 	WFIFOHEAD(fd,num_quests * sizeof(struct quest) + 8);
-	WFIFOW(fd,0) = 0x3860;
-	WFIFOW(fd,2) = static_cast<int16>( num_quests * sizeof( struct quest ) + 8 );
-	WFIFOL(fd,4) = char_id;
+	// Same treatment for the reply builder (odd fifo positions possible).
+	{
+		uint16 op = 0x3860;
+		uint16 packet_len = static_cast<int16>( num_quests * sizeof( struct quest ) + 8 );
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+		memcpy(WFIFOP(fd,4), &char_id, sizeof(char_id));
+	}
 
 	if( num_quests > 0 )
 		memcpy(WFIFOP(fd,8), tmp_questlog, sizeof(struct quest) * num_quests);
