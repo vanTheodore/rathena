@@ -1857,8 +1857,14 @@ TIMER_FUNC(send_usercount_tochar){
 	chrif_check(-1);
 
 	WFIFOHEAD(char_fd,4);
-	WFIFOW(char_fd,0) = 0x2afe;
-	WFIFOW(char_fd,2) = map_usercount();
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x2afe;
+		uint16 users = (uint16)map_usercount();
+		memcpy(WFIFOP(char_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(char_fd,2), &users, sizeof(users));
+	}
 	WFIFOSET(char_fd,4);
 	return 0;
 }
