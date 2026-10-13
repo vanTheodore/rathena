@@ -101,15 +101,28 @@ int32 intif_create_pet(uint32 account_id,uint32 char_id,int16 pet_class,int16 pe
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd, 28 + NAME_LENGTH);
-	WFIFOW(inter_fd, 0) = 0x3080;
-	WFIFOL(inter_fd, 2) = account_id;
-	WFIFOL(inter_fd, 6) = char_id;
-	WFIFOW(inter_fd, 10) = pet_class;
-	WFIFOW(inter_fd, 12) = pet_lv;
-	WFIFOL(inter_fd, 14) = pet_egg_id;
-	WFIFOL(inter_fd, 18) = pet_equip;
-	WFIFOW(inter_fd, 22) = intimate;
-	WFIFOW(inter_fd, 24) = hungry;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x3080;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(inter_fd,2), &account_id, sizeof(account_id));
+		memcpy(WFIFOP(inter_fd,6), &char_id, sizeof(char_id));
+		v16 = pet_class;
+		memcpy(WFIFOP(inter_fd,10), &v16, sizeof(v16));
+		v16 = pet_lv;
+		memcpy(WFIFOP(inter_fd,12), &v16, sizeof(v16));
+		v32 = pet_egg_id;
+		memcpy(WFIFOP(inter_fd,14), &v32, sizeof(v32));
+		v32 = pet_equip;
+		memcpy(WFIFOP(inter_fd,18), &v32, sizeof(v32));
+		v16 = intimate;
+		memcpy(WFIFOP(inter_fd,22), &v16, sizeof(v16));
+		v16 = hungry;
+		memcpy(WFIFOP(inter_fd,24), &v16, sizeof(v16));
+	}
 	WFIFOB(inter_fd, 26) = rename_flag;
 	WFIFOB(inter_fd, 27) = incubate;
 	safestrncpy(WFIFOCP(inter_fd, 28), pet_name, NAME_LENGTH);
@@ -130,10 +143,17 @@ int32 intif_request_petdata(uint32 account_id,uint32 char_id,int32 pet_id)
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd, 14);
-	WFIFOW(inter_fd,0) = 0x3081;
-	WFIFOL(inter_fd,2) = account_id;
-	WFIFOL(inter_fd,6) = char_id;
-	WFIFOL(inter_fd,10) = pet_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3081;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(inter_fd,2), &account_id, sizeof(account_id));
+		memcpy(WFIFOP(inter_fd,6), &char_id, sizeof(char_id));
+		v32 = pet_id;
+		memcpy(WFIFOP(inter_fd,10), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd,14);
 
 	return 1;
@@ -150,11 +170,19 @@ int32 intif_save_petdata( uint32 account_id, const s_pet* p )
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd, sizeof(struct s_pet) + 8);
-	WFIFOW(inter_fd,0) = 0x3082;
-	WFIFOW(inter_fd,2) = sizeof(struct s_pet) + 8;
-	WFIFOL(inter_fd,4) = account_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3082;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
+	uint16 len = sizeof(struct s_pet) + 8;
+	memcpy(WFIFOP(inter_fd,2), &len, sizeof(len));
+	{
+		memcpy(WFIFOP(inter_fd,4), &account_id, sizeof(account_id));
+	}
 	memcpy(WFIFOP(inter_fd,8),p,sizeof(struct s_pet));
-	WFIFOSET(inter_fd,WFIFOW(inter_fd,2));
+	WFIFOSET(inter_fd, len);
 
 	return 1;
 }
@@ -169,8 +197,15 @@ int32 intif_delete_petdata(int32 pet_id)
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd,6);
-	WFIFOW(inter_fd,0) = 0x3083;
-	WFIFOL(inter_fd,2) = pet_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3083;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = pet_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd,6);
 
 	return 1;
@@ -189,9 +224,17 @@ int32 intif_rename( const map_session_data* sd, int32 type, char* name )
 		return 0;
 
 	WFIFOHEAD(inter_fd,NAME_LENGTH+12);
-	WFIFOW(inter_fd,0) = 0x3006;
-	WFIFOL(inter_fd,2) = sd->status.account_id;
-	WFIFOL(inter_fd,6) = sd->status.char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3006;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = sd->status.account_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+		v32 = sd->status.char_id;
+		memcpy(WFIFOP(inter_fd,6), &v32, sizeof(v32));
+	}
 	WFIFOB(inter_fd,10) = type;  //Type: 0 - PC, 1 - PET, 2 - HOM
 	safestrncpy(WFIFOCP(inter_fd,11),name, NAME_LENGTH);
 	WFIFOSET(inter_fd,NAME_LENGTH+12);
@@ -222,19 +265,44 @@ int32 intif_broadcast( const char* mes, size_t len, int32 type ){
 		return 0; //No need to send.
 
 	WFIFOHEAD(inter_fd, 16 + lp + len);
-	WFIFOW(inter_fd,0)  = 0x3000;
-	WFIFOW( inter_fd, 2 )  = static_cast<int16>( 16 + lp + len );
-	WFIFOL(inter_fd,4)  = 0xFF000000; // 0xFF000000 color signals standard broadcast
-	WFIFOW(inter_fd,8)  = 0; // fontType not used with standard broadcast
-	WFIFOW(inter_fd,10) = 0; // fontSize not used with standard broadcast
-	WFIFOW(inter_fd,12) = 0; // fontAlign not used with standard broadcast
-	WFIFOW(inter_fd,14) = 0; // fontY not used with standard broadcast
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x3000;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
+	uint16 plen = static_cast<int16>( 16 + lp + len );
+	memcpy(WFIFOP(inter_fd,2), &plen, sizeof(plen));
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		v32 = 0xFF000000;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32)); // 0xFF000000 color signals standard broadcast
+		v16 = 0;
+		memcpy(WFIFOP(inter_fd,8), &v16, sizeof(v16)); // fontType not used with standard broadcast
+		v16 = 0;
+		memcpy(WFIFOP(inter_fd,10), &v16, sizeof(v16)); // fontSize not used with standard broadcast
+		v16 = 0;
+		memcpy(WFIFOP(inter_fd,12), &v16, sizeof(v16)); // fontAlign not used with standard broadcast
+		v16 = 0;
+		memcpy(WFIFOP(inter_fd,14), &v16, sizeof(v16));
+	} // fontY not used with standard broadcast
 	if (type|BC_BLUE)
-		WFIFOL(inter_fd,16) = 0x65756c62; //If there's "blue" at the beginning of the message, game client will display it in blue instead of yellow.
+		{
+			uint32 v32_1 = 0;
+			v32_1 = 0x65756c62;
+			memcpy(WFIFOP(inter_fd,16), &v32_1, sizeof(v32_1));
+		} //If there's "blue" at the beginning of the message, game client will display it in blue instead of yellow.
 	else if (type|BC_WOE)
-		WFIFOL(inter_fd,16) = 0x73737373; //If there's "ssss", game client will recognize message as 'WoE broadcast'.
+		{
+			uint32 v32_2 = 0;
+			v32_2 = 0x73737373;
+			memcpy(WFIFOP(inter_fd,16), &v32_2, sizeof(v32_2));
+		} //If there's "ssss", game client will recognize message as 'WoE broadcast'.
 	safestrncpy(WFIFOCP(inter_fd,16 + lp), mes, len);
-	WFIFOSET(inter_fd, WFIFOW(inter_fd,2));
+	WFIFOSET(inter_fd, plen);
 	return 1;
 }
 
@@ -264,15 +332,32 @@ int32 intif_broadcast2( const char* mes, size_t len, unsigned long fontColor, in
 		return 0; //No need to send.
 
 	WFIFOHEAD(inter_fd, 16 + len);
-	WFIFOW(inter_fd,0)  = 0x3000;
-	WFIFOW( inter_fd, 2 )  = static_cast<int16>( 16 + len );
-	WFIFOL(inter_fd,4)  = fontColor;
-	WFIFOW(inter_fd,8)  = fontType;
-	WFIFOW(inter_fd,10) = fontSize;
-	WFIFOW(inter_fd,12) = fontAlign;
-	WFIFOW(inter_fd,14) = fontY;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x3000;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
+	uint16 plen = static_cast<int16>( 16 + len );
+	memcpy(WFIFOP(inter_fd,2), &plen, sizeof(plen));
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		v32 = fontColor;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+		v16 = fontType;
+		memcpy(WFIFOP(inter_fd,8), &v16, sizeof(v16));
+		v16 = fontSize;
+		memcpy(WFIFOP(inter_fd,10), &v16, sizeof(v16));
+		v16 = fontAlign;
+		memcpy(WFIFOP(inter_fd,12), &v16, sizeof(v16));
+		v16 = fontY;
+		memcpy(WFIFOP(inter_fd,14), &v16, sizeof(v16));
+	}
 	safestrncpy(WFIFOCP(inter_fd,16), mes, len);
-	WFIFOSET(inter_fd, WFIFOW(inter_fd,2));
+	WFIFOSET(inter_fd, plen);
 	return 1;
 }
 
@@ -324,13 +409,24 @@ int32 intif_wis_message(map_session_data *sd, char *nick, char *mes, size_t mes_
 	}
 
 	WFIFOHEAD(inter_fd,mes_len + headersize);
-	WFIFOW(inter_fd,0) = 0x3001;
-	WFIFOW(inter_fd,2) = static_cast<int16>( mes_len + headersize);
-	WFIFOL(inter_fd,4) = pc_get_group_level(sd);
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3001;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
+	uint16 len = static_cast<int16>( mes_len + headersize);
+	memcpy(WFIFOP(inter_fd,2), &len, sizeof(len));
+	{
+		uint32 v32 = 0;
+		v32 = pc_get_group_level(sd);
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+	}
 	safestrncpy(WFIFOCP(inter_fd,8), sd->status.name, NAME_LENGTH);
 	safestrncpy(WFIFOCP(inter_fd,8+NAME_LENGTH), nick, NAME_LENGTH);
 	safestrncpy(WFIFOCP(inter_fd,8+2*NAME_LENGTH), mes, mes_len);
-	WFIFOSET(inter_fd, WFIFOW(inter_fd,2));
+	WFIFOSET(inter_fd, len);
 
 	if (battle_config.etc_log)
 		ShowInfo("intif_wis_message from %s to %s (message: '%s')\n", sd->status.name, nick, mes);
@@ -349,8 +445,15 @@ int32 intif_wis_reply(int32 id, int32 flag)
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd,7);
-	WFIFOW(inter_fd,0) = 0x3002;
-	WFIFOL(inter_fd,2) = id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3002;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+	}
 	WFIFOB(inter_fd,6) = flag; // flag: 0: success to send wisper, 1: target character is not loged in?, 2: ignored by target
 	WFIFOSET(inter_fd,7);
 
@@ -376,12 +479,22 @@ int32 intif_wis_message_to_gm(char *wisp_name, int32 permission, char *mes)
 	size_t mes_len = strlen( mes ) + 1;
 
 	WFIFOHEAD(inter_fd, mes_len + 8 + NAME_LENGTH);
-	WFIFOW(inter_fd,0) = 0x3003;
-	WFIFOW( inter_fd, 2 ) = static_cast<int16>( mes_len + 32 );
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3003;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
+	uint16 len = static_cast<int16>( mes_len + 32 );
+	memcpy(WFIFOP(inter_fd,2), &len, sizeof(len));
 	safestrncpy(WFIFOCP(inter_fd,4), wisp_name, NAME_LENGTH);
-	WFIFOL(inter_fd,4+NAME_LENGTH) = permission;
+	{
+		uint32 v32 = 0;
+		v32 = permission;
+		memcpy(WFIFOP(inter_fd,4+NAME_LENGTH), &v32, sizeof(v32));
+	}
 	safestrncpy(WFIFOCP(inter_fd,8+NAME_LENGTH), mes, mes_len);
-	WFIFOSET(inter_fd, WFIFOW(inter_fd,2));
+	WFIFOSET(inter_fd, len);
 
 	if (battle_config.etc_log)
 		ShowNotice("intif_wis_message_to_gm: from: '%s', required permission: %d, message: '%s'.\n", wisp_name, permission, mes);
@@ -406,11 +519,23 @@ int32 intif_saveregistry(map_session_data *sd)
 		return -1;
 
 	WFIFOHEAD(inter_fd, 60000 + 300);
-	WFIFOW(inter_fd,0)  = 0x3004;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3004;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
 	// 0x2 = length (set later)
-	WFIFOL(inter_fd,4)  = sd->status.account_id;
-	WFIFOL(inter_fd,8)  = sd->status.char_id;
-	WFIFOW(inter_fd,12) = 0; // count
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		v32 = sd->status.account_id;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+		v32 = sd->status.char_id;
+		memcpy(WFIFOP(inter_fd,8), &v32, sizeof(v32));
+		v16 = 0;
+		memcpy(WFIFOP(inter_fd,12), &v16, sizeof(v16));
+	} // count
 
 	plen = 14;
 
@@ -447,7 +572,11 @@ int32 intif_saveregistry(map_session_data *sd)
 		safestrncpy(WFIFOCP(inter_fd,plen), varname, len); //the key
 		plen += static_cast<decltype(plen)>( len );
 
-		WFIFOL(inter_fd, plen) = script_getvaridx(key.i64);
+		{
+			uint32 v32_1 = 0;
+			v32_1 = script_getvaridx(key.i64);
+			memcpy(WFIFOP(inter_fd,plen), &v32_1, sizeof(v32_1));
+		}
 		plen += 4;
 
 		if( src->type ) {
@@ -489,26 +618,50 @@ int32 intif_saveregistry(map_session_data *sd)
 
 		}
 
-		WFIFOW(inter_fd,12) += 1;
+		// Byte-buffer read-modify-write on a byte-buffer slot: memcpy both ways.
+		{
+			uint16 count = 0;
+			memcpy(&count, WFIFOP(inter_fd,12), sizeof(count));
+			count += 1;
+			memcpy(WFIFOP(inter_fd,12), &count, sizeof(count));
+		}
 
 		if( plen > 60000 ) {
-			WFIFOW(inter_fd, 2) = plen;
+			{
+				uint16 v16_1 = 0;
+				v16_1 = plen;
+				memcpy(WFIFOP(inter_fd,2), &v16_1, sizeof(v16_1));
+			}
 			WFIFOSET(inter_fd, plen);
 
 			// prepare follow up
 			WFIFOHEAD(inter_fd, 60000 + 300);
-			WFIFOW(inter_fd,0)  = 0x3004;
+			{
+				uint16 op_1 = 0x3004;
+				memcpy(WFIFOP(inter_fd,0), &op_1, sizeof(op_1));
+			}
 			// 0x2 = length (set later)
-			WFIFOL(inter_fd,4)  = sd->status.account_id;
-			WFIFOL(inter_fd,8)  = sd->status.char_id;
-			WFIFOW(inter_fd,12) = 0; // count
+			{
+				uint16 v16_2 = 0;
+				uint32 v32_2 = 0;
+				v32_2 = sd->status.account_id;
+				memcpy(WFIFOP(inter_fd,4), &v32_2, sizeof(v32_2));
+				v32_2 = sd->status.char_id;
+				memcpy(WFIFOP(inter_fd,8), &v32_2, sizeof(v32_2));
+				v16_2 = 0;
+				memcpy(WFIFOP(inter_fd,12), &v16_2, sizeof(v16_2));
+			} // count
 
 			plen = 14;
 		}
 	}
 	dbi_destroy(iter);
 
-	WFIFOW(inter_fd, 2) = plen;
+	{
+		uint16 v16_3 = 0;
+		v16_3 = plen;
+		memcpy(WFIFOP(inter_fd,2), &v16_3, sizeof(v16_3));
+	}
 	WFIFOSET(inter_fd, plen);
 
 	sd->vars_dirty = false;
@@ -530,7 +683,10 @@ int32 intif_request_registry(map_session_data *sd, int32 flag)
 		return 0;
 
 	WFIFOHEAD(inter_fd,13);
-	WFIFOW(inter_fd,0) = 0x3005;
+	{
+		uint16 op = 0x3005;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
 	// Byte-buffer slots at odd offsets: memcpy, same bytes.
 	{
 		uint32 aid = sd->status.account_id, cid = sd->status.char_id;
@@ -556,9 +712,16 @@ bool intif_request_guild_storage(uint32 account_id, int32 guild_id)
 	if (CheckForCharServer())
 		return false;
 	WFIFOHEAD(inter_fd,10);
-	WFIFOW(inter_fd,0) = 0x3018;
-	WFIFOL(inter_fd,2) = account_id;
-	WFIFOL(inter_fd,6) = guild_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3018;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(inter_fd,2), &account_id, sizeof(account_id));
+		v32 = guild_id;
+		memcpy(WFIFOP(inter_fd,6), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd,10);
 	return true;
 }
@@ -574,12 +737,23 @@ bool intif_send_guild_storage(uint32 account_id, struct s_storage *gstor)
 	if (CheckForCharServer())
 		return false;
 	WFIFOHEAD(inter_fd,sizeof(struct s_storage)+12);
-	WFIFOW(inter_fd,0) = 0x3019;
-	WFIFOW(inter_fd,2) = (uint16)sizeof(struct s_storage)+12;
-	WFIFOL(inter_fd,4) = account_id;
-	WFIFOL(inter_fd,8) = gstor->id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3019;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
+	uint16 len = (uint16)sizeof(struct s_storage)+12;
+	memcpy(WFIFOP(inter_fd,2), &len, sizeof(len));
+	{
+		uint32 v32 = 0;
+		memcpy(WFIFOP(inter_fd,4), &account_id, sizeof(account_id));
+		v32 = gstor->id;
+		memcpy(WFIFOP(inter_fd,8), &v32, sizeof(v32));
+	}
 	memcpy( WFIFOP(inter_fd,12),gstor, sizeof(struct s_storage) );
-	WFIFOSET(inter_fd,WFIFOW(inter_fd,2));
+	WFIFOSET(inter_fd, len);
 	return true;
 }
 
@@ -598,13 +772,19 @@ int32 intif_create_party(struct party_member *member,char *name,int32 item,int32
 	nullpo_ret(member);
 
 	WFIFOHEAD(inter_fd, 6+NAME_LENGTH+sizeof(struct party_member));
-	WFIFOW(inter_fd,0) = 0x3020;
-	WFIFOW(inter_fd,2) = 6+NAME_LENGTH+sizeof(struct party_member);
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3020;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
+	uint16 len = 6+NAME_LENGTH+sizeof(struct party_member);
+	memcpy(WFIFOP(inter_fd,2), &len, sizeof(len));
 	safestrncpy(WFIFOCP(inter_fd,4),name, NAME_LENGTH);
 	WFIFOB(inter_fd,28)= item;
 	WFIFOB(inter_fd,29)= item2;
 	memcpy(WFIFOP(inter_fd,30), member, sizeof(struct party_member));
-	WFIFOSET(inter_fd,WFIFOW(inter_fd, 2));
+	WFIFOSET(inter_fd, len);
 	return 1;
 }
 
@@ -619,9 +799,16 @@ int32 intif_request_partyinfo(int32 party_id, uint32 char_id)
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd,10);
-	WFIFOW(inter_fd,0) = 0x3021;
-	WFIFOL(inter_fd,2) = party_id;
-	WFIFOL(inter_fd,6) = char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3021;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = party_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+		memcpy(WFIFOP(inter_fd,6), &char_id, sizeof(char_id));
+	}
 	WFIFOSET(inter_fd,10);
 	return 1;
 }
@@ -637,11 +824,22 @@ int32 intif_party_addmember(int32 party_id,struct party_member *member)
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd,8+sizeof(struct party_member));
-	WFIFOW(inter_fd,0)=0x3022;
-	WFIFOW(inter_fd,2)=8+sizeof(struct party_member);
-	WFIFOL(inter_fd,4)=party_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3022;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
+	uint16 len = 8+sizeof(struct party_member);
+	memcpy(WFIFOP(inter_fd,2), &len, sizeof(len));
+	{
+		uint32 v32 = 0;
+		v32 = party_id;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+	}
 	memcpy(WFIFOP(inter_fd,8),member,sizeof(struct party_member));
-	WFIFOSET(inter_fd,WFIFOW(inter_fd, 2));
+	WFIFOSET(inter_fd, len);
 	return 1;
 }
 
@@ -658,11 +856,21 @@ int32 intif_party_changeoption(int32 party_id,uint32 account_id,int32 exp,int32 
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd,14);
-	WFIFOW(inter_fd,0)=0x3023;
-	WFIFOL(inter_fd,2)=party_id;
-	WFIFOL(inter_fd,6)=account_id;
-	WFIFOW(inter_fd,10)=exp;
-	WFIFOW(inter_fd,12)=item;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x3023;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = party_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+		memcpy(WFIFOP(inter_fd,6), &account_id, sizeof(account_id));
+		v16 = exp;
+		memcpy(WFIFOP(inter_fd,10), &v16, sizeof(v16));
+		v16 = item;
+		memcpy(WFIFOP(inter_fd,12), &v16, sizeof(v16));
+	}
 	WFIFOSET(inter_fd,14);
 	return 1;
 }
@@ -679,10 +887,17 @@ int32 intif_party_leave(int32 party_id, uint32 account_id, uint32 char_id, const
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd,15+NAME_LENGTH);
-	WFIFOW(inter_fd,0) = 0x3024;
-	WFIFOL(inter_fd,2) = party_id;
-	WFIFOL(inter_fd,6) = account_id;
-	WFIFOL(inter_fd,10) = char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3024;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = party_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+		memcpy(WFIFOP(inter_fd,6), &account_id, sizeof(account_id));
+		memcpy(WFIFOP(inter_fd,10), &char_id, sizeof(char_id));
+	}
 	safestrncpy(WFIFOCP(inter_fd,14), name, NAME_LENGTH);
 	WFIFOB(inter_fd,14+NAME_LENGTH) = type;
 	WFIFOSET(inter_fd,15+NAME_LENGTH);
@@ -715,12 +930,25 @@ int32 intif_party_changemap(map_session_data *sd,int32 online)
 		mapindex = sd->mapindex;
 
 	WFIFOHEAD( inter_fd, 17 + MAP_NAME_LENGTH_EXT );
-	WFIFOW(inter_fd,0)=0x3025;
-	WFIFOL(inter_fd,2)=sd->status.party_id;
-	WFIFOL(inter_fd,6)=sd->status.account_id;
-	WFIFOL(inter_fd,10)=sd->status.char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3025;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = sd->status.party_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+		v32 = sd->status.account_id;
+		memcpy(WFIFOP(inter_fd,6), &v32, sizeof(v32));
+		v32 = sd->status.char_id;
+		memcpy(WFIFOP(inter_fd,10), &v32, sizeof(v32));
+	}
 	WFIFOB(inter_fd,14)=online;
-	WFIFOW(inter_fd,15)=sd->status.base_level;
+	{
+		uint16 v16 = 0;
+		v16 = sd->status.base_level;
+		memcpy(WFIFOP(inter_fd,15), &v16, sizeof(v16));
+	}
 	safestrncpy( WFIFOCP( inter_fd, 17 ), mapindex_id2name( mapindex ), MAP_NAME_LENGTH_EXT );
 	WFIFOSET( inter_fd, 17 + MAP_NAME_LENGTH_EXT );
 	return 1;
@@ -736,8 +964,15 @@ int32 intif_break_party(int32 party_id)
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd,6);
-	WFIFOW(inter_fd,0)=0x3026;
-	WFIFOL(inter_fd,2)=party_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3026;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = party_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd,6);
 	return 0;
 }
@@ -762,10 +997,19 @@ int32 intif_party_message(int32 party_id, uint32 account_id, const char *mes, si
 		return 0; //No need to send.
 
 	WFIFOHEAD(inter_fd,len + 12);
-	WFIFOW(inter_fd,0)=0x3027;
-	WFIFOW(inter_fd,2)=static_cast<int16>( len + 12 );
-	WFIFOL(inter_fd,4)=party_id;
-	WFIFOL(inter_fd,8)=account_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x3027;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = static_cast<int16>( len + 12 );
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+		v32 = party_id;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+		memcpy(WFIFOP(inter_fd,8), &account_id, sizeof(account_id));
+	}
 	safestrncpy(WFIFOCP(inter_fd,12),mes,len);
 	WFIFOSET(inter_fd,len+12);
 	return 1;
@@ -783,10 +1027,17 @@ int32 intif_party_leaderchange(int32 party_id,uint32 account_id,uint32 char_id)
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd,14);
-	WFIFOW(inter_fd,0)=0x3029;
-	WFIFOL(inter_fd,2)=party_id;
-	WFIFOL(inter_fd,6)=account_id;
-	WFIFOL(inter_fd,10)=char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3029;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = party_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+		memcpy(WFIFOP(inter_fd,6), &account_id, sizeof(account_id));
+		memcpy(WFIFOP(inter_fd,10), &char_id, sizeof(char_id));
+	}
 	WFIFOSET(inter_fd,14);
 	return 1;
 }
@@ -801,8 +1052,13 @@ int32 intif_party_sharelvlupdate(uint32 share_lvl)
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd,6);
-	WFIFOW(inter_fd,0)=0x302A;
-	WFIFOL(inter_fd,2)=share_lvl;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x302A;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(inter_fd,2), &share_lvl, sizeof(share_lvl));
+	}
 	WFIFOSET(inter_fd,6);
 	return 1;
 }
@@ -820,12 +1076,23 @@ int32 intif_guild_create(const char *name,const struct guild_member *master)
 	nullpo_ret(master);
 
 	WFIFOHEAD(inter_fd,sizeof(struct guild_member)+(8+NAME_LENGTH));
-	WFIFOW(inter_fd,0)=0x3030;
-	WFIFOW(inter_fd,2)=sizeof(struct guild_member)+(8+NAME_LENGTH);
-	WFIFOL(inter_fd,4)=master->account_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3030;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
+	uint16 len = sizeof(struct guild_member)+(8+NAME_LENGTH);
+	memcpy(WFIFOP(inter_fd,2), &len, sizeof(len));
+	{
+		uint32 v32 = 0;
+		v32 = master->account_id;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+	}
 	safestrncpy(WFIFOCP(inter_fd,8),name,NAME_LENGTH);
 	memcpy(WFIFOP(inter_fd,8+NAME_LENGTH),master,sizeof(struct guild_member));
-	WFIFOSET(inter_fd,WFIFOW(inter_fd,2));
+	WFIFOSET(inter_fd, len);
 	return 1;
 }
 
@@ -839,8 +1106,15 @@ int32 intif_guild_request_info(int32 guild_id)
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd,6);
-	WFIFOW(inter_fd,0) = 0x3031;
-	WFIFOL(inter_fd,2) = guild_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3031;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = guild_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd,6);
 	return 1;
 }
@@ -855,11 +1129,22 @@ int32 intif_guild_addmember( int32 guild_id, struct guild_member& m ){
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd,sizeof(struct guild_member)+8);
-	WFIFOW(inter_fd,0) = 0x3032;
-	WFIFOW(inter_fd,2) = sizeof(struct guild_member)+8;
-	WFIFOL(inter_fd,4) = guild_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3032;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
+	uint16 len = sizeof(struct guild_member)+8;
+	memcpy(WFIFOP(inter_fd,2), &len, sizeof(len));
+	{
+		uint32 v32 = 0;
+		v32 = guild_id;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+	}
 	memcpy( WFIFOP( inter_fd, 8 ), &m, sizeof( struct guild_member ) );
-	WFIFOSET(inter_fd,WFIFOW(inter_fd,2));
+	WFIFOSET(inter_fd, len);
 	return 1;
 }
 
@@ -874,9 +1159,18 @@ bool intif_guild_change_gm( int32 guild_id, const char* name, size_t len ){
 	if (CheckForCharServer())
 		return false;
 	WFIFOHEAD(inter_fd, len + 8);
-	WFIFOW(inter_fd, 0)=0x3033;
-	WFIFOW( inter_fd, 2 ) = static_cast<int16>( len + 8 );
-	WFIFOL(inter_fd, 4)=guild_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x3033;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = static_cast<int16>( len + 8 );
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+		v32 = guild_id;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+	}
 	safestrncpy(WFIFOCP(inter_fd,8),name,len);
 	WFIFOSET(inter_fd,len+8);
 	return true;
@@ -895,10 +1189,17 @@ bool intif_guild_leave( int32 guild_id, uint32 account_id, uint32 char_id, int32
 	if (CheckForCharServer())
 		return false;
 	WFIFOHEAD(inter_fd, 55);
-	WFIFOW(inter_fd, 0) = 0x3034;
-	WFIFOL(inter_fd, 2) = guild_id;
-	WFIFOL(inter_fd, 6) = account_id;
-	WFIFOL(inter_fd,10) = char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3034;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = guild_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+		memcpy(WFIFOP(inter_fd,6), &account_id, sizeof(account_id));
+		memcpy(WFIFOP(inter_fd,10), &char_id, sizeof(char_id));
+	}
 	WFIFOB(inter_fd,14) = flag;
 	safestrncpy(WFIFOCP(inter_fd,15),mes,40);
 	WFIFOSET(inter_fd,55);
@@ -920,13 +1221,25 @@ int32 intif_guild_memberinfoshort(int32 guild_id,uint32 account_id,uint32 char_i
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd, 19);
-	WFIFOW(inter_fd, 0) = 0x3035;
-	WFIFOL(inter_fd, 2) = guild_id;
-	WFIFOL(inter_fd, 6) = account_id;
-	WFIFOL(inter_fd,10) = char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3035;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = guild_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+		memcpy(WFIFOP(inter_fd,6), &account_id, sizeof(account_id));
+		memcpy(WFIFOP(inter_fd,10), &char_id, sizeof(char_id));
+	}
 	WFIFOB(inter_fd,14) = online;
-	WFIFOW(inter_fd,15) = lv;
-	WFIFOW(inter_fd,17) = class_;
+	{
+		uint16 v16 = 0;
+		v16 = lv;
+		memcpy(WFIFOP(inter_fd,15), &v16, sizeof(v16));
+		v16 = class_;
+		memcpy(WFIFOP(inter_fd,17), &v16, sizeof(v16));
+	}
 	WFIFOSET(inter_fd,19);
 	return 1;
 }
@@ -941,8 +1254,15 @@ int32 intif_guild_break(int32 guild_id)
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd, 6);
-	WFIFOW(inter_fd, 0) = 0x3036;
-	WFIFOL(inter_fd, 2) = guild_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3036;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = guild_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd,6);
 	return 1;
 }
@@ -965,10 +1285,19 @@ int32 intif_guild_message(int32 guild_id, uint32 account_id, const char *mes, si
 		return 0; //No need to send.
 
 	WFIFOHEAD(inter_fd, len + 12);
-	WFIFOW(inter_fd,0)=0x3037;
-	WFIFOW(inter_fd,2)=static_cast<int16>( len + 12 );
-	WFIFOL(inter_fd,4)=guild_id;
-	WFIFOL(inter_fd,8)=account_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x3037;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = static_cast<int16>( len + 12 );
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+		v32 = guild_id;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+		memcpy(WFIFOP(inter_fd,8), &account_id, sizeof(account_id));
+	}
 	safestrncpy(WFIFOCP(inter_fd,12),mes,len);
 	WFIFOSET(inter_fd,len+12);
 
@@ -988,10 +1317,20 @@ int32 intif_guild_change_basicinfo(int32 guild_id,int32 type,const void *data,in
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd, len + 10);
-	WFIFOW(inter_fd,0)=0x3039;
-	WFIFOW(inter_fd,2)=len+10;
-	WFIFOL(inter_fd,4)=guild_id;
-	WFIFOW(inter_fd,8)=type;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x3039;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = len+10;
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+		v32 = guild_id;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+		v16 = type;
+		memcpy(WFIFOP(inter_fd,8), &v16, sizeof(v16));
+	}
 	memcpy(WFIFOP(inter_fd,10),data,len);
 	WFIFOSET(inter_fd,len+10);
 	return 1;
@@ -1013,12 +1352,22 @@ int32 intif_guild_change_memberinfo(int32 guild_id,uint32 account_id,uint32 char
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd, len + 18);
-	WFIFOW(inter_fd, 0)=0x303a;
-	WFIFOW(inter_fd, 2)=len+18;
-	WFIFOL(inter_fd, 4)=guild_id;
-	WFIFOL(inter_fd, 8)=account_id;
-	WFIFOL(inter_fd,12)=char_id;
-	WFIFOW(inter_fd,16)=type;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x303a;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = len+18;
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+		v32 = guild_id;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+		memcpy(WFIFOP(inter_fd,8), &account_id, sizeof(account_id));
+		memcpy(WFIFOP(inter_fd,12), &char_id, sizeof(char_id));
+		v16 = type;
+		memcpy(WFIFOP(inter_fd,16), &v16, sizeof(v16));
+	}
 	memcpy(WFIFOP(inter_fd,18),data,len);
 	WFIFOSET(inter_fd,len+18);
 	return 1;
@@ -1036,12 +1385,24 @@ int32 intif_guild_position(int32 guild_id,int32 idx,struct guild_position *p)
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd, sizeof(struct guild_position)+12);
-	WFIFOW(inter_fd,0)=0x303b;
-	WFIFOW(inter_fd,2)=sizeof(struct guild_position)+12;
-	WFIFOL(inter_fd,4)=guild_id;
-	WFIFOL(inter_fd,8)=idx;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x303b;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
+	uint16 len = sizeof(struct guild_position)+12;
+	memcpy(WFIFOP(inter_fd,2), &len, sizeof(len));
+	{
+		uint32 v32 = 0;
+		v32 = guild_id;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+		v32 = idx;
+		memcpy(WFIFOP(inter_fd,8), &v32, sizeof(v32));
+	}
 	memcpy(WFIFOP(inter_fd,12),p,sizeof(struct guild_position));
-	WFIFOSET(inter_fd,WFIFOW(inter_fd,2));
+	WFIFOSET(inter_fd, len);
 	return 1;
 }
 
@@ -1058,11 +1419,20 @@ int32 intif_guild_skillup(int32 guild_id, uint16 skill_id, uint32 account_id, in
 	if( CheckForCharServer() )
 		return 0;
 	WFIFOHEAD(inter_fd, 18);
-	WFIFOW(inter_fd, 0)  = 0x303c;
-	WFIFOL(inter_fd, 2)  = guild_id;
-	WFIFOL(inter_fd, 6)  = skill_id;
-	WFIFOL(inter_fd, 10) = account_id;
-	WFIFOL(inter_fd, 14) = max;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x303c;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = guild_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+		v32 = skill_id;
+		memcpy(WFIFOP(inter_fd,6), &v32, sizeof(v32));
+		memcpy(WFIFOP(inter_fd,10), &account_id, sizeof(account_id));
+		v32 = max;
+		memcpy(WFIFOP(inter_fd,14), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd, 18);
 	return 1;
 }
@@ -1081,11 +1451,19 @@ int32 intif_guild_alliance(int32 guild_id1,int32 guild_id2,uint32 account_id1,ui
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd,19);
-	WFIFOW(inter_fd, 0)=0x303d;
-	WFIFOL(inter_fd, 2)=guild_id1;
-	WFIFOL(inter_fd, 6)=guild_id2;
-	WFIFOL(inter_fd,10)=account_id1;
-	WFIFOL(inter_fd,14)=account_id2;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x303d;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = guild_id1;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+		v32 = guild_id2;
+		memcpy(WFIFOP(inter_fd,6), &v32, sizeof(v32));
+		memcpy(WFIFOP(inter_fd,10), &account_id1, sizeof(account_id1));
+		memcpy(WFIFOP(inter_fd,14), &account_id2, sizeof(account_id2));
+	}
 	WFIFOB(inter_fd,18)=flag;
 	WFIFOSET(inter_fd,19);
 	return 1;
@@ -1103,8 +1481,15 @@ int32 intif_guild_notice(int32 guild_id,const char *mes1,const char *mes2)
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd,186);
-	WFIFOW(inter_fd,0)=0x303e;
-	WFIFOL(inter_fd,2)=guild_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x303e;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = guild_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+	}
 	safestrncpy(WFIFOCP(inter_fd,6),mes1,MAX_GUILDMES1);
 	safestrncpy(WFIFOCP(inter_fd,66),mes2,MAX_GUILDMES2);
 	WFIFOSET(inter_fd,186);
@@ -1125,10 +1510,20 @@ int32 intif_guild_emblem(int32 guild_id,int32 len,const char *data)
 	if(guild_id<=0 || len<0 || len>2000)
 		return 0;
 	WFIFOHEAD(inter_fd,len + 12);
-	WFIFOW(inter_fd,0)=0x303f;
-	WFIFOW(inter_fd,2)=len+12;
-	WFIFOL(inter_fd,4)=guild_id;
-	WFIFOL(inter_fd,8)=0;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x303f;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = len+12;
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+		v32 = guild_id;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+		v32 = 0;
+		memcpy(WFIFOP(inter_fd,8), &v32, sizeof(v32));
+	}
 	memcpy(WFIFOP(inter_fd,12),data,len);
 	WFIFOSET(inter_fd,len+12);
 	return 1;
@@ -1141,9 +1536,17 @@ int32 intif_guild_emblem_version(int32 guild_id, int32 emblem_id)
 	if (guild_id <= 0)
 		return 0;
 	WFIFOHEAD(inter_fd, 10);
-	WFIFOW(inter_fd, 0) = 0x3042;
-	WFIFOL(inter_fd, 2) = guild_id;
-	WFIFOL(inter_fd, 6) = emblem_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3042;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = guild_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+		v32 = emblem_id;
+		memcpy(WFIFOP(inter_fd,6), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd, 10);
 
 	return 1;
@@ -1162,10 +1565,19 @@ bool intif_guild_castle_dataload( const std::vector<int32>& castle_ids ){
 	uint16 size = (uint16)( 4 + castle_ids.size() * sizeof( int32 ) );
 
 	WFIFOHEAD( inter_fd, size );
-	WFIFOW(inter_fd, 0) = 0x3040;
-	WFIFOW( inter_fd, 2 ) = size;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3040;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(inter_fd,2), &size, sizeof(size));
+	}
 	for( size_t i = 0; i < castle_ids.size(); i++ ){
-		WFIFOL( inter_fd, 4 + i * sizeof( int32 ) ) = castle_ids[i];
+		{
+			uint32 v32 = 0;
+			v32 = castle_ids[i];
+			memcpy(WFIFOP(inter_fd,4 + i * sizeof( int32 )), &v32, sizeof(v32));
+		}
 	}
 	WFIFOSET( inter_fd, size );
 
@@ -1184,10 +1596,21 @@ int32 intif_guild_castle_datasave(int32 castle_id,int32 index, int32 value)
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd,9);
-	WFIFOW(inter_fd,0)=0x3041;
-	WFIFOW(inter_fd,2)=castle_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint16 op = 0x3041;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = castle_id;
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+	}
 	WFIFOB(inter_fd,4)=index;
-	WFIFOL(inter_fd,5)=value;
+	{
+		uint32 v32 = 0;
+		v32 = value;
+		memcpy(WFIFOP(inter_fd,5), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd,9);
 	return 1;
 }
@@ -1207,11 +1630,19 @@ int32 intif_homunculus_create( uint32 account_id, const s_homunculus* sh )
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd, sizeof(struct s_homunculus)+8);
-	WFIFOW(inter_fd,0) = 0x3090;
-	WFIFOW(inter_fd,2) = sizeof(struct s_homunculus)+8;
-	WFIFOL(inter_fd,4) = account_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3090;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
+	uint16 len = sizeof(struct s_homunculus)+8;
+	memcpy(WFIFOP(inter_fd,2), &len, sizeof(len));
+	{
+		memcpy(WFIFOP(inter_fd,4), &account_id, sizeof(account_id));
+	}
 	memcpy(WFIFOP(inter_fd,8),sh,sizeof(struct s_homunculus));
-	WFIFOSET(inter_fd, WFIFOW(inter_fd,2));
+	WFIFOSET(inter_fd, len);
 	return 1;
 }
 
@@ -1226,9 +1657,16 @@ int32 intif_homunculus_requestload(uint32 account_id, int32 homun_id)
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd, 10);
-	WFIFOW(inter_fd,0) = 0x3091;
-	WFIFOL(inter_fd,2) = account_id;
-	WFIFOL(inter_fd,6) = homun_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3091;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(inter_fd,2), &account_id, sizeof(account_id));
+		v32 = homun_id;
+		memcpy(WFIFOP(inter_fd,6), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd, 10);
 	return 1;
 }
@@ -1244,11 +1682,19 @@ int32 intif_homunculus_requestsave( uint32 account_id, const s_homunculus* sh )
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd, sizeof(struct s_homunculus)+8);
-	WFIFOW(inter_fd,0) = 0x3092;
-	WFIFOW(inter_fd,2) = sizeof(struct s_homunculus)+8;
-	WFIFOL(inter_fd,4) = account_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3092;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
+	uint16 len = sizeof(struct s_homunculus)+8;
+	memcpy(WFIFOP(inter_fd,2), &len, sizeof(len));
+	{
+		memcpy(WFIFOP(inter_fd,4), &account_id, sizeof(account_id));
+	}
 	memcpy(WFIFOP(inter_fd,8),sh,sizeof(struct s_homunculus));
-	WFIFOSET(inter_fd, WFIFOW(inter_fd,2));
+	WFIFOSET(inter_fd, len);
 	return 1;
 
 }
@@ -1263,8 +1709,15 @@ int32 intif_homunculus_requestdelete(int32 homun_id)
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd, 6);
-	WFIFOW(inter_fd, 0) = 0x3093;
-	WFIFOL(inter_fd,2) = homun_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3093;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = homun_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd,6);
 	return 1;
 
@@ -1282,13 +1735,19 @@ int32 intif_homunculus_requestdelete(int32 homun_id)
  */
 int32 intif_parse_WisMessage(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	uint32 rl4 = 0, rl8 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
+	memcpy(&rl8, RFIFOP(fd,8), sizeof(rl8));
 	map_session_data* sd;
 	char *wisp_source;
 	char name[NAME_LENGTH];
 	int32 id, i, gmlvl;
 
-	id=RFIFOL(fd,4);
-	gmlvl=RFIFOL(fd,8);
+	id=rl4;
+	gmlvl=rl8;
 
 	safestrncpy(name, RFIFOCP(fd,12+NAME_LENGTH), NAME_LENGTH);
 	sd = map_nick2sd(name,false);
@@ -1313,7 +1772,7 @@ int32 intif_parse_WisMessage(int32 fd)
 		return 0;
 	}
 	//Success to send whisper.
-	clif_wis_message(sd, wisp_source, RFIFOCP(fd,12+2*NAME_LENGTH),RFIFOW(fd,2)-(12+2*NAME_LENGTH), gmlvl);
+	clif_wis_message(sd, wisp_source, RFIFOCP(fd,12+2*NAME_LENGTH),rw2-(12+2*NAME_LENGTH), gmlvl);
 	intif_wis_reply(id,0);   // success
 	return 1;
 }
@@ -1372,15 +1831,22 @@ static int32 mapif_parse_WisToGM_sub(map_session_data* sd,va_list va)
  */
 int32 mapif_parse_WisToGM(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
 	int32 permission, mes_len;
 	char Wisp_name[NAME_LENGTH];
 	char *message;
 
-	mes_len =  RFIFOW(fd,2) - (8+NAME_LENGTH);
+	mes_len =  rw2 - (8+NAME_LENGTH);
 	message = (char *) aMalloc(mes_len+1);
 
 	safestrncpy(Wisp_name, RFIFOCP(fd,4), NAME_LENGTH);
-	permission = RFIFOL(fd, 4 + NAME_LENGTH);
+	{
+		uint32 perm = 0;
+		memcpy(&perm, RFIFOP(fd, 4 + NAME_LENGTH), sizeof(perm));
+		permission = (int32)perm;
+	}
 	safestrncpy(message, RFIFOCP(fd,8+NAME_LENGTH), mes_len+1);
 	// information is sent to all online GM
 	map_foreachpc(mapif_parse_WisToGM_sub, permission, Wisp_name, message, mes_len);
@@ -1395,9 +1861,14 @@ int32 mapif_parse_WisToGM(int32 fd)
  */
 void intif_parse_Registers(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw14 = 0;
+	memcpy(&rw14, RFIFOP(fd,14), sizeof(rw14));
 	int32 flag;
 	map_session_data *sd;
-	uint32 account_id = RFIFOL(fd,4), char_id = RFIFOL(fd,8);
+	uint32 account_id = 0, char_id = 0;
+	memcpy(&account_id, RFIFOP(fd,4), sizeof(account_id));
+	memcpy(&char_id, RFIFOP(fd,8), sizeof(char_id));
 	struct auth_node *node = chrif_auth_check(account_id, char_id, ST_LOGIN);
 	char type = RFIFOB(fd, 13);
 
@@ -1433,10 +1904,10 @@ void intif_parse_Registers(int32 fd)
 	// have it not complain about insertion of vars before loading, and not set those vars as new or modified
 	pc_set_reg_load(true);
 	
-	if( RFIFOW(fd, 14) ) {
+	if( rw14 ) {
 		char key[32];
 		uint32 index;
-		int32 max = RFIFOW(fd, 14), cursor = 16, i;
+		int32 max = (int32)rw14, cursor = 16, i;
 
 		/**
 		 * Vessel!char_reg_num_db
@@ -1450,7 +1921,7 @@ void intif_parse_Registers(int32 fd)
 				safestrncpy(key, RFIFOCP(fd, cursor + 1), RFIFOB(fd, cursor));
 				cursor += RFIFOB(fd, cursor) + 1;
 
-				index = RFIFOL(fd, cursor);
+				memcpy(&index, RFIFOP(fd,cursor), sizeof(index));
 				cursor += 4;
 
 				safestrncpy(sval, RFIFOCP(fd, cursor + 1), RFIFOB(fd, cursor));
@@ -1470,7 +1941,7 @@ void intif_parse_Registers(int32 fd)
 				safestrncpy(key, RFIFOCP(fd, cursor + 1), RFIFOB(fd, cursor));
 				cursor += RFIFOB(fd, cursor) + 1;
 
-				index = RFIFOL(fd, cursor);
+				memcpy(&index, RFIFOP(fd,cursor), sizeof(index));
 				cursor += 4;
 
 				ival = RFIFOQ(fd, cursor);
@@ -1494,19 +1965,26 @@ void intif_parse_Registers(int32 fd)
  */
 int32 intif_parse_LoadGuildStorage(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	uint32 rl4 = 0, rl8 = 0, rl12 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
+	memcpy(&rl8, RFIFOP(fd,8), sizeof(rl8));
+	memcpy(&rl12, RFIFOP(fd,12), sizeof(rl12));
 	struct s_storage *gstor;
 	map_session_data *sd;
 	int32 guild_id, flag;
 
-	guild_id = RFIFOL(fd,8);
-	flag = RFIFOL(fd,12);
+	guild_id = rl8;
+	flag = rl12;
 	if (guild_id <= 0)
 		return 0;
 
-	sd = map_id2sd( RFIFOL(fd,4) );
+	sd = map_id2sd( rl4 );
 	if (flag){ //If flag != 0, we attach a player and open the storage
 		if(sd == nullptr){
-			ShowError("intif_parse_LoadGuildStorage: user not found (AID: %d)\n",RFIFOL(fd,4));
+			ShowError("intif_parse_LoadGuildStorage: user not found (AID: %d)\n",rl4);
 			return 0;
 		}
 	}
@@ -1523,8 +2001,8 @@ int32 intif_parse_LoadGuildStorage(int32 fd)
 		ShowWarning("intif_parse_LoadGuildStorage: received storage for an already modified non-saved storage! (User %d:%d)\n", flag?sd->status.account_id:1, flag?sd->status.char_id:1);
 		return 0;
 	}
-	if (RFIFOW(fd,2)-13 != sizeof(struct s_storage)) {
-		ShowError("intif_parse_LoadGuildStorage: data size error %d %" PRIuPTR "\n",RFIFOW(fd,2)-13 , sizeof(struct s_storage));
+	if (rw2-13 != sizeof(struct s_storage)) {
+		ShowError("intif_parse_LoadGuildStorage: data size error %d %" PRIuPTR "\n",rw2-13 , sizeof(struct s_storage));
 		gstor->status = false;
 		return 0;
 	}
@@ -1543,7 +2021,10 @@ int32 intif_parse_LoadGuildStorage(int32 fd)
  */
 int32 intif_parse_SaveGuildStorage(int32 fd)
 {
-	storage_guild_storagesaved(/*RFIFOL(fd,2), */RFIFOL(fd,6));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl6 = 0;
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	storage_guild_storagesaved(/*RFIFOL(fd,2), */rl6);
 	return 1;
 }
 
@@ -1554,9 +2035,14 @@ int32 intif_parse_SaveGuildStorage(int32 fd)
  */
 int32 intif_parse_PartyCreated(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0, rl6 = 0, rl11 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	memcpy(&rl11, RFIFOP(fd,11), sizeof(rl11));
 	if(battle_config.etc_log)
-		ShowInfo("intif: party created by account %d\n\n", RFIFOL(fd,2));
-	party_created(RFIFOL(fd,2), RFIFOL(fd,6),RFIFOB(fd,10),RFIFOL(fd,11), RFIFOCP(fd,15));
+		ShowInfo("intif: party created by account %d\n\n", rl2);
+	party_created(rl2, rl6,RFIFOB(fd,10),rl11, RFIFOCP(fd,15));
 	return 1;
 }
 
@@ -1567,15 +2053,21 @@ int32 intif_parse_PartyCreated(int32 fd)
  */
 int32 intif_parse_PartyInfo(int32 fd)
 {
-	if( RFIFOW(fd,2) == 12 ){
-		ShowWarning("intif: party noinfo (char_id=%d party_id=%d)\n", RFIFOL(fd,4), RFIFOL(fd,8));
-		party_recv_noinfo(RFIFOL(fd,8), RFIFOL(fd,4));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	uint32 rl4 = 0, rl8 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
+	memcpy(&rl8, RFIFOP(fd,8), sizeof(rl8));
+	if( rw2 == 12 ){
+		ShowWarning("intif: party noinfo (char_id=%d party_id=%d)\n", rl4, rl8);
+		party_recv_noinfo(rl8, rl4);
 		return 0;
 	}
 
-	if( RFIFOW(fd,2) != 8+sizeof(struct party) )
-		ShowError("intif: party info : data size error (char_id=%d party_id=%d packet_len=%d expected_len=%" PRIuPTR ")\n", RFIFOL(fd,4), RFIFOL(fd,8), RFIFOW(fd,2), 8+sizeof(struct party));
-	party_recv_info((struct party *)RFIFOP(fd,8), RFIFOL(fd,4));
+	if( rw2 != 8+sizeof(struct party) )
+		ShowError("intif: party info : data size error (char_id=%d party_id=%d packet_len=%d expected_len=%" PRIuPTR ")\n", rl4, rl8, rw2, 8+sizeof(struct party));
+	party_recv_info((struct party *)RFIFOP(fd,8), rl4);
 	return 1;
 }
 
@@ -1586,9 +2078,14 @@ int32 intif_parse_PartyInfo(int32 fd)
  */
 int32 intif_parse_PartyMemberAdded(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0, rl6 = 0, rl10 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	memcpy(&rl10, RFIFOP(fd,10), sizeof(rl10));
 	if(battle_config.etc_log)
-		ShowInfo("intif: party member added Party (%d), Account(%d), Char(%d)\n",RFIFOL(fd,2),RFIFOL(fd,6),RFIFOL(fd,10));
-	party_member_added(RFIFOL(fd,2),RFIFOL(fd,6),RFIFOL(fd,10), RFIFOB(fd, 14));
+		ShowInfo("intif: party member added Party (%d), Account(%d), Char(%d)\n",rl2,rl6,rl10);
+	party_member_added(rl2,rl6,rl10, RFIFOB(fd, 14));
 	return 1;
 }
 
@@ -1599,7 +2096,14 @@ int32 intif_parse_PartyMemberAdded(int32 fd)
  */
 int32 intif_parse_PartyOptionChanged(int32 fd)
 {
-	party_optionchanged(RFIFOL(fd,2),RFIFOL(fd,6),RFIFOW(fd,10),RFIFOW(fd,12),RFIFOB(fd,14));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw10 = 0, rw12 = 0;
+	uint32 rl2 = 0, rl6 = 0;
+	memcpy(&rw10, RFIFOP(fd,10), sizeof(rw10));
+	memcpy(&rw12, RFIFOP(fd,12), sizeof(rw12));
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	party_optionchanged(rl2,rl6,rw10,rw12,RFIFOB(fd,14));
 	return 1;
 }
 
@@ -1610,9 +2114,14 @@ int32 intif_parse_PartyOptionChanged(int32 fd)
  */
 int32 intif_parse_PartyMemberWithdraw(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0, rl6 = 0, rl10 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	memcpy(&rl10, RFIFOP(fd,10), sizeof(rl10));
 	if(battle_config.etc_log)
-		ShowInfo("intif: party member withdraw: Type(%d) Party(%d), Account(%d), Char(%d), Name(%s)\n",RFIFOB(fd,14+NAME_LENGTH),RFIFOL(fd,2),RFIFOL(fd,6),RFIFOL(fd,10),RFIFOCP(fd,14));
-	party_member_withdraw(RFIFOL(fd,2),RFIFOL(fd,6),RFIFOL(fd,10),RFIFOCP(fd,14),(enum e_party_member_withdraw)RFIFOB(fd,14+NAME_LENGTH));
+		ShowInfo("intif: party member withdraw: Type(%d) Party(%d), Account(%d), Char(%d), Name(%s)\n",RFIFOB(fd,14+NAME_LENGTH),rl2,rl6,rl10,RFIFOCP(fd,14));
+	party_member_withdraw(rl2,rl6,rl10,RFIFOCP(fd,14),(enum e_party_member_withdraw)RFIFOB(fd,14+NAME_LENGTH));
 	return 1;
 }
 
@@ -1623,7 +2132,10 @@ int32 intif_parse_PartyMemberWithdraw(int32 fd)
  */
 int32 intif_parse_PartyBroken(int32 fd)
 {
-	party_broken(RFIFOL(fd,2));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	party_broken(rl2);
 	return 1;
 }
 
@@ -1634,7 +2146,14 @@ int32 intif_parse_PartyBroken(int32 fd)
  */
 int32 intif_parse_PartyMove(int32 fd)
 {
-	party_recv_movemap( RFIFOL( fd, 2 ), RFIFOL( fd, 6 ), RFIFOL( fd, 10 ), RFIFOB( fd, 14 ), RFIFOW( fd, 15 ), RFIFOCP( fd, 17 ) );
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw15 = 0;
+	uint32 rl2 = 0, rl6 = 0, rl10 = 0;
+	memcpy(&rw15, RFIFOP(fd,15), sizeof(rw15));
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	memcpy(&rl10, RFIFOP(fd,10), sizeof(rl10));
+	party_recv_movemap( rl2, rl6, rl10, RFIFOB( fd, 14 ), rw15, RFIFOCP( fd, 17 ) );
 	return 1;
 }
 
@@ -1645,7 +2164,13 @@ int32 intif_parse_PartyMove(int32 fd)
  */
 int32 intif_parse_PartyMessage(int32 fd)
 {
-	party_recv_message(RFIFOL(fd,4),RFIFOL(fd,8),RFIFOCP(fd,12),RFIFOW(fd,2)-12);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	uint32 rl4 = 0, rl8 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
+	memcpy(&rl8, RFIFOP(fd,8), sizeof(rl8));
+	party_recv_message(rl4,rl8,RFIFOCP(fd,12),rw2-12);
 	return 1;
 }
 
@@ -1656,7 +2181,11 @@ int32 intif_parse_PartyMessage(int32 fd)
  */
 int32 intif_parse_GuildCreated(int32 fd)
 {
-	guild_created(RFIFOL(fd,2),RFIFOL(fd,6));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0, rl6 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	guild_created(rl2,rl6);
 	return 1;
 }
 
@@ -1667,13 +2196,18 @@ int32 intif_parse_GuildCreated(int32 fd)
  */
 int32 intif_parse_GuildInfo(int32 fd)
 {
-	if(RFIFOW(fd,2) == 8) {
-		ShowWarning("intif: guild noinfo %d\n",RFIFOL(fd,4));
-		guild_recv_noinfo(RFIFOL(fd,4));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	uint32 rl4 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
+	if(rw2 == 8) {
+		ShowWarning("intif: guild noinfo %d\n",rl4);
+		guild_recv_noinfo(rl4);
 		return 0;
 	}
-	if( RFIFOW(fd,2)!=sizeof(struct mmo_guild)+4 )
-		ShowError("intif: guild info : data size error Gid: %d recv size: %d Expected size: %" PRIuPTR "\n",RFIFOL(fd,4),RFIFOW(fd,2),sizeof(struct mmo_guild)+4);
+	if( rw2!=sizeof(struct mmo_guild)+4 )
+		ShowError("intif: guild info : data size error Gid: %d recv size: %d Expected size: %" PRIuPTR "\n",rl4,rw2,sizeof(struct mmo_guild)+4);
 	guild_recv_info(*(struct mmo_guild *)RFIFOP(fd,4));
 	return 1;
 }
@@ -1685,9 +2219,14 @@ int32 intif_parse_GuildInfo(int32 fd)
  */
 int32 intif_parse_GuildMemberAdded(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0, rl6 = 0, rl10 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	memcpy(&rl10, RFIFOP(fd,10), sizeof(rl10));
 	if(battle_config.etc_log)
-		ShowInfo("intif: guild member added %d %d %d %d\n",RFIFOL(fd,2),RFIFOL(fd,6),RFIFOL(fd,10),RFIFOB(fd,14));
-	guild_member_added(RFIFOL(fd,2),RFIFOL(fd,6),RFIFOL(fd,10),RFIFOB(fd,14));
+		ShowInfo("intif: guild member added %d %d %d %d\n",rl2,rl6,rl10,RFIFOB(fd,14));
+	guild_member_added(rl2,rl6,rl10,RFIFOB(fd,14));
 	return 1;
 }
 
@@ -1698,7 +2237,12 @@ int32 intif_parse_GuildMemberAdded(int32 fd)
  */
 int32 intif_parse_GuildMemberWithdraw(int32 fd)
 {
-	guild_member_withdraw(RFIFOL(fd,2),RFIFOL(fd,6),RFIFOL(fd,10),RFIFOB(fd,14),RFIFOCP(fd,55),RFIFOCP(fd,15));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0, rl6 = 0, rl10 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	memcpy(&rl10, RFIFOP(fd,10), sizeof(rl10));
+	guild_member_withdraw(rl2,rl6,rl10,RFIFOB(fd,14),RFIFOCP(fd,55),RFIFOCP(fd,15));
 	return 1;
 }
 
@@ -1709,7 +2253,15 @@ int32 intif_parse_GuildMemberWithdraw(int32 fd)
  */
 int32 intif_parse_GuildMemberInfoShort(int32 fd)
 {
-	guild_recv_memberinfoshort(RFIFOL(fd,2),RFIFOL(fd,6),RFIFOL(fd,10),RFIFOB(fd,14),RFIFOW(fd,15),RFIFOW(fd,17));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw15 = 0, rw17 = 0;
+	uint32 rl2 = 0, rl6 = 0, rl10 = 0;
+	memcpy(&rw15, RFIFOP(fd,15), sizeof(rw15));
+	memcpy(&rw17, RFIFOP(fd,17), sizeof(rw17));
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	memcpy(&rl10, RFIFOP(fd,10), sizeof(rl10));
+	guild_recv_memberinfoshort(rl2,rl6,rl10,RFIFOB(fd,14),rw15,rw17);
 	return 1;
 }
 
@@ -1720,7 +2272,10 @@ int32 intif_parse_GuildMemberInfoShort(int32 fd)
  */
 int32 intif_parse_GuildBroken(int32 fd)
 {
-	guild_broken(RFIFOL(fd,2),RFIFOB(fd,6));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	guild_broken(rl2,RFIFOB(fd,6));
 	return 1;
 }
 
@@ -1732,9 +2287,16 @@ int32 intif_parse_GuildBroken(int32 fd)
  */
 int32 intif_parse_GuildBasicInfoChanged(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw8 = 0, rw10 = 0;
+	uint32 rl4 = 0, rl10 = 0;
+	memcpy(&rw8, RFIFOP(fd,8), sizeof(rw8));
+	memcpy(&rw10, RFIFOP(fd,10), sizeof(rw10));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
+	memcpy(&rl10, RFIFOP(fd,10), sizeof(rl10));
 	//int32 len = RFIFOW(fd,2) - 10;
-	int32 guild_id = RFIFOL(fd,4);
-	int32 type = RFIFOW(fd,8);
+	int32 guild_id = (int32)rl4;
+	int32 type = (int32)rw8;
 	//void* data = RFIFOP(fd,10);
 
 	auto g = guild_search(guild_id);
@@ -1743,8 +2305,8 @@ int32 intif_parse_GuildBasicInfoChanged(int32 fd)
 
 	switch(type) {
 	case GBI_EXP:        g->guild.exp = RFIFOQ(fd,10); break;
-	case GBI_GUILDLV:    g->guild.guild_lv = RFIFOW(fd,10); break;
-	case GBI_SKILLPOINT: g->guild.skill_point = RFIFOL(fd,10); break;
+	case GBI_GUILDLV:    g->guild.guild_lv = rw10; break;
+	case GBI_SKILLPOINT: g->guild.skill_point = rl10; break;
 	}
 
 	return 1;
@@ -1758,11 +2320,19 @@ int32 intif_parse_GuildBasicInfoChanged(int32 fd)
  */
 int32 intif_parse_GuildMemberInfoChanged(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw16 = 0, rw18 = 0;
+	uint32 rl4 = 0;
+	memcpy(&rw16, RFIFOP(fd,16), sizeof(rw16));
+	memcpy(&rw18, RFIFOP(fd,18), sizeof(rw18));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
 	//int32 len = RFIFOW(fd,2) - 18;
-	int32 guild_id = RFIFOL(fd,4);
-	uint32 account_id = RFIFOL(fd,8);
-	uint32 char_id = RFIFOL(fd,12);
-	int32 type = RFIFOW(fd,16);
+	int32 guild_id = (int32)rl4;
+	uint32 account_id = 0;
+	memcpy(&account_id, RFIFOP(fd,8), sizeof(account_id));
+	uint32 char_id = 0;
+	memcpy(&char_id, RFIFOP(fd,12), sizeof(char_id));
+	int32 type = (int32)rw16;
 	//void* data = RFIFOP(fd,18);
 
 	int32 idx;
@@ -1776,13 +2346,13 @@ int32 intif_parse_GuildMemberInfoChanged(int32 fd)
 		return 0;
 
 	switch( type ) {
-	case GMI_POSITION:   g->guild.member[idx].position   = RFIFOW(fd,18); guild_memberposition_changed(g->guild,idx,RFIFOW(fd,18)); break;
+	case GMI_POSITION:   g->guild.member[idx].position   = rw18; guild_memberposition_changed(g->guild,idx,rw18); break;
 	case GMI_EXP:        g->guild.member[idx].exp        = RFIFOQ(fd,18); break;
-	case GMI_HAIR:       g->guild.member[idx].hair       = RFIFOW(fd,18); break;
-	case GMI_HAIR_COLOR: g->guild.member[idx].hair_color = RFIFOW(fd,18); break;
-	case GMI_GENDER:     g->guild.member[idx].gender     = RFIFOW(fd,18); break;
-	case GMI_CLASS:      g->guild.member[idx].class_     = RFIFOW(fd,18); break;
-	case GMI_LEVEL:      g->guild.member[idx].lv         = RFIFOW(fd,18); break;
+	case GMI_HAIR:       g->guild.member[idx].hair       = rw18; break;
+	case GMI_HAIR_COLOR: g->guild.member[idx].hair_color = rw18; break;
+	case GMI_GENDER:     g->guild.member[idx].gender     = rw18; break;
+	case GMI_CLASS:      g->guild.member[idx].class_     = rw18; break;
+	case GMI_LEVEL:      g->guild.member[idx].lv         = rw18; break;
 	}
 	return 1;
 }
@@ -1794,9 +2364,15 @@ int32 intif_parse_GuildMemberInfoChanged(int32 fd)
  */
 int32 intif_parse_GuildPosition(int32 fd)
 {
-	if( RFIFOW(fd,2)!=sizeof(struct guild_position)+12 )
-		ShowError("intif: guild info : data size error %d %d %" PRIuPTR "\n",RFIFOL(fd,4),RFIFOW(fd,2),sizeof(struct guild_position)+12);
-	guild_position_changed(RFIFOL(fd,4),RFIFOL(fd,8),(struct guild_position *)RFIFOP(fd,12));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	uint32 rl4 = 0, rl8 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
+	memcpy(&rl8, RFIFOP(fd,8), sizeof(rl8));
+	if( rw2!=sizeof(struct guild_position)+12 )
+		ShowError("intif: guild info : data size error %d %d %" PRIuPTR "\n",rl4,rw2,sizeof(struct guild_position)+12);
+	guild_position_changed(rl4,rl8,(struct guild_position *)RFIFOP(fd,12));
 	return 1;
 }
 
@@ -1807,7 +2383,12 @@ int32 intif_parse_GuildPosition(int32 fd)
  */
 int32 intif_parse_GuildSkillUp(int32 fd)
 {
-	guild_skillupack(RFIFOL(fd,2),RFIFOL(fd,6),RFIFOL(fd,10));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0, rl6 = 0, rl10 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	memcpy(&rl10, RFIFOP(fd,10), sizeof(rl10));
+	guild_skillupack(rl2,rl6,rl10);
 	return 1;
 }
 
@@ -1818,7 +2399,13 @@ int32 intif_parse_GuildSkillUp(int32 fd)
  */
 int32 intif_parse_GuildAlliance(int32 fd)
 {
-	guild_allianceack(RFIFOL(fd,2),RFIFOL(fd,6),RFIFOL(fd,10),RFIFOL(fd,14),RFIFOB(fd,18),RFIFOCP(fd,19),RFIFOCP(fd,43));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0, rl6 = 0, rl10 = 0, rl14 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	memcpy(&rl10, RFIFOP(fd,10), sizeof(rl10));
+	memcpy(&rl14, RFIFOP(fd,14), sizeof(rl14));
+	guild_allianceack(rl2,rl6,rl10,rl14,RFIFOB(fd,18),RFIFOCP(fd,19),RFIFOCP(fd,43));
 	return 1;
 }
 
@@ -1829,7 +2416,10 @@ int32 intif_parse_GuildAlliance(int32 fd)
  */
 int32 intif_parse_GuildNotice(int32 fd)
 {
-	guild_notice_changed(RFIFOL(fd,2),RFIFOCP(fd,6),RFIFOCP(fd,66));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	guild_notice_changed(rl2,RFIFOCP(fd,6),RFIFOCP(fd,66));
 	return 1;
 }
 
@@ -1840,13 +2430,23 @@ int32 intif_parse_GuildNotice(int32 fd)
  */
 int32 intif_parse_GuildEmblem(int32 fd)
 {
-	guild_emblem_changed(RFIFOW(fd,2)-12,RFIFOL(fd,4),RFIFOL(fd,8), RFIFOCP(fd,12));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	uint32 rl4 = 0, rl8 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
+	memcpy(&rl8, RFIFOP(fd,8), sizeof(rl8));
+	guild_emblem_changed(rw2-12,rl4,rl8, RFIFOCP(fd,12));
 	return 1;
 }
 
 int32 intif_parse_GuildEmblemVersionChanged(int32 fd)
 {
-	guild_emblem_changed(0, RFIFOL(fd, 2), RFIFOL(fd, 6), nullptr); // Doesn't need emblem length and data
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0, rl6 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	guild_emblem_changed(0, rl2, rl6, nullptr); // Doesn't need emblem length and data
 	return 1;
 }
 
@@ -1857,7 +2457,13 @@ int32 intif_parse_GuildEmblemVersionChanged(int32 fd)
  */
 int32 intif_parse_GuildMessage(int32 fd)
 {
-	guild_recv_message(RFIFOL(fd,4),RFIFOL(fd,8),RFIFOCP(fd,12),RFIFOW(fd,2)-12);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	uint32 rl4 = 0, rl8 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
+	memcpy(&rl8, RFIFOP(fd,8), sizeof(rl8));
+	guild_recv_message(rl4,rl8,RFIFOCP(fd,12),rw2-12);
 	return 1;
 }
 
@@ -1888,7 +2494,13 @@ int32 intif_parse_GuildCastleDataLoad(int32 fd)
  */
 int32 intif_parse_GuildMasterChanged(int32 fd)
 {
-	return guild_gm_changed(RFIFOL(fd,2),RFIFOL(fd,6),RFIFOL(fd,10),RFIFOL(fd,14));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0, rl6 = 0, rl10 = 0, rl14 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	memcpy(&rl10, RFIFOP(fd,10), sizeof(rl10));
+	memcpy(&rl14, RFIFOP(fd,14), sizeof(rl14));
+	return guild_gm_changed(rl2,rl6,rl10,rl14);
 }
 
 /**
@@ -1898,7 +2510,13 @@ int32 intif_parse_GuildMasterChanged(int32 fd)
  */
 int32 intif_parse_CreatePet(int32 fd)
 {
-	pet_get_egg(RFIFOL(fd,2),RFIFOW(fd,6),RFIFOL(fd,8));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw6 = 0;
+	uint32 rl2 = 0, rl8 = 0;
+	memcpy(&rw6, RFIFOP(fd,6), sizeof(rw6));
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl8, RFIFOP(fd,8), sizeof(rl8));
+	pet_get_egg(rl2,rw6,rl8);
 	return 1;
 }
 
@@ -1909,16 +2527,21 @@ int32 intif_parse_CreatePet(int32 fd)
  */
 int32 intif_parse_RecvPetData(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	uint32 rl4 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
 	struct s_pet p;
 	int32 len;
-	len=RFIFOW(fd,2);
+	len=rw2;
 	if(sizeof(struct s_pet)!=len-9) {
 		if(battle_config.etc_log)
 			ShowError("intif: pet data: data size error %" PRIuPTR " %d\n",sizeof(struct s_pet),len-9);
 	}
 	else{
 		memcpy(&p,RFIFOP(fd,9),sizeof(struct s_pet));
-		pet_recv_petdata(RFIFOL(fd,4),&p,RFIFOB(fd,8));
+		pet_recv_petdata(rl4,&p,RFIFOB(fd,8));
 	}
 
 	return 1;
@@ -1957,9 +2580,13 @@ int32 intif_parse_DeletePetOk(int32 fd)
  */
 int32 intif_parse_ChangeNameOk(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0, rl6 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
 	map_session_data *sd = nullptr;
-	if((sd=map_id2sd(RFIFOL(fd,2)))==nullptr ||
-		sd->status.char_id != RFIFOL(fd,6))
+	if((sd=map_id2sd(rl2))==nullptr ||
+		sd->status.char_id != rl6)
 		return 0;
 
 	switch (RFIFOB(fd,10)) {
@@ -1985,14 +2612,19 @@ int32 intif_parse_ChangeNameOk(int32 fd)
  */
 int32 intif_parse_CreateHomunculus(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	uint32 rl4 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
 	int32 len;
-	len=RFIFOW(fd,2)-9;
+	len=rw2-9;
 	if(sizeof(struct s_homunculus)!=len) {
 		if(battle_config.etc_log)
 			ShowError("intif: create homun data: data size error %" PRIuPTR " != %d\n",sizeof(struct s_homunculus),len);
 		return 0;
 	}
-	hom_recv_data(RFIFOL(fd,4), (struct s_homunculus*)RFIFOP(fd,9), RFIFOB(fd,8)) ;
+	hom_recv_data(rl4, (struct s_homunculus*)RFIFOP(fd,9), RFIFOB(fd,8)) ;
 	return 1;
 }
 
@@ -2003,16 +2635,21 @@ int32 intif_parse_CreateHomunculus(int32 fd)
  */
 int32 intif_parse_RecvHomunculusData(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	uint32 rl4 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
 	int32 len;
 
-	len=RFIFOW(fd,2)-9;
+	len=rw2-9;
 
 	if(sizeof(struct s_homunculus)!=len) {
 		if(battle_config.etc_log)
 			ShowError("intif: homun data: data size error %" PRIuPTR " %d\n",sizeof(struct s_homunculus),len);
 		return 0;
 	}
-	hom_recv_data(RFIFOL(fd,4), (struct s_homunculus*)RFIFOP(fd,9), RFIFOB(fd,8));
+	hom_recv_data(rl4, (struct s_homunculus*)RFIFOP(fd,9), RFIFOB(fd,8));
 	return 1;
 }
 
@@ -2023,8 +2660,11 @@ int32 intif_parse_RecvHomunculusData(int32 fd)
  */
 int32 intif_parse_SaveHomunculusOk(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
 	if(RFIFOB(fd,6) != 1)
-		ShowError("homunculus data save failure for account %d\n", RFIFOL(fd,2));
+		ShowError("homunculus data save failure for account %d\n", rl2);
 
 	return 1;
 }
@@ -2132,7 +2772,10 @@ void intif_parse_questlog(int32 fd)
  */
 void intif_parse_questsave(int32 fd)
 {
-	int32 cid = RFIFOL(fd, 2);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	int32 cid = (int32)rl2;
 	TBL_PC *sd = map_id2sd(cid);
 
 	if( !RFIFOB(fd, 6) )
@@ -2154,9 +2797,18 @@ int32 intif_quest_save(map_session_data *sd)
 		return 0;
 
 	WFIFOHEAD(inter_fd, len);
-	WFIFOW(inter_fd,0) = 0x3061;
-	WFIFOW(inter_fd,2) = len;
-	WFIFOL(inter_fd,4) = sd->status.char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x3061;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = len;
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+		v32 = sd->status.char_id;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+	}
 	if( sd->num_quests )
 		memcpy(WFIFOP(inter_fd,8), sd->quest_log, sizeof(struct quest)*sd->num_quests);
 	WFIFOSET(inter_fd,  len);
@@ -2264,7 +2916,10 @@ void intif_parse_achievements(int32 fd)
  */
 void intif_parse_achievementsave(int32 fd)
 {
-	int32 cid = RFIFOL(fd, 2);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	int32 cid = (int32)rl2;
 	map_session_data *sd = map_charid2sd(cid);
 
 	if (!sd) // User not online anymore
@@ -2287,9 +2942,18 @@ int32 intif_achievement_save(map_session_data *sd)
 		return 0;
 
 	WFIFOHEAD(inter_fd, len);
-	WFIFOW(inter_fd, 0) = 0x3063;
-	WFIFOW(inter_fd, 2) = len;
-	WFIFOL(inter_fd, 4) = sd->status.char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x3063;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = len;
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+		v32 = sd->status.char_id;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+	}
 	if (sd->achievement_data.count)
 		memcpy(WFIFOP(inter_fd, 8), sd->achievement_data.achievements, sizeof(struct achievement) * sd->achievement_data.count);
 	WFIFOSET(inter_fd, len);
@@ -2305,14 +2969,19 @@ int32 intif_achievement_save(map_session_data *sd)
  * @param fd : char-serv link
  */
 void intif_parse_achievementreward(int32 fd){
-	map_session_data *sd = map_charid2sd(RFIFOL(fd,2));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0, rl6 = 0, rl10 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	memcpy(&rl10, RFIFOP(fd,10), sizeof(rl10));
+	map_session_data *sd = map_charid2sd(rl2);
 
 	// User not online anymore
 	if( !sd ){
 		return;
 	}
 
-	achievement_get_reward(sd, RFIFOL(fd, 6), RFIFOL(fd, 10));
+	achievement_get_reward(sd, rl6, rl10);
 }
 
 /**
@@ -2324,11 +2993,22 @@ int32 intif_achievement_reward( const map_session_data* sd, struct s_achievement
 	}
 
 	WFIFOHEAD(inter_fd, 16+NAME_LENGTH+ACHIEVEMENT_NAME_LENGTH);
-	WFIFOW(inter_fd, 0) = 0x3064;
-	WFIFOL(inter_fd, 2) = sd->status.char_id;
-	WFIFOL(inter_fd, 6) = adb->achievement_id;
-	WFIFOL(inter_fd, 10) = adb->rewards.nameid;
-	WFIFOW(inter_fd, 14) = adb->rewards.amount;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x3064;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = sd->status.char_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+		v32 = adb->achievement_id;
+		memcpy(WFIFOP(inter_fd,6), &v32, sizeof(v32));
+		v32 = adb->rewards.nameid;
+		memcpy(WFIFOP(inter_fd,10), &v32, sizeof(v32));
+		v16 = adb->rewards.amount;
+		memcpy(WFIFOP(inter_fd,14), &v16, sizeof(v16));
+	}
 	safestrncpy(WFIFOCP(inter_fd, 16), sd->status.name, NAME_LENGTH);
 	safestrncpy(WFIFOCP(inter_fd, 16+NAME_LENGTH), adb->name.c_str(), ACHIEVEMENT_NAME_LENGTH);
 	WFIFOSET(inter_fd, 16+NAME_LENGTH+ACHIEVEMENT_NAME_LENGTH);
@@ -2429,8 +3109,15 @@ int32 intif_Mail_read(int32 mail_id)
 		return 0;
 
 	WFIFOHEAD(inter_fd,6);
-	WFIFOW(inter_fd,0) = 0x3049;
-	WFIFOL(inter_fd,2) = mail_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3049;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = mail_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd,6);
 
 	return 1;
@@ -2447,9 +3134,17 @@ bool intif_mail_getattach( map_session_data* sd, struct mail_message *msg, enum 
 		return false;
 
 	WFIFOHEAD(inter_fd,11);
-	WFIFOW(inter_fd,0) = 0x304a;
-	WFIFOL(inter_fd,2) = sd->status.char_id;
-	WFIFOL(inter_fd,6) = msg->id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x304a;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = sd->status.char_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+		v32 = msg->id;
+		memcpy(WFIFOP(inter_fd,6), &v32, sizeof(v32));
+	}
 	WFIFOB(inter_fd,10) = (uint8)type;
 	WFIFOSET(inter_fd, 11);
 
@@ -2463,31 +3158,38 @@ bool intif_mail_getattach( map_session_data* sd, struct mail_message *msg, enum 
  */
 int32 intif_parse_Mail_getattach(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	uint32 rl4 = 0, rl8 = 0, rl12 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
+	memcpy(&rl8, RFIFOP(fd,8), sizeof(rl8));
+	memcpy(&rl12, RFIFOP(fd,12), sizeof(rl12));
 	map_session_data *sd;
 	struct item item[MAIL_MAX_ITEM];
 	int32 i, mail_id, zeny;
 
-	if (RFIFOW(fd, 2) - 16 != sizeof(struct item)*MAIL_MAX_ITEM)
+	if (rw2 - 16 != sizeof(struct item)*MAIL_MAX_ITEM)
 	{
-		ShowError("intif_parse_Mail_getattach: data size error %d %" PRIuPTR "\n", RFIFOW(fd, 2) - 16, sizeof(struct item));
+		ShowError("intif_parse_Mail_getattach: data size error %d %" PRIuPTR "\n", rw2 - 16, sizeof(struct item));
 		return 0;
 	}
 
-	sd = map_charid2sd( RFIFOL(fd,4) );
+	sd = map_charid2sd( rl4 );
 
 	if (sd == nullptr)
 	{
-		ShowError("intif_parse_Mail_getattach: char not found %d\n",RFIFOL(fd,4));
+		ShowError("intif_parse_Mail_getattach: char not found %d\n",rl4);
 		return 0;
 	}
 
-	mail_id = RFIFOL(fd, 8);
+	mail_id = rl8;
 
 	ARR_FIND(0, MAIL_MAX_INBOX, i, sd->mail.inbox.msg[i].id == mail_id);
 	if (i == MAIL_MAX_INBOX)
 		return 0;
 
-	zeny = RFIFOL(fd, 12);
+	zeny = rl12;
 
 	memcpy(item, RFIFOP(fd,16), sizeof(struct item)*MAIL_MAX_ITEM);
 
@@ -2507,9 +3209,16 @@ int32 intif_Mail_delete(uint32 char_id, int32 mail_id)
 		return 0;
 
 	WFIFOHEAD(inter_fd,10);
-	WFIFOW(inter_fd,0) = 0x304b;
-	WFIFOL(inter_fd,2) = char_id;
-	WFIFOL(inter_fd,6) = mail_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x304b;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(inter_fd,2), &char_id, sizeof(char_id));
+		v32 = mail_id;
+		memcpy(WFIFOP(inter_fd,6), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd,10);
 
 	return 1;
@@ -2522,8 +3231,12 @@ int32 intif_Mail_delete(uint32 char_id, int32 mail_id)
  */
 int32 intif_parse_Mail_delete(int32 fd)
 {
-	uint32 char_id = RFIFOL(fd,2);
-	int32 mail_id = RFIFOL(fd,6);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl6 = 0;
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	uint32 char_id = 0;
+	memcpy(&char_id, RFIFOP(fd,2), sizeof(char_id));
+	int32 mail_id = (int32)rl6;
 	bool failed = RFIFOB(fd,10) > 0;
 
 	map_session_data *sd = map_charid2sd(char_id);
@@ -2568,9 +3281,16 @@ int32 intif_Mail_return(uint32 char_id, int32 mail_id)
 		return 0;
 
 	WFIFOHEAD(inter_fd,10);
-	WFIFOW(inter_fd,0) = 0x304c;
-	WFIFOL(inter_fd,2) = char_id;
-	WFIFOL(inter_fd,6) = mail_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x304c;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(inter_fd,2), &char_id, sizeof(char_id));
+		v32 = mail_id;
+		memcpy(WFIFOP(inter_fd,6), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd,10);
 
 	return 1;
@@ -2583,13 +3303,17 @@ int32 intif_Mail_return(uint32 char_id, int32 mail_id)
  */
 int32 intif_parse_Mail_return(int32 fd)
 {
-	map_session_data *sd = map_charid2sd(RFIFOL(fd,2));
-	int32 mail_id = RFIFOL(fd,6);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0, rl6 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	map_session_data *sd = map_charid2sd(rl2);
+	int32 mail_id = (int32)rl6;
 	int16 fail = RFIFOB(fd,10);
 
 	if( sd == nullptr )
 	{
-		ShowError("intif_parse_Mail_return: char not found %d\n",RFIFOL(fd,2));
+		ShowError("intif_parse_Mail_return: char not found %d\n",rl2);
 		return 1;
 	}
 
@@ -2630,9 +3354,16 @@ int32 intif_Mail_send(uint32 account_id, struct mail_message *msg)
 		return 0;
 
 	WFIFOHEAD(inter_fd,len);
-	WFIFOW(inter_fd,0) = 0x304d;
-	WFIFOW(inter_fd,2) = len;
-	WFIFOL(inter_fd,4) = account_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint16 op = 0x304d;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = len;
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+		memcpy(WFIFOP(inter_fd,4), &account_id, sizeof(account_id));
+	}
 	memcpy(WFIFOP(inter_fd,8), msg, sizeof(struct mail_message));
 	WFIFOSET(inter_fd,len);
 
@@ -2645,13 +3376,16 @@ int32 intif_Mail_send(uint32 account_id, struct mail_message *msg)
  */
 static void intif_parse_Mail_send(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
 	struct mail_message msg;
 	map_session_data *sd;
 	bool fail;
 
-	if( RFIFOW(fd,2) - 4 != sizeof(struct mail_message) )
+	if( rw2 - 4 != sizeof(struct mail_message) )
 	{
-		ShowError("intif_parse_Mail_send: data size error %d %" PRIuPTR "\n", RFIFOW(fd,2) - 4, sizeof(struct mail_message));
+		ShowError("intif_parse_Mail_send: data size error %d %" PRIuPTR "\n", rw2 - 4, sizeof(struct mail_message));
 		return;
 	}
 
@@ -2679,8 +3413,12 @@ static void intif_parse_Mail_send(int32 fd)
  */
 static void intif_parse_Mail_new(int32 fd)
 {
-	map_session_data *sd = map_charid2sd(RFIFOL(fd,2));
-	int32 mail_id = RFIFOL(fd,6);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0, rl6 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	map_session_data *sd = map_charid2sd(rl2);
+	int32 mail_id = (int32)rl6;
 	const char* sender_name = RFIFOCP(fd,10);
 	const char* title = RFIFOCP(fd,34);
 
@@ -2696,14 +3434,21 @@ static void intif_parse_Mail_new(int32 fd)
 }
 
 static void intif_parse_Mail_receiver( int32 fd ){
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw10 = 0, rw12 = 0;
+	uint32 rl2 = 0, rl6 = 0;
+	memcpy(&rw10, RFIFOP(fd,10), sizeof(rw10));
+	memcpy(&rw12, RFIFOP(fd,12), sizeof(rw12));
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
 	map_session_data *sd;
 
-	sd = map_charid2sd( RFIFOL( fd, 2 ) );
+	sd = map_charid2sd( rl2 );
 
 	// Only f the player is online
 	if( sd ){
-		clif_Mail_Receiver_Ack( sd, RFIFOL( fd, 6 ), RFIFOW( fd, 10 ), RFIFOW( fd, 12 ), RFIFOCP( fd, 14 ) );
-		sd->mail.dest_id = RFIFOL(fd, 6);
+		clif_Mail_Receiver_Ack( sd, rl6, rw10, rw12, RFIFOCP( fd, 14 ) );
+		sd->mail.dest_id = rl6;
 	}
 }
 
@@ -2724,8 +3469,15 @@ bool intif_mail_checkreceiver( map_session_data* sd, char* name ){
 		return false;
 
 	WFIFOHEAD(inter_fd, 6 + NAME_LENGTH);
-	WFIFOW(inter_fd, 0) = 0x304e;
-	WFIFOL(inter_fd, 2) = sd->status.char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x304e;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = sd->status.char_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+	}
 	safestrncpy(WFIFOCP(inter_fd, 6), name, NAME_LENGTH);
 	WFIFOSET(inter_fd, 6 + NAME_LENGTH);
 
@@ -2754,12 +3506,23 @@ int32 intif_Auction_requestlist(uint32 char_id, int16 type, int32 price, const c
 		return 0;
 
 	WFIFOHEAD(inter_fd,len);
-	WFIFOW(inter_fd,0) = 0x3050;
-	WFIFOW(inter_fd,2) = len;
-	WFIFOL(inter_fd,4) = char_id;
-	WFIFOW(inter_fd,8) = type;
-	WFIFOL(inter_fd,10) = price; //min price for search
-	WFIFOW(inter_fd,14) = page;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x3050;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = len;
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+		memcpy(WFIFOP(inter_fd,4), &char_id, sizeof(char_id));
+		v16 = type;
+		memcpy(WFIFOP(inter_fd,8), &v16, sizeof(v16));
+		v32 = price;
+		memcpy(WFIFOP(inter_fd,10), &v32, sizeof(v32)); //min price for search
+		v16 = page;
+		memcpy(WFIFOP(inter_fd,14), &v16, sizeof(v16));
+	}
 	safestrncpy(WFIFOCP(inter_fd,16), searchtext, NAME_LENGTH);
 	WFIFOSET(inter_fd,len);
 
@@ -2772,9 +3535,15 @@ int32 intif_Auction_requestlist(uint32 char_id, int16 type, int32 price, const c
  */
 static void intif_parse_Auction_results(int32 fd)
 {
-	map_session_data *sd = map_charid2sd(RFIFOL(fd,4));
-	int16 count = RFIFOW(fd,8);
-	int16 pages = RFIFOW(fd,10);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw8 = 0, rw10 = 0;
+	uint32 rl4 = 0;
+	memcpy(&rw8, RFIFOP(fd,8), sizeof(rw8));
+	memcpy(&rw10, RFIFOP(fd,10), sizeof(rw10));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
+	map_session_data *sd = map_charid2sd(rl4);
+	int16 count = (int16)rw8;
+	int16 pages = (int16)rw10;
 	uint8* data = RFIFOP(fd,12);
 
 	if( sd == nullptr )
@@ -2796,8 +3565,15 @@ int32 intif_Auction_register(struct auction_data *auction)
 		return 0;
 
 	WFIFOHEAD(inter_fd,len);
-	WFIFOW(inter_fd,0) = 0x3051;
-	WFIFOW(inter_fd,2) = len;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint16 op = 0x3051;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = len;
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+	}
 	memcpy(WFIFOP(inter_fd,4), auction, sizeof(struct auction_data));
 	WFIFOSET(inter_fd,len);
 
@@ -2810,12 +3586,15 @@ int32 intif_Auction_register(struct auction_data *auction)
  */
 static void intif_parse_Auction_register(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
 	map_session_data *sd;
 	struct auction_data auction;
 
-	if( RFIFOW(fd,2) - 4 != sizeof(struct auction_data) )
+	if( rw2 - 4 != sizeof(struct auction_data) )
 	{
-		ShowError("intif_parse_Auction_register: data size error %d %" PRIuPTR "\n", RFIFOW(fd,2) - 4, sizeof(struct auction_data));
+		ShowError("intif_parse_Auction_register: data size error %d %" PRIuPTR "\n", rw2 - 4, sizeof(struct auction_data));
 		return;
 	}
 
@@ -2852,9 +3631,14 @@ int32 intif_Auction_cancel(uint32 char_id, uint32 auction_id)
 		return 0;
 
 	WFIFOHEAD(inter_fd,10);
-	WFIFOW(inter_fd,0) = 0x3052;
-	WFIFOL(inter_fd,2) = char_id;
-	WFIFOL(inter_fd,6) = auction_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3052;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(inter_fd,2), &char_id, sizeof(char_id));
+		memcpy(WFIFOP(inter_fd,6), &auction_id, sizeof(auction_id));
+	}
 	WFIFOSET(inter_fd,10);
 
 	return 1;
@@ -2866,7 +3650,10 @@ int32 intif_Auction_cancel(uint32 char_id, uint32 auction_id)
  */
 static void intif_parse_Auction_cancel(int32 fd)
 {
-	map_session_data *sd = map_charid2sd(RFIFOL(fd,2));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	map_session_data *sd = map_charid2sd(rl2);
 	int32 result = RFIFOB(fd,6);
 
 	if( sd == nullptr )
@@ -2893,9 +3680,14 @@ int32 intif_Auction_close(uint32 char_id, uint32 auction_id)
 		return 0;
 
 	WFIFOHEAD(inter_fd,10);
-	WFIFOW(inter_fd,0) = 0x3053;
-	WFIFOL(inter_fd,2) = char_id;
-	WFIFOL(inter_fd,6) = auction_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3053;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(inter_fd,2), &char_id, sizeof(char_id));
+		memcpy(WFIFOP(inter_fd,6), &auction_id, sizeof(auction_id));
+	}
 	WFIFOSET(inter_fd,10);
 
 	return 1;
@@ -2907,7 +3699,10 @@ int32 intif_Auction_close(uint32 char_id, uint32 auction_id)
  */
 static void intif_parse_Auction_close(int32 fd)
 {
-	map_session_data *sd = map_charid2sd(RFIFOL(fd,2));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	map_session_data *sd = map_charid2sd(rl2);
 	unsigned char result = RFIFOB(fd,6);
 
 	if( sd == nullptr )
@@ -2938,11 +3733,20 @@ int32 intif_Auction_bid(uint32 char_id, const char* name, uint32 auction_id, int
 		return 0;
 
 	WFIFOHEAD(inter_fd,len);
-	WFIFOW(inter_fd,0) = 0x3055;
-	WFIFOW(inter_fd,2) = len;
-	WFIFOL(inter_fd,4) = char_id;
-	WFIFOL(inter_fd,8) = auction_id;
-	WFIFOL(inter_fd,12) = bid;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x3055;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = len;
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+		memcpy(WFIFOP(inter_fd,4), &char_id, sizeof(char_id));
+		memcpy(WFIFOP(inter_fd,8), &auction_id, sizeof(auction_id));
+		v32 = bid;
+		memcpy(WFIFOP(inter_fd,12), &v32, sizeof(v32));
+	}
 	safestrncpy(WFIFOCP(inter_fd,16), name, NAME_LENGTH);
 	WFIFOSET(inter_fd,len);
 
@@ -2956,8 +3760,12 @@ int32 intif_Auction_bid(uint32 char_id, const char* name, uint32 auction_id, int
  */
 static void intif_parse_Auction_bid(int32 fd)
 {
-	map_session_data *sd = map_charid2sd(RFIFOL(fd,2));
-	int32 bid = RFIFOL(fd,6);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0, rl6 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
+	map_session_data *sd = map_charid2sd(rl2);
+	int32 bid = (int32)rl6;
 	unsigned char result = RFIFOB(fd,10);
 
 	if( sd == nullptr )
@@ -2981,7 +3789,10 @@ static void intif_parse_Auction_bid(int32 fd)
  */
 static void intif_parse_Auction_message(int32 fd)
 {
-	map_session_data *sd = map_charid2sd(RFIFOL(fd,2));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	map_session_data *sd = map_charid2sd(rl2);
 	unsigned char result = RFIFOB(fd,6);
 
 	if( sd == nullptr )
@@ -3007,8 +3818,15 @@ int32 intif_mercenary_create(struct s_mercenary *merc)
 		return 0;
 
 	WFIFOHEAD(inter_fd,size);
-	WFIFOW(inter_fd,0) = 0x3070;
-	WFIFOW(inter_fd,2) = size;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint16 op = 0x3070;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = size;
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+	}
 	memcpy(WFIFOP(inter_fd,4), merc, sizeof(struct s_mercenary));
 	WFIFOSET(inter_fd,size);
 	return 1;
@@ -3021,7 +3839,10 @@ int32 intif_mercenary_create(struct s_mercenary *merc)
  */
 int32 intif_parse_mercenary_received(int32 fd)
 {
-	int32 len = RFIFOW(fd,2) - 5;
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	int32 len = rw2 - 5;
 	if( sizeof(struct s_mercenary) != len )
 	{
 		if( battle_config.etc_log )
@@ -3045,9 +3866,16 @@ int32 intif_mercenary_request(int32 merc_id, uint32 char_id)
 		return 0;
 
 	WFIFOHEAD(inter_fd,10);
-	WFIFOW(inter_fd,0) = 0x3071;
-	WFIFOL(inter_fd,2) = merc_id;
-	WFIFOL(inter_fd,6) = char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3071;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = merc_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+		memcpy(WFIFOP(inter_fd,6), &char_id, sizeof(char_id));
+	}
 	WFIFOSET(inter_fd,10);
 	return 1;
 }
@@ -3063,8 +3891,15 @@ int32 intif_mercenary_delete(int32 merc_id)
 		return 0;
 
 	WFIFOHEAD(inter_fd,6);
-	WFIFOW(inter_fd,0) = 0x3072;
-	WFIFOL(inter_fd,2) = merc_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3072;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = merc_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd,6);
 	return 1;
 }
@@ -3095,8 +3930,15 @@ int32 intif_mercenary_save(struct s_mercenary *merc)
 		return 0;
 
 	WFIFOHEAD(inter_fd,size);
-	WFIFOW(inter_fd,0) = 0x3073;
-	WFIFOW(inter_fd,2) = size;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint16 op = 0x3073;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = size;
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+	}
 	memcpy(WFIFOP(inter_fd,4), merc, sizeof(struct s_mercenary));
 	WFIFOSET(inter_fd,size);
 	return 1;
@@ -3132,8 +3974,15 @@ int32 intif_elemental_create(struct s_elemental *ele)
 		return 0;
 
 	WFIFOHEAD(inter_fd,size);
-	WFIFOW(inter_fd,0) = 0x307c;
-	WFIFOW(inter_fd,2) = size;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint16 op = 0x307c;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = size;
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+	}
 	memcpy(WFIFOP(inter_fd,4), ele, sizeof(struct s_elemental));
 	WFIFOSET(inter_fd,size);
 	return 1;
@@ -3146,7 +3995,10 @@ int32 intif_elemental_create(struct s_elemental *ele)
  */
 int32 intif_parse_elemental_received(int32 fd)
 {
-	int32 len = RFIFOW(fd,2) - 5;
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	int32 len = rw2 - 5;
 	if( sizeof(struct s_elemental) != len )
 	{
 		if( battle_config.etc_log )
@@ -3170,9 +4022,16 @@ int32 intif_elemental_request(int32 ele_id, uint32 char_id)
 		return 0;
 
 	WFIFOHEAD(inter_fd,10);
-	WFIFOW(inter_fd,0) = 0x307d;
-	WFIFOL(inter_fd,2) = ele_id;
-	WFIFOL(inter_fd,6) = char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x307d;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = ele_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+		memcpy(WFIFOP(inter_fd,6), &char_id, sizeof(char_id));
+	}
 	WFIFOSET(inter_fd,10);
 	return 1;
 }
@@ -3188,8 +4047,15 @@ int32 intif_elemental_delete(int32 ele_id)
 		return 0;
 
 	WFIFOHEAD(inter_fd,6);
-	WFIFOW(inter_fd,0) = 0x307e;
-	WFIFOL(inter_fd,2) = ele_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x307e;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = ele_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd,6);
 	return 1;
 }
@@ -3220,8 +4086,15 @@ int32 intif_elemental_save(struct s_elemental *ele)
 		return 0;
 
 	WFIFOHEAD(inter_fd,size);
-	WFIFOW(inter_fd,0) = 0x307f;
-	WFIFOW(inter_fd,2) = size;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint16 op = 0x307f;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = size;
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+	}
 	memcpy(WFIFOP(inter_fd,4), ele, sizeof(struct s_elemental));
 	WFIFOSET(inter_fd,size);
 	return 1;
@@ -3256,10 +4129,19 @@ int32 intif_request_accinfo( int32 u_fd, int32 aid, int32 group_lv, char* query 
 	
 	WFIFOHEAD(inter_fd,2 + 4 + 4 + 4 + NAME_LENGTH);
 
-	WFIFOW(inter_fd,0) = 0x3007;
-	WFIFOL(inter_fd,2) = u_fd;
-	WFIFOL(inter_fd,6) = aid;
-	WFIFOL(inter_fd,10) = group_lv;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x3007;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = u_fd;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+		v32 = aid;
+		memcpy(WFIFOP(inter_fd,6), &v32, sizeof(v32));
+		v32 = group_lv;
+		memcpy(WFIFOP(inter_fd,10), &v32, sizeof(v32));
+	}
 	safestrncpy(WFIFOCP(inter_fd,14), query, NAME_LENGTH);
 
 	WFIFOSET(inter_fd,2 + 4 + 4 + 4 + NAME_LENGTH);
@@ -3271,9 +4153,13 @@ int32 intif_request_accinfo( int32 u_fd, int32 aid, int32 group_lv, char* query 
  * @param fd : char-serv link
  */
 void intif_parse_accinfo_ack( int32 fd ) {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0, rl6 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	memcpy(&rl6, RFIFOP(fd,6), sizeof(rl6));
 	char acc_name[NAME_LENGTH];
-	int32 u_fd = RFIFOL(fd,2);
-	int32 acc_id = RFIFOL(fd,6);
+	int32 u_fd = (int32)rl2;
+	int32 acc_id = (int32)rl6;
 	safestrncpy(acc_name, RFIFOCP(fd,10), NAME_LENGTH);
 	clif_account_name(u_fd, acc_id, acc_name);
 }
@@ -3283,15 +4169,21 @@ void intif_parse_accinfo_ack( int32 fd ) {
  * @param fd : Char-serv link
  */
 void intif_parse_MessageToFD(int32 fd) {
-	int32 u_fd = RFIFOL(fd,4);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	uint32 rl4 = 0, rl8 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
+	memcpy(&rl8, RFIFOP(fd,8), sizeof(rl8));
+	int32 u_fd = (int32)rl4;
 
 	if( session[u_fd] && session[u_fd]->session_data ) { //check if the player still online
-		int32 aid = RFIFOL(fd,8);
+		int32 aid = (int32)rl8;
 		map_session_data * sd = (map_session_data *)session[u_fd]->session_data;
 		/* matching e.g. previous fd owner didn't dc during request or is still the same */
 		if( sd->id == aid ) {
 			char msg[512];
-			safestrncpy(msg, RFIFOCP(fd,12), RFIFOW(fd,2) - 12);
+			safestrncpy(msg, RFIFOCP(fd,12), rw2 - 12);
 			clif_displaymessage(u_fd,msg);
 		}
 
@@ -3330,13 +4222,27 @@ int32 intif_broadcast_obtain_special_item(map_session_data *sd, t_itemid nameid,
 		return 0;
 
 	WFIFOHEAD(inter_fd, 11 + NAME_LENGTH);
-	WFIFOW(inter_fd, 0) = 0x3009;
-	WFIFOW(inter_fd, 2) = 11 + NAME_LENGTH;
-	WFIFOL(inter_fd, 4) = nameid;
-	WFIFOW(inter_fd, 8) = sourceid;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x3009;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
+	uint16 len = 11 + NAME_LENGTH;
+	memcpy(WFIFOP(inter_fd,2), &len, sizeof(len));
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		v32 = nameid;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+		v16 = sourceid;
+		memcpy(WFIFOP(inter_fd,8), &v16, sizeof(v16));
+	}
 	WFIFOB(inter_fd, 10) = type;
 	safestrncpy(WFIFOCP(inter_fd, 11), sd->status.name, NAME_LENGTH);
-	WFIFOSET(inter_fd, WFIFOW(inter_fd, 2));
+	WFIFOSET(inter_fd, len);
 
 	return 1;
 }
@@ -3363,13 +4269,27 @@ int32 intif_broadcast_obtain_special_item_npc(map_session_data *sd, t_itemid nam
 		return 0;
 
 	WFIFOHEAD(inter_fd, 11 + NAME_LENGTH*2);
-	WFIFOW(inter_fd, 0) = 0x3009;
-	WFIFOW(inter_fd, 2) = 11 + NAME_LENGTH*2;
-	WFIFOL(inter_fd, 4) = nameid;
-	WFIFOW(inter_fd, 8) = 0;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x3009;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
+	uint16 len = 11 + NAME_LENGTH*2;
+	memcpy(WFIFOP(inter_fd,2), &len, sizeof(len));
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		v32 = nameid;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+		v16 = 0;
+		memcpy(WFIFOP(inter_fd,8), &v16, sizeof(v16));
+	}
 	WFIFOB(inter_fd, 10) = ITEMOBTAIN_TYPE_NPC;
 	safestrncpy(WFIFOCP(inter_fd, 11), sd->status.name, NAME_LENGTH);
-	WFIFOSET(inter_fd, WFIFOW(inter_fd, 2));
+	WFIFOSET(inter_fd, len);
 
 	return 1;
 }
@@ -3380,6 +4300,11 @@ int32 intif_broadcast_obtain_special_item_npc(map_session_data *sd, t_itemid nam
  * @param fd
  **/
 void intif_parse_broadcast_obtain_special_item(int32 fd) {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw8 = 0;
+	uint32 rl4 = 0;
+	memcpy(&rw8, RFIFOP(fd,8), sizeof(rw8));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
 	int32 type = RFIFOB(fd, 10);
 	char name[NAME_LENGTH];
 
@@ -3387,7 +4312,7 @@ void intif_parse_broadcast_obtain_special_item(int32 fd) {
 	if (type == ITEMOBTAIN_TYPE_NPC)
 		safestrncpy(name, RFIFOCP(fd, 11 + NAME_LENGTH), NAME_LENGTH);
 
-	clif_broadcast_obtain_special_item(name, RFIFOL(fd, 4), RFIFOW(fd, 8), (enum BROADCASTING_SPECIAL_ITEM_OBTAIN)type);
+	clif_broadcast_obtain_special_item(name, rl4, rw8, (enum BROADCASTING_SPECIAL_ITEM_OBTAIN)type);
 }
 
 /*==========================================
@@ -3410,10 +4335,17 @@ void intif_itembound_guild_retrieve(uint32 char_id,uint32 account_id,int32 guild
 		return;
 	
 	WFIFOHEAD(inter_fd,12);
-	WFIFOW(inter_fd,0) = 0x3056;
-	WFIFOL(inter_fd,2) = char_id;
-	WFIFOL(inter_fd,6) = account_id;
-	WFIFOW(inter_fd,10) = guild_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint16 op = 0x3056;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(inter_fd,2), &char_id, sizeof(char_id));
+		memcpy(WFIFOP(inter_fd,6), &account_id, sizeof(account_id));
+		v16 = guild_id;
+		memcpy(WFIFOP(inter_fd,10), &v16, sizeof(v16));
+	}
 	WFIFOSET(inter_fd,12);
 	if (gstor)
 		gstor->lock = true; //Lock for retrieval process
@@ -3427,7 +4359,10 @@ void intif_itembound_guild_retrieve(uint32 char_id,uint32 account_id,int32 guild
  * @param fd : Char-serv link
  */
 void intif_parse_itembound_ack(int32 fd) {
-	int32 guild_id = RFIFOW(fd,6);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw6 = 0;
+	memcpy(&rw6, RFIFOP(fd,6), sizeof(rw6));
+	int32 guild_id = (int32)rw6;
 	struct s_storage *gstor = guild2storage2(guild_id);
 	if (gstor)
 		gstor->lock = false; //Unlock now that operation is completed
@@ -3440,8 +4375,12 @@ void intif_parse_itembound_ack(int32 fd) {
  * @author [Cydh]
  */
 void intif_parse_itembound_store2gstorage(int32 fd) {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw4 = 0, rw6 = 0;
+	memcpy(&rw4, RFIFOP(fd,4), sizeof(rw4));
+	memcpy(&rw6, RFIFOP(fd,6), sizeof(rw6));
 	uint16 i, failed = 0;
-	int16 count = RFIFOW(fd, 4), guild_id = RFIFOW(fd, 6);
+	int16 count = (int16)rw4, guild_id = (int16)rw6;
 	struct s_storage *gstor = guild2storage(guild_id);
 
 	if (!gstor) {
@@ -3600,6 +4539,9 @@ static bool intif_parse_StorageReceived(int32 fd)
  */
 static void intif_parse_StorageSaved(int32 fd)
 {
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 rl2 = 0;
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
 	if (RFIFOB(fd, 6)) {
 		switch (RFIFOB(fd, 7)) {
 			case TABLE_INVENTORY: //inventory
@@ -3607,7 +4549,7 @@ static void intif_parse_StorageSaved(int32 fd)
 				break;
 			case TABLE_STORAGE: //storage
 				{
-					map_session_data *sd = map_id2sd( RFIFOL( fd, 2 ) );
+					map_session_data *sd = map_id2sd( rl2 );
 					struct s_storage* stor = nullptr;
 
 					if( RFIFOB( fd, 8 ) ){
@@ -3632,7 +4574,7 @@ static void intif_parse_StorageSaved(int32 fd)
 			case TABLE_CART: // cart
 				//ShowInfo("Cart has been saved (AID: %d).\n", RFIFOL(fd, 2));
 				{
-					map_session_data *sd = map_id2sd(RFIFOL(fd, 2));
+					map_session_data *sd = map_id2sd(rl2);
 
 					if( sd && sd->state.prevend ){
 						intif_storage_request(sd,TABLE_CART,0,STOR_MODE_ALL);
@@ -3643,7 +4585,7 @@ static void intif_parse_StorageSaved(int32 fd)
 				break;
 		}
 	} else
-		ShowError("Failed to save inventory/cart/storage data (AID: %d, type: %d).\n", RFIFOL(fd, 2), RFIFOB(fd, 7));
+		ShowError("Failed to save inventory/cart/storage data (AID: %d, type: %d).\n", rl2, RFIFOB(fd, 7));
 }
 
 /**
@@ -3727,11 +4669,23 @@ bool intif_storage_save( const map_session_data* sd, const s_storage* stor )
 		return false;
 
 	WFIFOHEAD(inter_fd, stor_size+13);
-	WFIFOW(inter_fd, 0) = 0x308b;
-	WFIFOW(inter_fd, 2) = stor_size+13;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint16 op = 0x308b;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = stor_size+13;
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+	}
 	WFIFOB(inter_fd, 4) = stor->type;
-	WFIFOL(inter_fd, 5) = sd->status.account_id;
-	WFIFOL(inter_fd, 9) = sd->status.char_id;
+	{
+		uint32 v32 = 0;
+		v32 = sd->status.account_id;
+		memcpy(WFIFOP(inter_fd,5), &v32, sizeof(v32));
+		v32 = sd->status.char_id;
+		memcpy(WFIFOP(inter_fd,9), &v32, sizeof(v32));
+	}
 	memcpy(WFIFOP(inter_fd, 13), stor, stor_size);
 	WFIFOSET(inter_fd, stor_size+13);
 	return true;
@@ -3741,7 +4695,12 @@ int32 intif_clan_requestclans(){
 	if (CheckForCharServer())
 		return 0;
 	WFIFOHEAD(inter_fd, 2);
-	WFIFOW(inter_fd, 0) = 0x30A0;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x30A0;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+	}
 	WFIFOSET(inter_fd, 2);
 	return 1;
 }
@@ -3769,10 +4728,19 @@ int32 intif_clan_message( int32 clan_id, uint32 account_id, const char *mes, siz
 		return 0; //No need to send.
 
 	WFIFOHEAD(inter_fd, len + 12);
-	WFIFOW(inter_fd,0)=0x30A1;
-	WFIFOW( inter_fd, 2 ) = static_cast<uint16>( len + 12 );
-	WFIFOL(inter_fd,4)=clan_id;
-	WFIFOL(inter_fd,8)=account_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 v16 = 0;
+		uint32 v32 = 0;
+		uint16 op = 0x30A1;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v16 = static_cast<uint16>( len + 12 );
+		memcpy(WFIFOP(inter_fd,2), &v16, sizeof(v16));
+		v32 = clan_id;
+		memcpy(WFIFOP(inter_fd,4), &v32, sizeof(v32));
+		memcpy(WFIFOP(inter_fd,8), &account_id, sizeof(account_id));
+	}
 	safestrncpy(WFIFOCP(inter_fd,12),mes,len);
 	WFIFOSET(inter_fd,len+12);
 
@@ -3780,7 +4748,13 @@ int32 intif_clan_message( int32 clan_id, uint32 account_id, const char *mes, siz
 }
 
 int32 intif_parse_clan_message( int32 fd ){
-	clan_recv_message(RFIFOL(fd,4),RFIFOL(fd,8),(char *) RFIFOP(fd,12),RFIFOW(fd,2)-12);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw2 = 0;
+	uint32 rl4 = 0, rl8 = 0;
+	memcpy(&rw2, RFIFOP(fd,2), sizeof(rw2));
+	memcpy(&rl4, RFIFOP(fd,4), sizeof(rl4));
+	memcpy(&rl8, RFIFOP(fd,8), sizeof(rl8));
+	clan_recv_message(rl4,rl8,(char *) RFIFOP(fd,12),rw2-12);
 
 	return 1;
 }
@@ -3793,8 +4767,15 @@ int32 intif_clan_member_left( int32 clan_id ){
 		return 0; //No need to send.
 
 	WFIFOHEAD(inter_fd,6);
-	WFIFOW(inter_fd,0) = 0x30A2;
-	WFIFOL(inter_fd,2) = clan_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x30A2;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = clan_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd,6);
 	
 	return 1;
@@ -3808,21 +4789,33 @@ int32 intif_clan_member_joined( int32 clan_id ){
 		return 0; //No need to send.
 
 	WFIFOHEAD(inter_fd,6);
-	WFIFOW(inter_fd,0) = 0x30A3;
-	WFIFOL(inter_fd,2) = clan_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint32 v32 = 0;
+		uint16 op = 0x30A3;
+		memcpy(WFIFOP(inter_fd,0), &op, sizeof(op));
+		v32 = clan_id;
+		memcpy(WFIFOP(inter_fd,2), &v32, sizeof(v32));
+	}
 	WFIFOSET(inter_fd,6);
 	
 	return 1;
 }
 
 int32 intif_parse_clan_onlinecount( int32 fd ){
-	struct clan* clan = clan_search(RFIFOL(fd,2));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 rw6 = 0;
+	uint32 rl2 = 0;
+	memcpy(&rw6, RFIFOP(fd,6), sizeof(rw6));
+	memcpy(&rl2, RFIFOP(fd,2), sizeof(rl2));
+	struct clan* clan = clan_search(rl2);
 
 	if( clan == nullptr ){
 		return 0;
 	}
 
-	clan->connect_member = RFIFOW(fd,6);
+	clan->connect_member = rw6;
 
 	clif_clan_onlinecount( *clan );
 
@@ -3868,12 +4861,22 @@ int32 intif_parse(int32 fd)
 	}
 	// Processing branch
 	switch(cmd){
-	case 0x3800:
-		if (RFIFOL(fd,4) == 0xFF000000) //Normal announce.
+	case 0x3800: {
+		// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+		uint32 color = 0;
+		memcpy(&color, RFIFOP(fd,4), sizeof(color));
+		if (color == 0xFF000000) //Normal announce.
 			clif_broadcast(nullptr, RFIFOCP(fd,16), packet_len-16, BC_DEFAULT, ALL_CLIENT);
-		else //Color announce.
-			clif_broadcast2(nullptr, RFIFOCP(fd,16), packet_len-16, RFIFOL(fd,4), RFIFOW(fd,8), RFIFOW(fd,10), RFIFOW(fd,12), RFIFOW(fd,14), ALL_CLIENT);
+		else { //Color announce.
+			uint16 fontType = 0, fontSize = 0, fontAlign = 0, fontY = 0;
+			memcpy(&fontType, RFIFOP(fd,8), sizeof(fontType));
+			memcpy(&fontSize, RFIFOP(fd,10), sizeof(fontSize));
+			memcpy(&fontAlign, RFIFOP(fd,12), sizeof(fontAlign));
+			memcpy(&fontY, RFIFOP(fd,14), sizeof(fontY));
+			clif_broadcast2(nullptr, RFIFOCP(fd,16), packet_len-16, color, fontType, fontSize, fontAlign, fontY, ALL_CLIENT);
+		}
 		break;
+	}
 	case 0x3801:	intif_parse_WisMessage(fd); break;
 	case 0x3802:	intif_parse_WisEnd(fd); break;
 	case 0x3803:	mapif_parse_WisToGM(fd); break;
@@ -3975,7 +4978,7 @@ int32 intif_parse(int32 fd)
 	case 0x38A2:	intif_parse_clan_onlinecount(fd); break;
 
 	default:
-		ShowError("intif_parse : unknown packet %d %x\n",fd,RFIFOW(fd,0));
+		ShowError("intif_parse : unknown packet %d %x\n",fd,cmd);
 		return 0;
 	}
 
