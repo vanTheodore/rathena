@@ -413,10 +413,19 @@ void mapif_storage_data_loaded(int32 fd, uint32 account_id, char type, struct s_
 	uint16 size = sizeof(struct s_storage) + 10;
 	
 	WFIFOHEAD(fd, size);
-	WFIFOW(fd, 0) = 0x388a;
-	WFIFOW(fd, 2) = size;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x388a;
+		uint16 packet_size = size;
+		memcpy(WFIFOP(fd, 0), &op, sizeof(op));
+		memcpy(WFIFOP(fd, 2), &packet_size, sizeof(packet_size));
+	}
 	WFIFOB(fd, 4) = type;
-	WFIFOL(fd, 5) = account_id;
+	{
+		uint32 aid = account_id;
+		memcpy(WFIFOP(fd, 5), &aid, sizeof(aid));
+	}
 	WFIFOB(fd, 9) = result;
 	memcpy(WFIFOP(fd, 10), entries, sizeof(struct s_storage));
 	WFIFOSET(fd, size);
@@ -434,8 +443,13 @@ void mapif_storage_data_loaded(int32 fd, uint32 account_id, char type, struct s_
  */
 void mapif_storage_saved(int32 fd, uint32 account_id, uint32 char_id, bool success, char type, uint8 stor_id) {
 	WFIFOHEAD(fd,9);
-	WFIFOW(fd, 0) = 0x388b;
-	WFIFOL(fd, 2) = account_id;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x388b;
+		uint32 aid = account_id;
+		memcpy(WFIFOP(fd, 0), &op, sizeof(op));
+		memcpy(WFIFOP(fd, 2), &aid, sizeof(aid));
+	}
 	WFIFOB(fd, 6) = success;
 	WFIFOB(fd, 7) = type;
 	WFIFOB(fd, 8) = stor_id;
