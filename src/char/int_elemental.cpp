@@ -96,8 +96,14 @@ void mapif_elemental_send(int32 fd, struct s_elemental *ele, unsigned char flag)
 	int32 size = sizeof(struct s_elemental) + 5;
 
 	WFIFOHEAD(fd,size);
-	WFIFOW(fd,0) = 0x387c;
-	WFIFOW(fd,2) = size;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x387c;
+		uint16 packet_size = (uint16)size;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &packet_size, sizeof(packet_size));
+	}
 	WFIFOB(fd,4) = flag;
 	memcpy(WFIFOP(fd,5),ele,sizeof(struct s_elemental));
 	WFIFOSET(fd,size);
@@ -116,7 +122,11 @@ void mapif_parse_elemental_load(int32 fd, int32 ele_id, uint32 char_id) {
 
 void mapif_elemental_deleted(int32 fd, unsigned char flag) {
 	WFIFOHEAD(fd,3);
-	WFIFOW(fd,0) = 0x387d;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x387d;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+	}
 	WFIFOB(fd,2) = flag;
 	WFIFOSET(fd,3);
 }
@@ -128,7 +138,11 @@ void mapif_parse_elemental_delete(int32 fd, int32 ele_id) {
 
 void mapif_elemental_saved(int32 fd, unsigned char flag) {
 	WFIFOHEAD(fd,3);
-	WFIFOW(fd,0) = 0x387e;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x387e;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+	}
 	WFIFOB(fd,2) = flag;
 	WFIFOSET(fd,3);
 }
@@ -156,8 +170,20 @@ int32 inter_elemental_parse_frommap(int32 fd) {
 
 	switch( cmd ) {
 		case 0x307c: mapif_parse_elemental_create(fd, (struct s_elemental*)RFIFOP(fd,4)); break;
-		case 0x307d: mapif_parse_elemental_load(fd, (int32)RFIFOL(fd,2), (int32)RFIFOL(fd,6)); break;
-		case 0x307e: mapif_parse_elemental_delete(fd, (int32)RFIFOL(fd,2)); break;
+		case 0x307d: {
+			// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+			uint32 ele_id_tmp = 0, char_id_tmp = 0;
+			memcpy(&ele_id_tmp, RFIFOP(fd,2), sizeof(ele_id_tmp));
+			memcpy(&char_id_tmp, RFIFOP(fd,6), sizeof(char_id_tmp));
+			mapif_parse_elemental_load(fd, (int32)ele_id_tmp, char_id_tmp);
+			break;
+		}
+		case 0x307e: {
+			uint32 ele_id_tmp = 0;
+			memcpy(&ele_id_tmp, RFIFOP(fd,2), sizeof(ele_id_tmp));
+			mapif_parse_elemental_delete(fd, (int32)ele_id_tmp);
+			break;
+		}
 		case 0x307f: mapif_parse_elemental_save(fd, (struct s_elemental*)RFIFOP(fd,4)); break;
 		default:
 			return 0;
