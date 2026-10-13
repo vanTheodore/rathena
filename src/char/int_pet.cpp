@@ -126,15 +126,24 @@ int32 inter_pet_delete(int32 pet_id){
 int32 mapif_pet_created(int32 fd, uint32 account_id, struct s_pet *p)
 {
 	WFIFOHEAD(fd, 12);
-	WFIFOW(fd, 0) = 0x3880;
-	WFIFOL(fd, 2) = account_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3880;
+		uint32 aid = account_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &aid, sizeof(aid));
+	}
 	if(p!=nullptr){
-		WFIFOW(fd, 6) = p->class_;
-		WFIFOL(fd, 8) = p->pet_id;
+		int16 pet_class = p->class_;
+		int32 pet_id = p->pet_id;
+		memcpy(WFIFOP(fd,6), &pet_class, sizeof(pet_class));
+		memcpy(WFIFOP(fd,8), &pet_id, sizeof(pet_id));
 		ShowInfo("int_pet: created pet %d - %s\n", p->pet_id, p->name);
 	}else{
 		WFIFOB(fd, 6) = 0;
-		WFIFOL(fd, 8) = 0;
+		uint32 pet_id_zero = 0;
+		memcpy(WFIFOP(fd,8), &pet_id_zero, sizeof(pet_id_zero));
 	}
 	WFIFOSET(fd, 12);
 
@@ -143,32 +152,49 @@ int32 mapif_pet_created(int32 fd, uint32 account_id, struct s_pet *p)
 
 int32 mapif_pet_info(int32 fd, uint32 account_id, struct s_pet *p){
 	WFIFOHEAD(fd, sizeof(struct s_pet) + 9);
-	WFIFOW(fd, 0) =0x3881;
-	WFIFOW(fd, 2) =sizeof(struct s_pet) + 9;
-	WFIFOL(fd, 4) =account_id;
+	// Same treatment for the reply builder (odd fifo positions possible).
+	{
+		uint16 op = 0x3881;
+		uint16 packet_len = sizeof(struct s_pet) + 9;
+		uint32 aid = account_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+		memcpy(WFIFOP(fd,4), &aid, sizeof(aid));
+	}
 	WFIFOB(fd, 8)=0;
 	memcpy(WFIFOP(fd, 9), p, sizeof(struct s_pet));
-	WFIFOSET(fd, WFIFOW(fd, 2));
+	WFIFOSET(fd, sizeof(struct s_pet) + 9);
 
 	return 0;
 }
 
 int32 mapif_pet_noinfo(int32 fd, uint32 account_id){
 	WFIFOHEAD(fd, sizeof(struct s_pet) + 9);
-	WFIFOW(fd, 0) =0x3881;
-	WFIFOW(fd, 2) =sizeof(struct s_pet) + 9;
-	WFIFOL(fd, 4) =account_id;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x3881;
+		uint16 packet_len = sizeof(struct s_pet) + 9;
+		uint32 aid = account_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+		memcpy(WFIFOP(fd,4), &aid, sizeof(aid));
+	}
 	WFIFOB(fd, 8)=1;
 	memset(WFIFOP(fd, 9), 0, sizeof(struct s_pet));
-	WFIFOSET(fd, WFIFOW(fd, 2));
+	WFIFOSET(fd, sizeof(struct s_pet) + 9);
 
 	return 0;
 }
 
 int32 mapif_save_pet_ack(int32 fd, uint32 account_id, int32 flag){
 	WFIFOHEAD(fd, 7);
-	WFIFOW(fd, 0) =0x3882;
-	WFIFOL(fd, 2) =account_id;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x3882;
+		uint32 aid = account_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &aid, sizeof(aid));
+	}
 	WFIFOB(fd, 6) =flag;
 	WFIFOSET(fd, 7);
 
@@ -177,7 +203,11 @@ int32 mapif_save_pet_ack(int32 fd, uint32 account_id, int32 flag){
 
 int32 mapif_delete_pet_ack(int32 fd, int32 flag){
 	WFIFOHEAD(fd, 3);
-	WFIFOW(fd, 0) =0x3883;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x3883;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+	}
 	WFIFOB(fd, 2) =flag;
 	WFIFOSET(fd, 3);
 
@@ -249,8 +279,10 @@ int32 mapif_load_pet(int32 fd, uint32 account_id, uint32 char_id, int32 pet_id){
 
 int32 mapif_save_pet(int32 fd, uint32 account_id, struct s_pet *data) {
 	//here process pet save request.
-	int32 len;
-	len=RFIFOW(fd, 2);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 packet_len = 0;
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+	int32 len = packet_len;
 	if(sizeof(struct s_pet)!=len-8) {
 		ShowError("inter pet: data size error %" PRIuPTR " %d\n", sizeof(struct s_pet), len-8);
 	}
@@ -278,23 +310,47 @@ int32 mapif_delete_pet(int32 fd, int32 pet_id){
 }
 
 int32 mapif_parse_CreatePet(int32 fd){
-	mapif_create_pet(fd, RFIFOL(fd, 2), RFIFOL(fd, 6), RFIFOW(fd, 10), RFIFOW(fd, 12), RFIFOL(fd, 14), RFIFOL(fd, 18), RFIFOW(fd, 22),
-		RFIFOW(fd, 24), RFIFOB(fd, 26), RFIFOB(fd, 27), RFIFOCP(fd, 28));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 account_id = 0, char_id = 0;
+	uint16 pet_class_tmp = 0, pet_lv_tmp = 0;
+	t_itemid pet_egg_id = 0, pet_equip = 0;
+	uint16 intimate_tmp = 0, hungry_tmp = 0;
+	memcpy(&account_id, RFIFOP(fd,2), sizeof(account_id));
+	memcpy(&char_id, RFIFOP(fd,6), sizeof(char_id));
+	memcpy(&pet_class_tmp, RFIFOP(fd,10), sizeof(pet_class_tmp));
+	memcpy(&pet_lv_tmp, RFIFOP(fd,12), sizeof(pet_lv_tmp));
+	memcpy(&pet_egg_id, RFIFOP(fd,14), sizeof(pet_egg_id));
+	memcpy(&pet_equip, RFIFOP(fd,18), sizeof(pet_equip));
+	memcpy(&intimate_tmp, RFIFOP(fd,22), sizeof(intimate_tmp));
+	memcpy(&hungry_tmp, RFIFOP(fd,24), sizeof(hungry_tmp));
+	mapif_create_pet(fd, account_id, char_id, (int16)pet_class_tmp, (int16)pet_lv_tmp, pet_egg_id, pet_equip, (int16)intimate_tmp,
+		(int16)hungry_tmp, RFIFOB(fd, 26), RFIFOB(fd, 27), RFIFOCP(fd, 28));
 	return 0;
 }
 
 int32 mapif_parse_LoadPet(int32 fd){
-	mapif_load_pet(fd, RFIFOL(fd, 2), RFIFOL(fd, 6), RFIFOL(fd, 10));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 account_id = 0, char_id = 0, pet_id_tmp = 0;
+	memcpy(&account_id, RFIFOP(fd,2), sizeof(account_id));
+	memcpy(&char_id, RFIFOP(fd,6), sizeof(char_id));
+	memcpy(&pet_id_tmp, RFIFOP(fd,10), sizeof(pet_id_tmp));
+	mapif_load_pet(fd, account_id, char_id, (int32)pet_id_tmp);
 	return 0;
 }
 
 int32 mapif_parse_SavePet(int32 fd){
-	mapif_save_pet(fd, RFIFOL(fd, 4), (struct s_pet *) RFIFOP(fd, 8));
+	// Byte-buffer read at an odd read position: memcpy, same value.
+	uint32 account_id = 0;
+	memcpy(&account_id, RFIFOP(fd,4), sizeof(account_id));
+	mapif_save_pet(fd, account_id, (struct s_pet *) RFIFOP(fd, 8));
 	return 0;
 }
 
 int32 mapif_parse_DeletePet(int32 fd){
-	mapif_delete_pet(fd, RFIFOL(fd, 2));
+	// Byte-buffer read at an odd read position: memcpy, same value.
+	uint32 pet_id_tmp = 0;
+	memcpy(&pet_id_tmp, RFIFOP(fd,2), sizeof(pet_id_tmp));
+	mapif_delete_pet(fd, (int32)pet_id_tmp);
 	return 0;
 }
 
