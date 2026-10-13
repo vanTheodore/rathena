@@ -235,15 +235,29 @@ async function createChar(chport: number, aid: number, l1: number, l2: number,
 		Buffer.from([0, 0]), Buffer.from([1])]));
 	const echo = await c.readExact(4, 5000);
 	if (!echo || echo.readUInt32LE(0) !== aid) { c.close(); return { verdict: -2, errcode: -1 }; }
-	// Flush stale auth-phase traffic before the verdict window.
-	await c.drainCollect(800);
+	// Flush stale auth-phase traffic before the verdict window (generous
+	// under ASan: the char list can arrive late).
+	await c.drainCollect(1500);
 	c.send(Buffer.concat([u16(0xa39), nameField(hex), Buffer.from([slot]),
 		u16(1), u16(1), u32(0), Buffer.from([1])]));
 	const blob = await c.drainCollect(2500);
 	c.close();
 	if (blob.length < 2) return { verdict: -1, errcode: -1 };
+	// Walk packets: a late char list (0x82d, length-framed) may precede the
+	// verdict in this window. Skipping it reaches the real verdict; an
+	// unknown layout falls back to the first id (previous behavior).
+	let o = 0;
+	while (o + 2 <= blob.length) {
+		const pid = blob.readUInt16LE(o);
+		if (pid === 0xb6f) return { verdict: pid, errcode: 0 };
+		if (pid === 0x6e) return { verdict: pid, errcode: blob.length > o + 2 ? blob[o + 2] : -1 };
+		if (pid === 0x82d && o + 4 <= blob.length) {
+			const len = blob.readUInt16LE(o + 2);
+			if (len >= 4 && o + len <= blob.length) { o += len; continue; }
+		}
+		break;
+	}
 	const id = blob.readUInt16LE(0);
-	if (id === 0xb6f) return { verdict: id, errcode: 0 };
 	if (id === 0x6e && blob.length >= 3) return { verdict: id, errcode: blob[2] };
 	return { verdict: id, errcode: -1 };
 }
