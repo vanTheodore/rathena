@@ -3466,7 +3466,9 @@ void intif_parse_itembound_store2gstorage(int32 fd) {
 static bool intif_parse_StorageReceived(int32 fd)
 {
 	char type =  RFIFOB(fd,4);
-	uint32 account_id = RFIFOL(fd, 5);
+	// Byte-buffer read at an odd read position: memcpy, same value.
+	uint32 account_id = 0;
+	memcpy(&account_id, RFIFOP(fd,5), sizeof(account_id));
 	map_session_data *sd = map_id2sd(account_id);
 	struct s_storage *stor, *p; //storage
 	size_t sz_stor = sizeof(struct s_storage);
