@@ -361,7 +361,10 @@ void mapif_parse_Mail_requestinbox(int32 fd)
  *------------------------------------------*/
 void mapif_parse_Mail_read(int32 fd)
 {
-	int32 mail_id = RFIFOL(fd,2);
+	// Byte-buffer read at an odd read position: memcpy, same value.
+	uint32 mail_id_tmp = 0;
+	memcpy(&mail_id_tmp, RFIFOP(fd,2), sizeof(mail_id_tmp));
+	int32 mail_id = (int32)mail_id_tmp;
 	if( SQL_ERROR == Sql_Query(sql_handle, "UPDATE `%s` SET `status` = '%d' WHERE `id` = '%d'", schema_config.mail_db, MAIL_READ, mail_id) )
 		Sql_ShowDebug(sql_handle);
 }
@@ -425,26 +428,43 @@ void mapif_Mail_getattach(int32 fd, uint32 char_id, int32 mail_id, int32 type)
 		return; // No Attachment
 
 	WFIFOHEAD(fd, sizeof(struct item)*MAIL_MAX_ITEM + 16);
-	WFIFOW(fd,0) = 0x384a;
-	WFIFOW(fd,2) = sizeof(struct item)*MAIL_MAX_ITEM + 16;
-	WFIFOL(fd,4) = char_id;
-	WFIFOL(fd,8) = mail_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x384a;
+		uint16 packet_len = sizeof(struct item)*MAIL_MAX_ITEM + 16;
+		uint32 cid = char_id;
+		int32 mid = mail_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+		memcpy(WFIFOP(fd,4), &cid, sizeof(cid));
+		memcpy(WFIFOP(fd,8), &mid, sizeof(mid));
+	}
 	if( type & MAIL_ATT_ZENY ){
-		WFIFOL(fd,12) = msg.zeny;
+		uint32 zeny = (uint32)msg.zeny;
+		memcpy(WFIFOP(fd,12), &zeny, sizeof(zeny));
 	}else{
-		WFIFOL(fd, 12) = 0;
+		uint32 zeny_zero = 0;
+		memcpy(WFIFOP(fd,12), &zeny_zero, sizeof(zeny_zero));
 	}
 	if( type & MAIL_ATT_ITEM ){
 		memcpy(WFIFOP(fd, 16), &msg.item, sizeof(struct item)*MAIL_MAX_ITEM);
 	}else{
 		memset(WFIFOP(fd, 16), 0, sizeof(struct item)*MAIL_MAX_ITEM);
 	}
-	WFIFOSET(fd,WFIFOW(fd,2));
+	WFIFOSET(fd,sizeof(struct item)*MAIL_MAX_ITEM + 16);
 }
 
 void mapif_parse_Mail_getattach(int32 fd)
 {
-	mapif_Mail_getattach(fd, RFIFOL(fd,2), RFIFOL(fd,6),RFIFOB(fd,10));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 char_id = 0;
+	int32 mail_id = 0;
+	uint32 mail_id_tmp = 0;
+	memcpy(&char_id, RFIFOP(fd,2), sizeof(char_id));
+	memcpy(&mail_id_tmp, RFIFOP(fd,6), sizeof(mail_id_tmp));
+	mail_id = (int32)mail_id_tmp;
+	mapif_Mail_getattach(fd, char_id, mail_id, RFIFOB(fd,10));
 }
 
 /*==========================================
@@ -479,9 +499,16 @@ bool mapif_Mail_delete( int32 fd, uint32 char_id, int32 mail_id, uint32 account_
 	}
 
 	WFIFOHEAD(fd,11);
-	WFIFOW(fd,0) = 0x384b;
-	WFIFOL(fd,2) = char_id;
-	WFIFOL(fd,6) = mail_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x384b;
+		uint32 cid = char_id;
+		int32 mid = mail_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &cid, sizeof(cid));
+		memcpy(WFIFOP(fd,6), &mid, sizeof(mid));
+	}
 	WFIFOB(fd,10) = failed;
 	WFIFOSET(fd,11);
 
@@ -490,7 +517,12 @@ bool mapif_Mail_delete( int32 fd, uint32 char_id, int32 mail_id, uint32 account_
 
 void mapif_parse_Mail_delete(int32 fd)
 {
-	mapif_Mail_delete( fd, RFIFOL( fd, 2 ), RFIFOL( fd, 6 ) );
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 char_id = 0;
+	uint32 mail_id_tmp = 0;
+	memcpy(&char_id, RFIFOP(fd,2), sizeof(char_id));
+	memcpy(&mail_id_tmp, RFIFOP(fd,6), sizeof(mail_id_tmp));
+	mapif_Mail_delete( fd, char_id, (int32)mail_id_tmp );
 }
 
 /*==========================================
@@ -580,16 +612,27 @@ void mapif_Mail_return( int32 fd, uint32 char_id, int32 mail_id, uint32 account_
 	}
 
 	WFIFOHEAD(fd,11);
-	WFIFOW(fd,0) = 0x384c;
-	WFIFOL(fd,2) = char_id;
-	WFIFOL(fd,6) = mail_id;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x384c;
+		uint32 cid = char_id;
+		int32 mid = mail_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &cid, sizeof(cid));
+		memcpy(WFIFOP(fd,6), &mid, sizeof(mid));
+	}
 	WFIFOB(fd,10) = (new_mail == 0);
 	WFIFOSET(fd,11);
 }
 
 void mapif_parse_Mail_return(int32 fd)
 {
-	mapif_Mail_return(fd, RFIFOL(fd,2), RFIFOL(fd,6));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 char_id = 0;
+	uint32 mail_id_tmp = 0;
+	memcpy(&char_id, RFIFOP(fd,2), sizeof(char_id));
+	memcpy(&mail_id_tmp, RFIFOP(fd,6), sizeof(mail_id_tmp));
+	mapif_Mail_return(fd, char_id, (int32)mail_id_tmp);
 }
 
 /*==========================================
@@ -600,8 +643,14 @@ void mapif_Mail_send(int32 fd, struct mail_message* msg)
 	int32 len = sizeof(struct mail_message) + 4;
 
 	WFIFOHEAD(fd,len);
-	WFIFOW(fd,0) = 0x384d;
-	WFIFOW(fd,2) = len;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x384d;
+		uint16 packet_len = (uint16)len;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+	}
 	memcpy(WFIFOP(fd,4), msg, sizeof(struct mail_message));
 	WFIFOSET(fd,len);
 }
@@ -612,8 +661,11 @@ void mapif_parse_Mail_send(int32 fd)
 	char esc_name[NAME_LENGTH*2+1];
 	char *data;
 	size_t len;
+	// Byte-buffer read at an odd read position: memcpy, same value.
+	uint16 packet_len = 0;
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
 
-	if(RFIFOW(fd,2) != 8 + sizeof(struct mail_message))
+	if(packet_len != 8 + sizeof(struct mail_message))
 		return;
 
 	memcpy(&msg, RFIFOP(fd,8), sizeof(struct mail_message));
@@ -643,7 +695,8 @@ void mapif_parse_Mail_send(int32 fd)
 		Sql_ShowDebug(sql_handle);
 	}else if ( SQL_SUCCESS == Sql_NextRow(sql_handle) ){
 #if PACKETVER < 20150513
-		uint32 account_id = RFIFOL(fd,4);
+		uint32 account_id = 0;
+		memcpy(&account_id, RFIFOP(fd,4), sizeof(account_id));
 
 		Sql_GetData(sql_handle, 0, &data, nullptr);
 		if (atoi(data) != account_id)
@@ -700,11 +753,20 @@ bool mail_sendmail(int32 send_id, const char* send_name, int32 dest_id, const ch
 
 void mapif_Mail_receiver_send( int32 fd, int32 requesting_char_id, int32 char_id, int32 class_, int32 base_level, const char* name ){
 	WFIFOHEAD(fd,38);
-	WFIFOW(fd,0) = 0x384e;
-	WFIFOL(fd,2) = requesting_char_id;
-	WFIFOL(fd,6) = char_id;
-	WFIFOW(fd,10) = class_;
-	WFIFOW(fd,12) = base_level;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x384e;
+		int32 req_cid = requesting_char_id;
+		int32 cid = char_id;
+		uint16 cls = (uint16)class_;
+		uint16 blvl = (uint16)base_level;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &req_cid, sizeof(req_cid));
+		memcpy(WFIFOP(fd,6), &cid, sizeof(cid));
+		memcpy(WFIFOP(fd,10), &cls, sizeof(cls));
+		memcpy(WFIFOP(fd,12), &blvl, sizeof(blvl));
+	}
 	strncpy(WFIFOCP(fd, 14), name, NAME_LENGTH);
 	WFIFOSET(fd,38);
 }
@@ -730,7 +792,9 @@ void mapif_parse_Mail_receiver_check( int32 fd ){
 	}
 
 	Sql_FreeResult(sql_handle);
-	mapif_Mail_receiver_send( fd, RFIFOL(fd, 2), char_id, class_, base_level, name );
+	uint32 req_cid_tmp = 0;
+	memcpy(&req_cid_tmp, RFIFOP(fd,2), sizeof(req_cid_tmp));
+	mapif_Mail_receiver_send( fd, (int32)req_cid_tmp, char_id, class_, base_level, name );
 }
 
 /*==========================================
