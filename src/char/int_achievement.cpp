@@ -251,9 +251,16 @@ void mapif_achievement_load( int32 fd, uint32 char_id ){
 	tmp_achievementlog = mapif_achievements_fromsql(char_id, &num_achievements);
 
 	WFIFOHEAD(fd, num_achievements * sizeof(struct achievement) + 8);
-	WFIFOW(fd, 0) = 0x3862;
-	WFIFOW(fd, 2) = static_cast<int16>( num_achievements * sizeof( struct achievement ) + 8 );
-	WFIFOL(fd, 4) = char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3862;
+		uint16 packet_len = static_cast<int16>( num_achievements * sizeof( struct achievement ) + 8 );
+		uint32 cid = char_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+		memcpy(WFIFOP(fd,4), &cid, sizeof(cid));
+	}
 
 	if (num_achievements > 0)
 		memcpy(WFIFOP(fd, 8), tmp_achievementlog, sizeof(struct achievement) * num_achievements);
@@ -271,7 +278,10 @@ void mapif_achievement_load( int32 fd, uint32 char_id ){
  */
 int32 mapif_parse_achievement_load(int32 fd)
 {
-	mapif_achievement_load( fd, RFIFOL(fd, 2) );
+	// Byte-buffer read at an odd read position: memcpy, same value.
+	uint32 char_id = 0;
+	memcpy(&char_id, RFIFOP(fd,2), sizeof(char_id));
+	mapif_achievement_load( fd, char_id );
 
 	return 0;
 }
@@ -281,10 +291,17 @@ int32 mapif_parse_achievement_load(int32 fd)
  */
 void mapif_achievement_reward( int32 fd, uint32 char_id, int32 achievement_id, time_t rewarded ){
 	WFIFOHEAD(fd, 14);
-	WFIFOW(fd, 0) = 0x3864;
-	WFIFOL(fd, 2) = char_id;
-	WFIFOL(fd, 6) = achievement_id;
-	WFIFOL(fd, 10) = (uint32)rewarded;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x3864;
+		uint32 cid = char_id;
+		int32 aid = achievement_id;
+		uint32 rew = (uint32)rewarded;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &cid, sizeof(cid));
+		memcpy(WFIFOP(fd,6), &aid, sizeof(aid));
+		memcpy(WFIFOP(fd,10), &rew, sizeof(rew));
+	}
 	WFIFOSET(fd, 14);
 }
 
@@ -294,13 +311,18 @@ void mapif_achievement_reward( int32 fd, uint32 char_id, int32 achievement_id, t
  */
 int32 mapif_parse_achievement_reward(int32 fd){
 	time_t current = time(nullptr);
-	uint32 char_id = RFIFOL(fd, 2);
-	int32 achievement_id = RFIFOL(fd, 6);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 char_id = 0;
+	int32 achievement_id = 0;
+	memcpy(&char_id, RFIFOP(fd,2), sizeof(char_id));
+	memcpy(&achievement_id, RFIFOP(fd,6), sizeof(achievement_id));
 
+	uint16 has_reward = 0;
+	memcpy(&has_reward, RFIFOP(fd,10), sizeof(has_reward));
 	if( Sql_Query( sql_handle, "UPDATE `%s` SET `rewarded` = FROM_UNIXTIME('%u') WHERE `char_id`='%u' AND `id` = '%d' AND `completed` IS NOT NULL AND `rewarded` IS NULL", schema_config.achievement_table, (uint32)current, char_id, achievement_id ) == SQL_ERROR ||
 		Sql_NumRowsAffected(sql_handle) <= 0 ){
 		current = 0;
-	}else if( RFIFOW(fd,10) > 0 ){ // Do not send a mail if no item reward
+	}else if( has_reward > 0 ){ // Do not send a mail if no item reward
 		char mail_sender[NAME_LENGTH];
 		char mail_receiver[NAME_LENGTH];
 		char mail_title[MAIL_TITLE_LENGTH];
@@ -308,8 +330,14 @@ int32 mapif_parse_achievement_reward(int32 fd){
 		struct item item;
 
 		memset(&item, 0, sizeof(struct item));
-		item.nameid = RFIFOL(fd, 10);
-		item.amount = RFIFOW(fd, 14);
+		{
+			uint32 nameid = 0;
+			uint16 amount = 0;
+			memcpy(&nameid, RFIFOP(fd,10), sizeof(nameid));
+			memcpy(&amount, RFIFOP(fd,14), sizeof(amount));
+			item.nameid = nameid;
+			item.amount = amount;
+		}
 		item.identify = 1;
 
 		safesnprintf(mail_sender, NAME_LENGTH, char_msg_txt(227)); // 227: GM
