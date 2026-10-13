@@ -932,14 +932,23 @@ int32 guild_calcinfo( std::shared_ptr<CharGuild> g ){
 
 int32 mapif_guild_created( int32 fd, uint32 account_id, struct mmo_guild *g ){
 	WFIFOHEAD(fd, 10);
-	WFIFOW(fd,0)=0x3830;
-	WFIFOL(fd,2)=account_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3830;
+		uint32 aid = account_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &aid, sizeof(aid));
+	}
 	if(g != nullptr)
 	{
-		WFIFOL(fd,6)=g->guild_id;
+		int32 gid = g->guild_id;
+		memcpy(WFIFOP(fd,6), &gid, sizeof(gid));
 		ShowInfo("int_guild: Guild created (%d - %s)\n",g->guild_id,g->name);
-	} else
-		WFIFOL(fd,6)=0;
+	} else {
+		uint32 gid_zero = 0;
+		memcpy(WFIFOP(fd,6), &gid_zero, sizeof(gid_zero));
+	}
 
 	WFIFOSET(fd,10);
 	return 0;
@@ -977,10 +986,17 @@ int32 mapif_guild_info( int32 fd, const struct mmo_guild &g ){
 int32 mapif_guild_memberadded(int32 fd,int32 guild_id,uint32 account_id,uint32 char_id,int32 flag)
 {
 	WFIFOHEAD(fd, 15);
-	WFIFOW(fd,0)=0x3832;
-	WFIFOL(fd,2)=guild_id;
-	WFIFOL(fd,6)=account_id;
-	WFIFOL(fd,10)=char_id;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x3832;
+		int32 gid = guild_id;
+		uint32 aid = account_id;
+		uint32 cid = char_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &gid, sizeof(gid));
+		memcpy(WFIFOP(fd,6), &aid, sizeof(aid));
+		memcpy(WFIFOP(fd,10), &cid, sizeof(cid));
+	}
 	WFIFOB(fd,14)=flag;
 	WFIFOSET(fd,15);
 	return 0;
@@ -1934,24 +1950,148 @@ int32 inter_guild_parse_frommap(int32 fd)
 	uint16 op = 0;
 	memcpy(&op, RFIFOP(fd,0), sizeof(op));
 	switch((int32)op) {
-	case 0x3030: mapif_parse_CreateGuild(fd,RFIFOL(fd,4),RFIFOCP(fd,8),(struct guild_member *)RFIFOP(fd,32)); break;
-	case 0x3031: mapif_parse_GuildInfo(fd,RFIFOL(fd,2)); break;
-	case 0x3032: mapif_parse_GuildAddMember(fd,RFIFOL(fd,4),(struct guild_member *)RFIFOP(fd,8)); break;
-	case 0x3033: mapif_parse_GuildMasterChange(fd,RFIFOL(fd,4),RFIFOCP(fd,8),RFIFOW(fd,2)-8); break;
-	case 0x3034: mapif_parse_GuildLeave(fd,RFIFOL(fd,2),RFIFOL(fd,6),RFIFOL(fd,10),RFIFOB(fd,14),RFIFOCP(fd,15)); break;
-	case 0x3035: mapif_parse_GuildChangeMemberInfoShort(fd,RFIFOL(fd,2),RFIFOL(fd,6),RFIFOL(fd,10),RFIFOB(fd,14),RFIFOW(fd,15),RFIFOW(fd,17)); break;
-	case 0x3036: mapif_parse_BreakGuild(fd,RFIFOL(fd,2)); break;
-	case 0x3037: mapif_parse_GuildMessage(fd,RFIFOL(fd,4),RFIFOL(fd,8),RFIFOCP(fd,12),RFIFOW(fd,2)-12); break;
-	case 0x3039: mapif_parse_GuildBasicInfoChange(fd,RFIFOL(fd,4),RFIFOW(fd,8),RFIFOCP(fd,10),RFIFOW(fd,2)-10); break;
-	case 0x303A: mapif_parse_GuildMemberInfoChange(fd,RFIFOL(fd,4),RFIFOL(fd,8),RFIFOL(fd,12),RFIFOW(fd,16),RFIFOCP(fd,18),RFIFOW(fd,2)-18); break;
-	case 0x303B: mapif_parse_GuildPosition(fd,RFIFOL(fd,4),RFIFOL(fd,8),(struct guild_position *)RFIFOP(fd,12)); break;
-	case 0x303C: mapif_parse_GuildSkillUp(fd,RFIFOL(fd,2),RFIFOL(fd,6),RFIFOL(fd,10),RFIFOL(fd,14)); break;
-	case 0x303D: mapif_parse_GuildAlliance(fd,RFIFOL(fd,2),RFIFOL(fd,6),RFIFOL(fd,10),RFIFOL(fd,14),RFIFOB(fd,18)); break;
-	case 0x303E: mapif_parse_GuildNotice(fd,RFIFOL(fd,2),RFIFOCP(fd,6),RFIFOCP(fd,66)); break;
-	case 0x303F: mapif_parse_GuildEmblem(fd,RFIFOW(fd,2)-12,RFIFOL(fd,4),RFIFOL(fd,8),RFIFOCP(fd,12)); break;
-	case 0x3040: mapif_parse_GuildCastleDataLoad(fd,RFIFOW(fd,2),(int32 *)RFIFOP(fd,4)); break;
-	case 0x3041: mapif_parse_GuildCastleDataSave(fd,RFIFOW(fd,2),RFIFOB(fd,4),RFIFOL(fd,5)); break;
-	case 0x3042: mapif_parse_GuildEmblemVersion(fd, RFIFOL(fd, 2), RFIFOL(fd, 6)); break;
+	case 0x3030: {
+		// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+		uint32 account_id_tmp = 0;
+		memcpy(&account_id_tmp, RFIFOP(fd,4), sizeof(account_id_tmp));
+		mapif_parse_CreateGuild(fd,account_id_tmp,RFIFOCP(fd,8),(struct guild_member *)RFIFOP(fd,32));
+		break;
+	}
+	case 0x3031: {
+		uint32 guild_id_tmp = 0;
+		memcpy(&guild_id_tmp, RFIFOP(fd,2), sizeof(guild_id_tmp));
+		mapif_parse_GuildInfo(fd,(int32)guild_id_tmp);
+		break;
+	}
+	case 0x3032: {
+		uint32 guild_id_tmp = 0;
+		memcpy(&guild_id_tmp, RFIFOP(fd,4), sizeof(guild_id_tmp));
+		mapif_parse_GuildAddMember(fd,(int32)guild_id_tmp,(struct guild_member *)RFIFOP(fd,8));
+		break;
+	}
+	case 0x3033: {
+		uint32 guild_id_tmp = 0;
+		uint16 packet_len = 0;
+		memcpy(&guild_id_tmp, RFIFOP(fd,4), sizeof(guild_id_tmp));
+		memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+		mapif_parse_GuildMasterChange(fd,(int32)guild_id_tmp,RFIFOCP(fd,8),(int32)packet_len-8);
+		break;
+	}
+	case 0x3034: {
+		uint32 guild_id_tmp = 0, account_id_tmp = 0, char_id_tmp = 0;
+		memcpy(&guild_id_tmp, RFIFOP(fd,2), sizeof(guild_id_tmp));
+		memcpy(&account_id_tmp, RFIFOP(fd,6), sizeof(account_id_tmp));
+		memcpy(&char_id_tmp, RFIFOP(fd,10), sizeof(char_id_tmp));
+		mapif_parse_GuildLeave(fd,(int32)guild_id_tmp,account_id_tmp,char_id_tmp,RFIFOB(fd,14),RFIFOCP(fd,15));
+		break;
+	}
+	case 0x3035: {
+		uint32 guild_id_tmp = 0, account_id_tmp = 0, char_id_tmp = 0;
+		uint16 lv_tmp = 0, class_tmp = 0;
+		memcpy(&guild_id_tmp, RFIFOP(fd,2), sizeof(guild_id_tmp));
+		memcpy(&account_id_tmp, RFIFOP(fd,6), sizeof(account_id_tmp));
+		memcpy(&char_id_tmp, RFIFOP(fd,10), sizeof(char_id_tmp));
+		memcpy(&lv_tmp, RFIFOP(fd,15), sizeof(lv_tmp));
+		memcpy(&class_tmp, RFIFOP(fd,17), sizeof(class_tmp));
+		mapif_parse_GuildChangeMemberInfoShort(fd,(int32)guild_id_tmp,account_id_tmp,char_id_tmp,RFIFOB(fd,14),(int32)lv_tmp,(int32)class_tmp);
+		break;
+	}
+	case 0x3036: {
+		uint32 guild_id_tmp = 0;
+		memcpy(&guild_id_tmp, RFIFOP(fd,2), sizeof(guild_id_tmp));
+		mapif_parse_BreakGuild(fd,(int32)guild_id_tmp);
+		break;
+	}
+	case 0x3037: {
+		uint32 guild_id_tmp = 0, account_id_tmp = 0;
+		uint16 packet_len = 0;
+		memcpy(&guild_id_tmp, RFIFOP(fd,4), sizeof(guild_id_tmp));
+		memcpy(&account_id_tmp, RFIFOP(fd,8), sizeof(account_id_tmp));
+		memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+		mapif_parse_GuildMessage(fd,(int32)guild_id_tmp,account_id_tmp,RFIFOCP(fd,12),(int32)packet_len-12);
+		break;
+	}
+	case 0x3039: {
+		uint32 guild_id_tmp = 0;
+		uint16 type_tmp = 0, packet_len = 0;
+		memcpy(&guild_id_tmp, RFIFOP(fd,4), sizeof(guild_id_tmp));
+		memcpy(&type_tmp, RFIFOP(fd,8), sizeof(type_tmp));
+		memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+		mapif_parse_GuildBasicInfoChange(fd,(int32)guild_id_tmp,(int32)type_tmp,RFIFOCP(fd,10),(int32)packet_len-10);
+		break;
+	}
+	case 0x303A: {
+		uint32 guild_id_tmp = 0, account_id_tmp = 0, char_id_tmp = 0;
+		uint16 type_tmp = 0, packet_len = 0;
+		memcpy(&guild_id_tmp, RFIFOP(fd,4), sizeof(guild_id_tmp));
+		memcpy(&account_id_tmp, RFIFOP(fd,8), sizeof(account_id_tmp));
+		memcpy(&char_id_tmp, RFIFOP(fd,12), sizeof(char_id_tmp));
+		memcpy(&type_tmp, RFIFOP(fd,16), sizeof(type_tmp));
+		memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+		mapif_parse_GuildMemberInfoChange(fd,(int32)guild_id_tmp,account_id_tmp,char_id_tmp,(int32)type_tmp,RFIFOCP(fd,18),(int32)packet_len-18);
+		break;
+	}
+	case 0x303B: {
+		uint32 guild_id_tmp = 0, idx_tmp = 0;
+		memcpy(&guild_id_tmp, RFIFOP(fd,4), sizeof(guild_id_tmp));
+		memcpy(&idx_tmp, RFIFOP(fd,8), sizeof(idx_tmp));
+		mapif_parse_GuildPosition(fd,(int32)guild_id_tmp,(int32)idx_tmp,(struct guild_position *)RFIFOP(fd,12));
+		break;
+	}
+	case 0x303C: {
+		uint32 guild_id_tmp = 0, account_id_tmp = 0, max_tmp = 0, skill_id_tmp = 0;
+		memcpy(&guild_id_tmp, RFIFOP(fd,2), sizeof(guild_id_tmp));
+		memcpy(&skill_id_tmp, RFIFOP(fd,6), sizeof(skill_id_tmp));
+		memcpy(&account_id_tmp, RFIFOP(fd,10), sizeof(account_id_tmp));
+		memcpy(&max_tmp, RFIFOP(fd,14), sizeof(max_tmp));
+		mapif_parse_GuildSkillUp(fd,(int32)guild_id_tmp,(uint16)skill_id_tmp,account_id_tmp,(int32)max_tmp);
+		break;
+	}
+	case 0x303D: {
+		uint32 guild_id_tmp = 0, guild_id2_tmp = 0, account_id_tmp = 0, account_id2_tmp = 0;
+		memcpy(&guild_id_tmp, RFIFOP(fd,2), sizeof(guild_id_tmp));
+		memcpy(&guild_id2_tmp, RFIFOP(fd,6), sizeof(guild_id2_tmp));
+		memcpy(&account_id_tmp, RFIFOP(fd,10), sizeof(account_id_tmp));
+		memcpy(&account_id2_tmp, RFIFOP(fd,14), sizeof(account_id2_tmp));
+		mapif_parse_GuildAlliance(fd,(int32)guild_id_tmp,(int32)guild_id2_tmp,account_id_tmp,account_id2_tmp,RFIFOB(fd,18));
+		break;
+	}
+	case 0x303E: {
+		uint32 guild_id_tmp = 0;
+		memcpy(&guild_id_tmp, RFIFOP(fd,2), sizeof(guild_id_tmp));
+		mapif_parse_GuildNotice(fd,(int32)guild_id_tmp,RFIFOCP(fd,6),RFIFOCP(fd,66));
+		break;
+	}
+	case 0x303F: {
+		uint16 packet_len = 0;
+		uint32 guild_id_tmp = 0, dummy_tmp = 0;
+		memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+		memcpy(&guild_id_tmp, RFIFOP(fd,4), sizeof(guild_id_tmp));
+		memcpy(&dummy_tmp, RFIFOP(fd,8), sizeof(dummy_tmp));
+		mapif_parse_GuildEmblem(fd,(int32)packet_len-12,(int32)guild_id_tmp,(int32)dummy_tmp,RFIFOCP(fd,12));
+		break;
+	}
+	case 0x3040: {
+		uint16 packet_len = 0;
+		memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+		mapif_parse_GuildCastleDataLoad(fd,(int32)packet_len,(int32 *)RFIFOP(fd,4));
+		break;
+	}
+	case 0x3041: {
+		uint16 castle_id_tmp = 0;
+		uint32 value_tmp = 0;
+		memcpy(&castle_id_tmp, RFIFOP(fd,2), sizeof(castle_id_tmp));
+		memcpy(&value_tmp, RFIFOP(fd,5), sizeof(value_tmp));
+		mapif_parse_GuildCastleDataSave(fd,(int32)castle_id_tmp,RFIFOB(fd,4),(int32)value_tmp);
+		break;
+	}
+	case 0x3042: {
+		uint32 guild_id_tmp = 0, version_tmp = 0;
+		memcpy(&guild_id_tmp, RFIFOP(fd,2), sizeof(guild_id_tmp));
+		memcpy(&version_tmp, RFIFOP(fd,6), sizeof(version_tmp));
+		mapif_parse_GuildEmblemVersion(fd, (int32)guild_id_tmp, (int32)version_tmp);
+		break;
+	}
 
 	default:
 		return 0;
