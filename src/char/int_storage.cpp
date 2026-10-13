@@ -155,22 +155,37 @@ bool mapif_load_guild_storage(int32 fd,uint32 account_id,int32 guild_id, char fl
 	else if( Sql_NumRows(sql_handle) > 0 )
 	{// guild exists
 		WFIFOHEAD(fd, sizeof(struct s_storage)+13);
-		WFIFOW(fd,0) = 0x3818;
-		WFIFOW(fd,2) = sizeof(struct s_storage)+13;
-		WFIFOL(fd,4) = account_id;
-		WFIFOL(fd,8) = guild_id;
+		// Byte-buffer slots: the fifo write position can be odd-sized, so even
+		// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+		uint16 packet_len = sizeof(struct s_storage)+13;
+		{
+			uint16 op = 0x3818;
+			uint32 aid = account_id;
+			int32 gid = guild_id;
+			memcpy(WFIFOP(fd,0), &op, sizeof(op));
+			memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+			memcpy(WFIFOP(fd,4), &aid, sizeof(aid));
+			memcpy(WFIFOP(fd,8), &gid, sizeof(gid));
+		}
 		WFIFOB(fd,12) = flag; //1 open storage, 0 don't open
 		guild_storage_fromsql(guild_id, (struct s_storage*)WFIFOP(fd,13));
-		WFIFOSET(fd, WFIFOW(fd,2));
+		WFIFOSET(fd, packet_len);
 		return true;
 	}
 	// guild does not exist
 	Sql_FreeResult(sql_handle);
 	WFIFOHEAD(fd, 12);
-	WFIFOW(fd,0) = 0x3818;
-	WFIFOW(fd,2) = 12;
-	WFIFOL(fd,4) = account_id;
-	WFIFOL(fd,8) = 0;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x3818;
+		uint16 packet_len = 12;
+		uint32 aid = account_id;
+		uint32 gid_zero = 0;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+		memcpy(WFIFOP(fd,4), &aid, sizeof(aid));
+		memcpy(WFIFOP(fd,8), &gid_zero, sizeof(gid_zero));
+	}
 	WFIFOSET(fd, 12);
 	return false;
 }
@@ -178,9 +193,15 @@ bool mapif_load_guild_storage(int32 fd,uint32 account_id,int32 guild_id, char fl
 void mapif_save_guild_storage_ack(int32 fd,uint32 account_id,int32 guild_id,int32 fail)
 {
 	WFIFOHEAD(fd,11);
-	WFIFOW(fd,0)=0x3819;
-	WFIFOL(fd,2)=account_id;
-	WFIFOL(fd,6)=guild_id;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x3819;
+		uint32 aid = account_id;
+		int32 gid = guild_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &aid, sizeof(aid));
+		memcpy(WFIFOP(fd,6), &gid, sizeof(gid));
+	}
 	WFIFOB(fd,10)=fail;
 	WFIFOSET(fd,11);
 }
@@ -190,7 +211,11 @@ void mapif_save_guild_storage_ack(int32 fd,uint32 account_id,int32 guild_id,int3
 
 void mapif_parse_LoadGuildStorage(int32 fd)
 {
-	mapif_load_guild_storage(fd,RFIFOL(fd,2),RFIFOL(fd,6),1);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 account_id = 0, guild_id_tmp = 0;
+	memcpy(&account_id, RFIFOP(fd,2), sizeof(account_id));
+	memcpy(&guild_id_tmp, RFIFOP(fd,6), sizeof(guild_id_tmp));
+	mapif_load_guild_storage(fd, account_id, (int32)guild_id_tmp, 1);
 }
 
 /**
@@ -202,9 +227,14 @@ bool mapif_parse_SaveGuildStorage(int32 fd)
 {
 	int32 guild_id;
 	int32 len;
-
-	guild_id = RFIFOL(fd,8);
-	len = RFIFOW(fd,2);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 guild_id_tmp = 0;
+	uint16 packet_len = 0;
+	uint32 account_id_tmp = 0;
+	memcpy(&guild_id_tmp, RFIFOP(fd,8), sizeof(guild_id_tmp));
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+	guild_id = (int32)guild_id_tmp;
+	len = packet_len;
 
 	if( sizeof(struct s_storage) != len - 12 )
 	{
@@ -218,12 +248,14 @@ bool mapif_parse_SaveGuildStorage(int32 fd)
 		{// guild exists
 			Sql_FreeResult(sql_handle);
 			guild_storage_tosql(guild_id, (struct s_storage*)RFIFOP(fd,12));
-			mapif_save_guild_storage_ack(fd, RFIFOL(fd,4), guild_id, 0);
+			memcpy(&account_id_tmp, RFIFOP(fd,4), sizeof(account_id_tmp));
+			mapif_save_guild_storage_ack(fd, account_id_tmp, guild_id, 0);
 			return false;
 		}
 		Sql_FreeResult(sql_handle);
 	}
-	mapif_save_guild_storage_ack(fd, RFIFOL(fd,4), guild_id, 1);
+	memcpy(&account_id_tmp, RFIFOP(fd,4), sizeof(account_id_tmp));
+	mapif_save_guild_storage_ack(fd, account_id_tmp, guild_id, 1);
 	return true;
 }
 
@@ -235,9 +267,16 @@ bool mapif_parse_SaveGuildStorage(int32 fd)
 void mapif_itembound_ack(int32 fd, int32 account_id, int32 guild_id)
 {
 	WFIFOHEAD(fd,8);
-	WFIFOW(fd,0) = 0x3856;
-	WFIFOL(fd,2) = account_id;
-	WFIFOW(fd,6) = guild_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3856;
+		int32 aid = account_id;
+		int16 gid = (int16)guild_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &aid, sizeof(aid));
+		memcpy(WFIFOP(fd,6), &gid, sizeof(gid));
+	}
 	WFIFOSET(fd,8);
 	char_unset_session_flag(account_id, 1);
 }
@@ -258,15 +297,24 @@ void mapif_itembound_store2gstorage(int32 fd, int32 guild_id, struct item items[
 	int32 size = 8 + sizeof(struct item) * MAX_INVENTORY, i;
 
 	WFIFOHEAD(fd, size);
-	WFIFOW(fd, 0) = 0x3857;
-	WFIFOW(fd, 2) = size;
-	WFIFOW(fd, 6) = guild_id;
+	// Same treatment for the reply builder (odd fifo positions possible).
+	{
+		uint16 op = 0x3857;
+		uint16 packet_size = (uint16)size;
+		int16 gid = (int16)guild_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &packet_size, sizeof(packet_size));
+		memcpy(WFIFOP(fd,6), &gid, sizeof(gid));
+	}
 	for (i = 0; i < count && i < MAX_INVENTORY; i++) {
 		if (!&items[i])
 			continue;
 		memcpy(WFIFOP(fd, 8 + (i * sizeof(struct item))), &items[i], sizeof(struct item));
 	}
-	WFIFOW(fd, 4) = i;
+	{
+		uint16 cnt = (uint16)i;
+		memcpy(WFIFOP(fd,4), &cnt, sizeof(cnt));
+	}
 	WFIFOSET(fd, size);
 }
 
@@ -281,8 +329,13 @@ bool mapif_parse_itembound_retrieve(int32 fd)
 	SqlStmt stmt{ *sql_handle };
 	uint16 i = 0, count = 0;
 	struct item item, items[MAX_INVENTORY];
-	int32 j, guild_id = RFIFOW(fd,10);
-	uint32 char_id = RFIFOL(fd,2), account_id = RFIFOL(fd,6);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint16 guild_id_tmp = 0;
+	uint32 char_id = 0, account_id = 0;
+	memcpy(&guild_id_tmp, RFIFOP(fd,10), sizeof(guild_id_tmp));
+	memcpy(&char_id, RFIFOP(fd,2), sizeof(char_id));
+	memcpy(&account_id, RFIFOP(fd,6), sizeof(account_id));
+	int32 j, guild_id = (int32)guild_id_tmp;
 
 	StringBuf_Init(&buf);
 
@@ -508,8 +561,12 @@ bool mapif_parse_StorageSave(int32 fd) {
 	bool res = false;
 
 	type = RFIFOB(fd, 4);
-	aid = RFIFOL(fd, 5);
-	cid = RFIFOL(fd, 9);
+	// Byte-buffer reads at odd offsets: memcpy into aligned locals.
+	uint32 aid_tmp = 0, cid_tmp = 0;
+	memcpy(&aid_tmp, RFIFOP(fd,5), sizeof(aid_tmp));
+	memcpy(&cid_tmp, RFIFOP(fd,9), sizeof(cid_tmp));
+	aid = (int32)aid_tmp;
+	cid = (int32)cid_tmp;
 	
 	memset(&stor, 0, sizeof(struct s_storage));
 	memcpy(&stor, RFIFOP(fd, 13), sizeof(struct s_storage));
