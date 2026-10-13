@@ -606,9 +606,14 @@ int32 chrif_scdata_request(uint32 account_id, uint32 char_id) {
 	chrif_check(-1);
 
 	WFIFOHEAD(char_fd,10);
-	WFIFOW(char_fd,0) = 0x2afc;
-	WFIFOL(char_fd,2) = account_id;
-	WFIFOL(char_fd,6) = char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x2afc;
+		memcpy(WFIFOP(char_fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(char_fd,2), &account_id, sizeof(account_id));
+		memcpy(WFIFOP(char_fd,6), &char_id, sizeof(char_id));
+	}
 	WFIFOSET(char_fd,10);
 #endif
 	return 0;
