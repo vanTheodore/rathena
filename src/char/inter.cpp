@@ -1407,7 +1407,9 @@ int32 inter_check_length(int32 fd, int32 length)
 	{// variable-length packet
 		if( RFIFOREST(fd) < 4 )
 			return 0;
-		length = RFIFOW(fd,2);
+		uint16 dynlen = 0;
+		memcpy(&dynlen, RFIFOP(fd,2), sizeof(dynlen));
+		length = dynlen;
 	}
 
 	if( (int32)RFIFOREST(fd) < length )
@@ -1420,7 +1422,13 @@ int32 inter_parse_frommap(int32 fd)
 {
 	int32 cmd;
 	int32 len = 0;
-	cmd = RFIFOW(fd,0);
+	// Byte-buffer read: the read position advances by consumed packet
+	// lengths (often odd), so even the plain uint16 opcode load uses memcpy.
+	{
+		uint16 op = 0;
+		memcpy(&op, RFIFOP(fd,0), sizeof(op));
+		cmd = op;
+	}
 	// Check is valid packet entry
 	if(cmd < 0x3000 || cmd >= 0x3000 + ARRAYLENGTH(inter_recv_packet_length) || inter_recv_packet_length[cmd - 0x3000] == 0)
 		return 0;
