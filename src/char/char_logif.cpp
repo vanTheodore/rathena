@@ -153,13 +153,21 @@ TIMER_FUNC(chlogif_broadcast_user_count){
 		// send number of user to login server
 		WFIFOHEAD(login_fd,6);
 		WFIFOW(login_fd,0) = 0x2714;
-		WFIFOL(login_fd,2) = users;
+		// Byte-buffer slot at an odd offset: memcpy, same bytes.
+		{
+			uint32 nusers = (uint32)users;
+			memcpy(WFIFOP(login_fd,2), &nusers, sizeof(nusers));
+		}
 		WFIFOSET(login_fd,6);
 	}
 
 	// send number of players to all map-servers
+	// (stack buffer: offset 2 is never uint32-aligned, same treatment)
 	WBUFW(buf,0) = 0x2b00;
-	WBUFL(buf,2) = users;
+	{
+		uint32 nusers = (uint32)users;
+		memcpy(buf+2, &nusers, sizeof(nusers));
+	}
 	chmapif_sendall(buf,6);
 
 	return 0;
