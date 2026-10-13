@@ -210,8 +210,12 @@ int32 mapif_parse_achievement_save(int32 fd)
 	struct achievement *old_ad = nullptr, *new_ad = nullptr;
 	bool success = true;
 
-	if (new_n > 0)
-		new_ad = (struct achievement *)RFIFOP(fd, 8);
+	if (new_n > 0) {
+		// Byte-buffer struct array at an odd read position: copy into an
+		// aligned buffer first, member access on the raw fifo is unaligned.
+		new_ad = (struct achievement *)aMalloc(sizeof(struct achievement) * new_n);
+		memcpy(new_ad, RFIFOP(fd, 8), sizeof(struct achievement) * new_n);
+	}
 
 	old_ad = mapif_achievements_fromsql(char_id, &old_n);
 
@@ -243,6 +247,8 @@ int32 mapif_parse_achievement_save(int32 fd)
 			break;
 	}
 
+	if (new_ad)
+		aFree(new_ad);
 	if (old_ad)
 		aFree(old_ad);
 

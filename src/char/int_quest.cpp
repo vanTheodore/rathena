@@ -137,8 +137,12 @@ int32 mapif_parse_quest_save(int32 fd) {
 	bool success = true;
 	size_t old_n, new_n = ( packet_len - 8 ) / sizeof( struct quest );
 
-	if( new_n > 0 )
-		new_qd = (struct quest*)RFIFOP(fd,8);
+	if( new_n > 0 ) {
+		// Byte-buffer struct array at an odd read position: copy into an
+		// aligned buffer first (same latent issue as the achievement pair).
+		new_qd = (struct quest*)aMalloc(sizeof(struct quest) * new_n);
+		memcpy(new_qd, RFIFOP(fd,8), sizeof(struct quest) * new_n);
+	}
 
 	old_qd = mapif_quests_fromsql( char_id, old_n );
 
@@ -166,6 +170,8 @@ int32 mapif_parse_quest_save(int32 fd) {
 		success &= mapif_quest_delete(char_id, old_qd[i].quest_id);
 	}
 
+	if( new_qd )
+		aFree(new_qd);
 	if( old_qd )
 		aFree(old_qd);
 
