@@ -2377,18 +2377,23 @@ int32 intif_parse_Mail_inboxreceived(int32 fd)
 {
 	map_session_data *sd;
 	unsigned char flag = RFIFOB(fd,8);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 char_id = 0;
+	uint16 packet_len = 0;
+	memcpy(&char_id, RFIFOP(fd,4), sizeof(char_id));
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
 
-	sd = map_charid2sd(RFIFOL(fd,4));
+	sd = map_charid2sd(char_id);
 
 	if (sd == nullptr)
 	{
-		ShowError("intif_parse_Mail_inboxreceived: char not found %d\n",RFIFOL(fd,4));
+		ShowError("intif_parse_Mail_inboxreceived: char not found %d\n",char_id);
 		return 0;
 	}
 
-	if (RFIFOW(fd,2) - 10 != sizeof(struct mail_data))
+	if (packet_len - 10 != sizeof(struct mail_data))
 	{
-		ShowError("intif_parse_Mail_inboxreceived: data size error %d %" PRIuPTR "\n", RFIFOW(fd,2) - 10, sizeof(struct mail_data));
+		ShowError("intif_parse_Mail_inboxreceived: data size error %d %" PRIuPTR "\n", packet_len - 10, sizeof(struct mail_data));
 		return 0;
 	}
 
