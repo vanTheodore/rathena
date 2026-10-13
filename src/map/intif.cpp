@@ -3483,7 +3483,11 @@ static bool intif_parse_StorageReceived(int32 fd)
 		return false;
 	}
 
-	p = (struct s_storage *)RFIFOP(fd,10);
+	// Byte-buffer struct at an odd read position: copy into an aligned
+	// local first, member access on the raw buffer would be unaligned.
+	struct s_storage stor_buf;
+	memcpy(&stor_buf, RFIFOP(fd,10), sz_stor);
+	p = &stor_buf;
 
 	switch (type) { 
 		case TABLE_INVENTORY:
@@ -3512,8 +3516,10 @@ static bool intif_parse_StorageReceived(int32 fd)
 			return false;
 		}
 	}
-	if (RFIFOW(fd,2)-10 != sz_stor) {
-		ShowError("intif_parse_StorageReceived: data size error %d %" PRIuPTR "\n",RFIFOW(fd,2)-10 , sz_stor);
+	uint16 packet_len = 0;
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+	if (packet_len-10 != sz_stor) {
+		ShowError("intif_parse_StorageReceived: data size error %d %" PRIuPTR "\n",packet_len-10 , sz_stor);
 		stor->status = false;
 		return false;
 	}
