@@ -544,8 +544,13 @@ int32 chmapif_parse_req_skillcooldown(int32 fd){
 		return 0;
 	else {
 		int32 aid, cid;
-		aid = RFIFOL(fd,2);
-		cid = RFIFOL(fd,6);
+		// Byte-buffer reads at odd read positions: memcpy into aligned
+		// locals, same values.
+		uint32 uaid = 0, ucid = 0;
+		memcpy(&uaid, RFIFOP(fd,2), sizeof(uaid));
+		memcpy(&ucid, RFIFOP(fd,6), sizeof(ucid));
+		aid = (int32)uaid;
+		cid = (int32)ucid;
 		RFIFOSKIP(fd, 10);
 		if( SQL_ERROR == Sql_Query(sql_handle, "SELECT skill, tick FROM `%s` WHERE `account_id` = '%d' AND `char_id`='%d'",
 			schema_config.skillcooldown_db, aid, cid) )
