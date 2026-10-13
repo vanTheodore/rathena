@@ -1421,7 +1421,12 @@ int32 chmapif_parse(int32 fd){
 
 	while(RFIFOREST(fd) >= 2){
 		int32 next=1;
-		switch(RFIFOW(fd,0)){
+		// Byte-buffer read: the read position advances by consumed packet
+		// lengths (often odd), so even the plain uint16 opcode load uses
+		// memcpy (same value, no unaligned load).
+		uint16 op = 0;
+		memcpy(&op, RFIFOP(fd,0), sizeof(op));
+		switch((int32)op){
 			case 0x2afa: next=chmapif_parse_getmapname(fd,id); break;
 			case 0x2afc: next=chmapif_parse_askscdata(fd); break;
 			case 0x2afe: next=chmapif_parse_getusercount(fd,id); break; //get nb user
