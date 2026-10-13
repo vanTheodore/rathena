@@ -2178,8 +2178,13 @@ void intif_request_achievements(uint32 char_id)
 		return;
 
 	WFIFOHEAD(inter_fd, 6);
-	WFIFOW(inter_fd, 0) = 0x3062;
-	WFIFOL(inter_fd, 2) = char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3062;
+		memcpy(WFIFOP(inter_fd, 0), &op, sizeof(op));
+		memcpy(WFIFOP(inter_fd, 2), &char_id, sizeof(char_id));
+	}
 	WFIFOSET(inter_fd, 6);
 }
 
@@ -2189,7 +2194,12 @@ void intif_request_achievements(uint32 char_id)
  */
 void intif_parse_achievements(int32 fd)
 {
-	uint32 char_id = RFIFOL(fd, 4), num_received = (RFIFOW(fd, 2) - 8) / sizeof(struct achievement);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 char_id = 0;
+	uint16 packet_len = 0;
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+	memcpy(&char_id, RFIFOP(fd,4), sizeof(char_id));
+	uint32 num_received = (packet_len - 8) / sizeof(struct achievement);
 	map_session_data *sd = map_charid2sd(char_id);
 
 	if (!sd) // User not online anymore
