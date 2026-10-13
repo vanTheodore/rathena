@@ -299,7 +299,9 @@ int32 mapif_parse_DeletePet(int32 fd){
 }
 
 int32 inter_pet_parse_frommap(int32 fd){
-	switch(RFIFOW(fd, 0)){
+	uint16 pet_op = 0;
+	memcpy(&pet_op, RFIFOP(fd,0), sizeof(pet_op));
+	switch((int32)pet_op){
 	case 0x3080: mapif_parse_CreatePet(fd); break;
 	case 0x3081: mapif_parse_LoadPet(fd); break;
 	case 0x3082: mapif_parse_SavePet(fd); break;
