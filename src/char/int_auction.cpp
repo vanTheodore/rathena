@@ -262,11 +262,20 @@ void mapif_Auction_sendlist(int32 fd, uint32 char_id, int16 count, int16 pages, 
 	int32 len = (sizeof(struct auction_data) * count) + 12;
 
 	WFIFOHEAD(fd, len);
-	WFIFOW(fd,0) = 0x3850;
-	WFIFOW(fd,2) = len;
-	WFIFOL(fd,4) = char_id;
-	WFIFOW(fd,8) = count;
-	WFIFOW(fd,10) = pages;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3850;
+		uint16 packet_len = (uint16)len;
+		uint32 cid = char_id;
+		int16 cnt = count;
+		int16 pgs = pages;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+		memcpy(WFIFOP(fd,4), &cid, sizeof(cid));
+		memcpy(WFIFOP(fd,8), &cnt, sizeof(cnt));
+		memcpy(WFIFOP(fd,10), &pgs, sizeof(pgs));
+	}
 	memcpy(WFIFOP(fd,12), buf, len - 12);
 	WFIFOSET(fd,len);
 }
@@ -274,9 +283,17 @@ void mapif_Auction_sendlist(int32 fd, uint32 char_id, int16 count, int16 pages, 
 void mapif_parse_Auction_requestlist(int32 fd)
 {
 	char searchtext[NAME_LENGTH];
-	uint32 char_id = RFIFOL(fd,4), len = sizeof(struct auction_data);
-	int32 price = RFIFOL(fd,10);
-	int16 type = RFIFOW(fd,8), page = max(1,RFIFOW(fd,14));
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 char_id = 0;
+	uint32 price_tmp = 0;
+	uint16 type_tmp = 0, page_tmp = 0;
+	memcpy(&char_id, RFIFOP(fd,4), sizeof(char_id));
+	memcpy(&price_tmp, RFIFOP(fd,10), sizeof(price_tmp));
+	memcpy(&type_tmp, RFIFOP(fd,8), sizeof(type_tmp));
+	memcpy(&page_tmp, RFIFOP(fd,14), sizeof(page_tmp));
+	uint32 len = sizeof(struct auction_data);
+	int32 price = (int32)price_tmp;
+	int16 type = (int16)type_tmp, page = max(1,(int16)page_tmp);
 	unsigned char buf[5 * sizeof(struct auction_data)];
 	int16 i = 0, j = 0, pages = 1;
 
@@ -317,15 +334,24 @@ void mapif_Auction_register(int32 fd, struct auction_data *auction)
 	int32 len = sizeof(struct auction_data) + 4;
 
 	WFIFOHEAD(fd,len);
-	WFIFOW(fd,0) = 0x3851;
-	WFIFOW(fd,2) = len;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3851;
+		uint16 packet_len = (uint16)len;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+	}
 	memcpy(WFIFOP(fd,4), auction, sizeof(struct auction_data));
 	WFIFOSET(fd,len);
 }
 
 void mapif_parse_Auction_register(int32 fd)
 {
-	if( RFIFOW(fd,2) != sizeof(struct auction_data) + 4 )
+	// Byte-buffer read at an odd read position: memcpy, same value.
+	uint16 packet_len = 0;
+	memcpy(&packet_len, RFIFOP(fd,2), sizeof(packet_len));
+	if( packet_len != sizeof(struct auction_data) + 4 )
 		return;
 
 	struct auction_data* auction = reinterpret_cast<struct auction_data*>( RFIFOP( fd, 4 ) );
@@ -346,15 +372,24 @@ void mapif_parse_Auction_register(int32 fd)
 void mapif_Auction_cancel(int32 fd, uint32 char_id, unsigned char result)
 {
 	WFIFOHEAD(fd,7);
-	WFIFOW(fd,0) = 0x3852;
-	WFIFOL(fd,2) = char_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3852;
+		uint32 cid = char_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &cid, sizeof(cid));
+	}
 	WFIFOB(fd,6) = result;
 	WFIFOSET(fd,7);
 }
 
 void mapif_parse_Auction_cancel(int32 fd)
 {
-	uint32 char_id = RFIFOL(fd,2), auction_id = RFIFOL(fd,6);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 char_id = 0, auction_id = 0;
+	memcpy(&char_id, RFIFOP(fd,2), sizeof(char_id));
+	memcpy(&auction_id, RFIFOP(fd,6), sizeof(auction_id));
 
 	std::shared_ptr<struct auction_data> auction = util::umap_find( auction_db, auction_id );
 
@@ -384,15 +419,23 @@ void mapif_parse_Auction_cancel(int32 fd)
 void mapif_Auction_close(int32 fd, uint32 char_id, unsigned char result)
 {
 	WFIFOHEAD(fd,7);
-	WFIFOW(fd,0) = 0x3853;
-	WFIFOL(fd,2) = char_id;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x3853;
+		uint32 cid = char_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &cid, sizeof(cid));
+	}
 	WFIFOB(fd,6) = result;
 	WFIFOSET(fd,7);
 }
 
 void mapif_parse_Auction_close(int32 fd)
 {
-	uint32 char_id = RFIFOL(fd,2), auction_id = RFIFOL(fd,6);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 char_id = 0, auction_id = 0;
+	memcpy(&char_id, RFIFOP(fd,2), sizeof(char_id));
+	memcpy(&auction_id, RFIFOP(fd,6), sizeof(auction_id));
 	std::shared_ptr<struct auction_data> auction = util::umap_find( auction_db, auction_id );
 
 	if( auction == nullptr ){
@@ -425,17 +468,29 @@ void mapif_parse_Auction_close(int32 fd)
 void mapif_Auction_bid(int32 fd, uint32 char_id, int32 bid, unsigned char result)
 {
 	WFIFOHEAD(fd,11);
-	WFIFOW(fd,0) = 0x3855;
-	WFIFOL(fd,2) = char_id;
-	WFIFOL(fd,6) = bid; // To Return Zeny
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3855;
+		uint32 cid = char_id;
+		int32 b = bid;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &cid, sizeof(cid));
+		memcpy(WFIFOP(fd,6), &b, sizeof(b)); // To Return Zeny
+	}
 	WFIFOB(fd,10) = result;
 	WFIFOSET(fd,11);
 }
 
 void mapif_parse_Auction_bid(int32 fd)
 {
-	uint32 char_id = RFIFOL(fd,4), auction_id = RFIFOL(fd,8);
-	int32 bid = RFIFOL(fd,12);
+	// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+	uint32 char_id = 0, auction_id = 0;
+	uint32 bid_tmp = 0;
+	memcpy(&char_id, RFIFOP(fd,4), sizeof(char_id));
+	memcpy(&auction_id, RFIFOP(fd,8), sizeof(auction_id));
+	memcpy(&bid_tmp, RFIFOP(fd,12), sizeof(bid_tmp));
+	int32 bid = (int32)bid_tmp;
 	std::shared_ptr<struct auction_data> auction = util::umap_find( auction_db, auction_id );
 
 	if( auction == nullptr || auction->price >= bid || auction->seller_id == char_id ){
