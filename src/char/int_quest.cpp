@@ -211,7 +211,11 @@ int32 mapif_parse_quest_load(int32 fd) {
  * @see inter_parse_frommap
  */
 int32 inter_quest_parse_frommap(int32 fd) {
-	switch(RFIFOW(fd,0)) {
+	// Byte-buffer read: the read position advances by consumed packet
+	// lengths (often odd), so even the plain uint16 opcode load uses memcpy.
+	uint16 quest_op = 0;
+	memcpy(&quest_op, RFIFOP(fd,0), sizeof(quest_op));
+	switch((int32)quest_op) {
 		case 0x3060: mapif_parse_quest_load(fd); break;
 		case 0x3061: mapif_parse_quest_save(fd); break;
 		default:
