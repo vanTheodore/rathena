@@ -1929,7 +1929,11 @@ int32 mapif_parse_GuildEmblemVersion(int32 fd, int32 guild_id, int32 version)
 //  0 : error
 int32 inter_guild_parse_frommap(int32 fd)
 {
-	switch(RFIFOW(fd,0)) {
+	// Byte-buffer read: the read position advances by consumed packet
+	// lengths (often odd), so even the plain uint16 opcode load uses memcpy.
+	uint16 op = 0;
+	memcpy(&op, RFIFOP(fd,0), sizeof(op));
+	switch((int32)op) {
 	case 0x3030: mapif_parse_CreateGuild(fd,RFIFOL(fd,4),RFIFOCP(fd,8),(struct guild_member *)RFIFOP(fd,32)); break;
 	case 0x3031: mapif_parse_GuildInfo(fd,RFIFOL(fd,2)); break;
 	case 0x3032: mapif_parse_GuildAddMember(fd,RFIFOL(fd,4),(struct guild_member *)RFIFOP(fd,8)); break;
