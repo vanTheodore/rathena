@@ -1289,7 +1289,9 @@ int32 chmapif_bonus_script_get(int32 fd) {
 		return 0;
 	else {
 		uint8 num_rows = 0;
-		uint32 cid = RFIFOL(fd,2);
+		// Byte-buffer read at an odd read position: memcpy, same value.
+		uint32 cid = 0;
+		memcpy(&cid, RFIFOP(fd,2), sizeof(cid));
 		struct bonus_script_data tmp_bsdata;
 		SqlStmt stmt{ *sql_handle };
 
