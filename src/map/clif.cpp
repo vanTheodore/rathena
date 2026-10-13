@@ -22074,9 +22074,16 @@ void clif_attendence_response( const map_session_data* sd, int32 data ){
 	int32 fd = sd->fd;
 
 	WFIFOHEAD(fd,packet_len(0xAF0));
-	WFIFOW(fd,0) = 0xAF0;
-	WFIFOL(fd,2) = 0;
-	WFIFOL(fd,6) = data;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0xAF0;
+		uint32 zero = 0;
+		uint32 udata = (uint32)data;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &zero, sizeof(zero));
+		memcpy(WFIFOP(fd,6), &udata, sizeof(udata));
+	}
 	WFIFOSET(fd,packet_len(0xAF0));
 }
 
@@ -22095,8 +22102,13 @@ void clif_weight_limit( const map_session_data* sd ){
 	int32 fd = sd->fd;
 
 	WFIFOHEAD(fd, packet_len(0xADE));
-	WFIFOW(fd, 0) = 0xADE;
-	WFIFOL(fd, 2) = battle_config.natural_heal_weight_rate;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0xADE;
+		uint32 rate = (uint32)battle_config.natural_heal_weight_rate;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &rate, sizeof(rate));
+	}
 	WFIFOSET(fd, packet_len(0xADE));
 #endif
 }
