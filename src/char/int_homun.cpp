@@ -28,18 +28,29 @@ void inter_homunculus_sql_final(void)
 void mapif_homunculus_created(int32 fd, uint32 account_id, struct s_homunculus *sh, unsigned char flag)
 {
 	WFIFOHEAD(fd, sizeof(struct s_homunculus)+9);
-	WFIFOW(fd,0) = 0x3890;
-	WFIFOW(fd,2) = sizeof(struct s_homunculus)+9;
-	WFIFOL(fd,4) = account_id;
+	// Byte-buffer slots: the fifo write position can be odd-sized, so even
+	// plain uint16/uint32 stores use memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x3890;
+		uint16 packet_len = sizeof(struct s_homunculus)+9;
+		uint32 aid = account_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+		memcpy(WFIFOP(fd,4), &aid, sizeof(aid));
+	}
 	WFIFOB(fd,8)= flag;
 	memcpy(WFIFOP(fd,9),sh,sizeof(struct s_homunculus));
-	WFIFOSET(fd, WFIFOW(fd,2));
+	WFIFOSET(fd, sizeof(struct s_homunculus)+9);
 }
 
 void mapif_homunculus_deleted(int32 fd, int32 flag)
 {
 	WFIFOHEAD(fd, 3);
-	WFIFOW(fd, 0) = 0x3893;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x3893;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+	}
 	WFIFOB(fd,2) = flag; //Flag 1 = success
 	WFIFOSET(fd, 3);
 }
@@ -47,9 +58,15 @@ void mapif_homunculus_deleted(int32 fd, int32 flag)
 void mapif_homunculus_loaded(int32 fd, uint32 account_id, struct s_homunculus *hd)
 {
 	WFIFOHEAD(fd, sizeof(struct s_homunculus)+9);
-	WFIFOW(fd,0) = 0x3891;
-	WFIFOW(fd,2) = sizeof(struct s_homunculus)+9;
-	WFIFOL(fd,4) = account_id;
+	// Same treatment for the reply builder (odd fifo positions possible).
+	{
+		uint16 op = 0x3891;
+		uint16 packet_len = sizeof(struct s_homunculus)+9;
+		uint32 aid = account_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &packet_len, sizeof(packet_len));
+		memcpy(WFIFOP(fd,4), &aid, sizeof(aid));
+	}
 	if( hd != nullptr )
 	{
 		WFIFOB(fd,8) = 1; // success
@@ -66,8 +83,13 @@ void mapif_homunculus_loaded(int32 fd, uint32 account_id, struct s_homunculus *h
 void mapif_homunculus_saved(int32 fd, uint32 account_id, bool flag)
 {
 	WFIFOHEAD(fd, 7);
-	WFIFOW(fd,0) = 0x3892;
-	WFIFOL(fd,2) = account_id;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x3892;
+		uint32 aid = account_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &aid, sizeof(aid));
+	}
 	WFIFOB(fd,6) = flag; // 1:success, 0:failure
 	WFIFOSET(fd, 7);
 }
@@ -75,9 +97,15 @@ void mapif_homunculus_saved(int32 fd, uint32 account_id, bool flag)
 void mapif_homunculus_renamed(int32 fd, uint32 account_id, uint32 char_id, unsigned char flag, char* name)
 {
 	WFIFOHEAD(fd, NAME_LENGTH+12);
-	WFIFOW(fd, 0) = 0x3894;
-	WFIFOL(fd, 2) = account_id;
-	WFIFOL(fd, 6) = char_id;
+	// Same treatment: the fifo write position can be odd-sized.
+	{
+		uint16 op = 0x3894;
+		uint32 aid = account_id;
+		uint32 cid = char_id;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+		memcpy(WFIFOP(fd,2), &aid, sizeof(aid));
+		memcpy(WFIFOP(fd,6), &cid, sizeof(cid));
+	}
 	WFIFOB(fd,10) = flag;
 	safestrncpy(WFIFOCP(fd,11), name, NAME_LENGTH);
 	WFIFOSET(fd, NAME_LENGTH+12);
@@ -356,11 +384,43 @@ int32 inter_homunculus_parse_frommap(int32 fd)
 
 	switch( cmd )
 	{
-		case 0x3090: mapif_parse_homunculus_create(fd, (int32)RFIFOW(fd,2), (int32)RFIFOL(fd,4), (struct s_homunculus*)RFIFOP(fd,8)); break;
-		case 0x3091: mapif_parse_homunculus_load  (fd, (int32)RFIFOL(fd,2), (int32)RFIFOL(fd,6)); break;
-		case 0x3092: mapif_parse_homunculus_save  (fd, (int32)RFIFOW(fd,2), (int32)RFIFOL(fd,4), (struct s_homunculus*)RFIFOP(fd,8)); break;
-		case 0x3093: mapif_parse_homunculus_delete(fd, (int32)RFIFOL(fd,2)); break;
-		case 0x3094: mapif_parse_homunculus_rename(fd, (int32)RFIFOL(fd,2), (int32)RFIFOL(fd,6), RFIFOCP(fd,10)); break;
+		case 0x3090: {
+			// Byte-buffer reads at odd read positions: memcpy into aligned locals.
+			uint16 len_tmp = 0;
+			uint32 account_id_tmp = 0;
+			memcpy(&len_tmp, RFIFOP(fd,2), sizeof(len_tmp));
+			memcpy(&account_id_tmp, RFIFOP(fd,4), sizeof(account_id_tmp));
+			mapif_parse_homunculus_create(fd, (int32)len_tmp, account_id_tmp, (struct s_homunculus*)RFIFOP(fd,8));
+			break;
+		}
+		case 0x3091: {
+			uint32 account_id_tmp = 0, homun_id_tmp = 0;
+			memcpy(&account_id_tmp, RFIFOP(fd,2), sizeof(account_id_tmp));
+			memcpy(&homun_id_tmp, RFIFOP(fd,6), sizeof(homun_id_tmp));
+			mapif_parse_homunculus_load(fd, account_id_tmp, (int32)homun_id_tmp);
+			break;
+		}
+		case 0x3092: {
+			uint16 len_tmp = 0;
+			uint32 account_id_tmp = 0;
+			memcpy(&len_tmp, RFIFOP(fd,2), sizeof(len_tmp));
+			memcpy(&account_id_tmp, RFIFOP(fd,4), sizeof(account_id_tmp));
+			mapif_parse_homunculus_save(fd, (int32)len_tmp, account_id_tmp, (struct s_homunculus*)RFIFOP(fd,8));
+			break;
+		}
+		case 0x3093: {
+			uint32 homun_id_tmp = 0;
+			memcpy(&homun_id_tmp, RFIFOP(fd,2), sizeof(homun_id_tmp));
+			mapif_parse_homunculus_delete(fd, (int32)homun_id_tmp);
+			break;
+		}
+		case 0x3094: {
+			uint32 account_id_tmp = 0, char_id_tmp = 0;
+			memcpy(&account_id_tmp, RFIFOP(fd,2), sizeof(account_id_tmp));
+			memcpy(&char_id_tmp, RFIFOP(fd,6), sizeof(char_id_tmp));
+			mapif_parse_homunculus_rename(fd, account_id_tmp, char_id_tmp, RFIFOCP(fd,10));
+			break;
+		}
 		default:
 			return 0;
 	}
