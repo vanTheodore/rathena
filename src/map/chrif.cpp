@@ -1568,7 +1568,12 @@ void chrif_update_ip(int32 fd) {
 // pings the charserver
 void chrif_keepalive(int32 fd) {
 	WFIFOHEAD(fd,2);
-	WFIFOW(fd,0) = 0x2b23;
+	// Byte-buffer slot: the fifo write position can be odd-sized, so even
+	// this plain uint16 store uses memcpy (same bytes, no unaligned store).
+	{
+		uint16 op = 0x2b23;
+		memcpy(WFIFOP(fd,0), &op, sizeof(op));
+	}
 	WFIFOSET(fd,2);
 }
 
