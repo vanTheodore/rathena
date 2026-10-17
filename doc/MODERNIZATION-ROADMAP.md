@@ -285,7 +285,10 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   idéntico salvo bounds evaluados 1× en vez de N+1 (control del test
   `legacy=5 modern=1`, seguro porque todo bound es puro); test
   `tools/arr-find-check.cpp` verde GCC 12.2/Clang 22.1.8; rebuild 0
-  errores y −359 warnings. ~~`ARR_MOVE`~~ ✅ **cerrado (`9f54a03`)**:
+  errores. (Corrección de medición: los deltas por iteración que
+  comparaban logs parciales de 101–116 TUs recompilados contra full
+  no eran como-contra-como; el único full limpio comparable es
+  22.713 → ver cierre del lote abajo.) ~~`ARR_MOVE`~~ ✅ **cerrado (`9f54a03`)**:
   shim sobre `std::rotate` para los 2 sitios reales (char_mapif,
   `fame_list` POD); resultado byte-idéntico al legacy de 3 `memmove`
   (grid A/B + layouts esperados), ahora constexpr y bien definido para
@@ -301,7 +304,22 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   verbatim): **707 sitios → 0 restantes**, 41 archivos, diff
   línea-equilibrado; `timer.cpp` único TU sin el header (lo resolvió el
   compilador, `-k` lo probó); test `tools/a2i-check.cpp` verde
-  GCC/Clang sin warnings; −727 warnings. **Siguiente del backlog:**
+  GCC/Clang sin warnings. ~~`std::stoi`/`std::stoul`~~ ✅ **cerrado
+  (`6f3d5be`)**: 167 + 2 sitios migrados a `a2i` (overload
+  `std::string`; `<string>` en strlib). Diagnóstico: `std::stoi` lanza
+  sin ningún `catch` en los 9 TUs afectados (controllers web parsean
+  parámetros HTTP con esto) → garbage/corrupt = `std::terminate`;
+  paridad exacta en rango (34/34) y 7 inputs de clase
+  throw-and-terminate anclados en el test. Verificación de args
+  multi-`pos`: 0 reales (los 35 del heuristic eran comas anidadas).
+  Tras la migración, 0 llamadas `std::sto*` en posición de código en
+  `src/`. **Medición honesta del lote (full limpio 194 TUs): 22.752
+  warnings vs 22.713 del full limpio de alineación = +39 netos, 0
+  atribuidos a `a2i`/strlib, delta por archivo migrado ≈ 0 (mob +2 de
+  atribución).** Lección: los deltas −359/−727 de iteraciones previas
+  (commits `efdc506`/`e29a68f`, texto histórico no reescribible)
+  comparaban logs parciales — desde ahora solo full-limpio-contra-full-
+  limpio. **Siguiente del backlog:**
   `expected`, `string_view`/`span` (aparcados por alcance);
   `NULL→nullptr` y `to_underlying` rechazados (estética)
 - ✅ `StringBuf` (diseño evaluado, **se mantiene**): ~494 usos
@@ -407,12 +425,18 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 **Lote backlog 2026-10-17 (Gogogo — tres iteraciones de familia):**
 `efdc506` (ARR_FIND template+shim, 254 sitios sin editar), `9f54a03`
 (ARR_MOVE via `std::rotate`, 2 sitios), `e29a68f` (`a2i` + migración de
-707 `atoi`). Validación del lote: full rebuild 0 errores, **21 625
+707 `atoi`), `6f3d5be` (`stoi`/`stoul` → `a2i`, 169 sitios). Validación del lote: full rebuild 0 errores, **21 625
 warnings** (−727 vs 22 352; burn-down acumulado 22 716 → 21 625);
 suite de regresión completa verde (cap-value, storage-sort,
 script-sort, apply-rate, rnd-chance, arr-find ×2, arr-move ×2, a2i ×2)
-y boot smoke ×3 servidores = exit 1 sin panics. CI: push `9f54a03`
-en curso; `e29a68f` + este docs pendientes de push.
+y boot smoke ×3 servidores = exit 1 sin panics. **Totales corregidos
+(medición):** solo el full limpio es comparable — 22.713 (alineación)
+→ **22.752 (tras las 4 iteraciones, 194 TUs)** = +39 netos con 0
+warnings atribuidos a `a2i`/strlib; los "−359/−727" previos eran
+parciales (101–116 TUs) y quedan rectificados en la entrada de
+backlog. Cuarta iteración: `6f3d5be` (`stoi`/`stoul` → `a2i`, 169
+sitios, controllers web sin-terminate). CI: `9f54a03` = **7/7 SUCCESS**
+(ambos runs); `018ebdc` en curso.
 
 **Cierre de sesión 2026-10-17 (host Linux sandbox — ver «Entorno local»):**
 3 commits en la rama (`be0bab1`, `fbcee01`, `192cc2f`):
