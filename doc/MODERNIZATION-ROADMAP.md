@@ -36,6 +36,15 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 - **Host previo (MinGW-w64 ucrt64):** GCC 16.2.0, Clang 22.1.8; CMake 4.4.4
   + Ninja; 4 núcleos; máximo `-j2` (regla permanente); sin Docker; sin MSVC,
   sin `pkg-config`, sin BD local, sin host Linux, sin ARM64
+- **Recetas del rebuild 2026-10-17 (iteración 8):** zlib con
+  `-DZLIB_BUILD_TESTING=OFF` (el `infcover` usa `-coverage` y no linka con
+  zig); mariadb-connector-c con los plugins por defecto DYNAMIC→STATIC
+  (`-DCLIENT_PLUGIN_{DIALOG,CLIENT_ED25519,CACHING_SHA2_PASSWORD,SHA256_PASSWORD,PARSEC,MYSQL_CLEAR_PASSWORD,ZSTD,REMOTE_IO,PVIO_SHMEM}=STATIC`
+  — zig rechaza `-Wl,--dynamic-list`) e instalado en `lib/mariadb/` →
+  symlinks `lib/libmariadb.so{,.3}` + `libmariadb.a`; `-ftime-trace` de zig
+  solo escribe con ruta explícita (`-ftime-trace=<ruta>`) — el wrapper local
+  `/tmp/tools/zig{cc,cxx}` la genera por objeto (herramienta de diagnóstico,
+  no se committea).
 
 ## Estado por fases
 
@@ -451,7 +460,61 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   compartido (spread hasta 24.7% en kernels sub-ns), micro-kernels de
   `common/` ≠ throughput del server, tiempos de build no instrumentados.
 
+- ✅ **Perfilado de frontend con `-ftime-trace` (2026-10-17, iteración 8;
+  zig/Clang 22.1.8, Release `-j2`, flag en ambos lados del A/B):** 195 TUs
+  trazadas, `ExecuteCompiler` total 781 s (wall 399 s) y **código propio <
+  0,9 s por TU** → el coste casi total es re-parseo de headers. Ranking por
+  tiempo inclusivo (× nº de TUs): `common/database.hpp` 48,1 s ×85 ·
+  `common/utilities.hpp` 36,0 s ×90 · cadena ryml (`ryml_std.hpp`/`vector`/
+  `node`/`tree`/`error`/`tag`/`stack`… ≈21–34 s ×85–96) · `map/pc.hpp`
+  31,2 s ×57 · libc++ `vector` 25,2 s ×138 · `string` 24,0 s ×174 ·
+  `algorithm` 22,4 s ×130 · `map/itemdb.hpp` 19,7 s ×57 (hoja más cara:
+  15,6 s directos). Demanda medida por target (`.d` del propio build):
+  database/ryml = map 59/61 + char 17/18 + common_base 2/20 + tools 7/24;
+  login/web/minicore 0 → PCH particionado (§6). Método: pares `Source`
+  b/e de los JSON (inclusivo = re-parseo ahorrable); los deltas de
+  3rdparty sin PCH (±7–19 %) miden la banda de ruido de esta métrica.
+
 ### 6. Optimización de compilación — parcial
+
+- ✅ **PCH opt-in medido y adoptado (2026-10-17, iteración 8; `ENABLE_PCH`
+  OFF por defecto).** Mecanismo: `target_precompile_headers` — base
+  `src/common/pch.hpp` (`config/core`→`cbasetypes`→`mmo`→`core`→
+  `utilities`→`strlib`→`showmsg`→`malloc`) propagada por `rathena_cxx23` a
+  todos los targets de primera parte + extra `src/common/pch-database.hpp`
+  (cadena `database.hpp`→ryml) adjuntada por target (map/char/common_base/
+  herramientas yaml); 3rdparty fuera a propósito; `#ifdef __cplusplus`
+  porque los targets mixtos (los `.c` de libconfig dentro de `minicore`)
+  generan también su par en C. **A/B (Release `-j2`, `-ftime-trace` en
+  ambos): limpio A 399 s → B 334 s = −65 s (−16,3 %); incremental (touch
+  `common/cbasetypes.hpp`, 143 objs) A 357,1 s → B 300,7 / 306,7 s
+  (−14 a −15 %; la 1ª muestra de A se perdió sin `bc`, bruta ≈350–360 s;
+  spread intra-lado ≤6 s frente a un hueco ≥50 s → gate superado sin
+  rondas extra).** Frontend medio por área (`ExecuteCompiler` A→B):
+  login 950→288 ms (−69,7 %) · char 1896→642 (−66,1 %) · common_base
+  ≈658→274 (−58,4 %) · common 566→189 (−66,5 %) · map 6062→4871
+  (−19,6 %; domina el código propio de un TU de ~8 s) · tools
+  8095→7892 (−2,5 %) y web 9076→8564 (−5,6 %) — estos dos arrastran
+  cabeceras yaml-cpp/httplib de 3rdparty (fuera del PCH por decisión);
+  3rdparty sin PCH = ±7–19 % (ruido). Overhead: 11 compiles de PCH =
+  16,6 s. **Validación:** 0 `-invalid-pch`; smoke ×4 exit 1 sin UBSan
+  **byte-idéntico A↔B**; suite 10/10 verde documentada (extras clang:
+  `mapindex-name-check` linka con los archives reales del toolchain;
+  `script-sort` con clang tropieza en el `memcpy(NULL,0)` del propio test
+  bajo el runtime de zig — su compilador documentado, gcc, en verde);
+  warnings 22.714 → 22.398 = **−316 artifacto** (los headers se emiten 1×
+  en el PCH, no por TU): **con PCH ON los warnings no son comparables** y
+  el burn-down sigue midiéndose con PCH OFF. Tamaños A→B: map
+  70.784.168→70.097.648, char 8.696.064→8.522.632, login/web +16/+63 kB =
+  contexto de instanciación de templates distinto (permitido por el
+  estándar), sin cambio observable — no hay identicidad de bytes esperable.
+  **Decisiones:** (1) default OFF (precedente `ENABLE_LTO`; CI en billing
+  no puede validar y no hay host MSVC — vcxproj intactos); (2) el beneficio
+  es por-TU (limpio ≈ incremental), no de caché; (3) follow-ups opcionales:
+  yaml-cpp/httplib en PCH por target, `Modules` sigue pendiente (unity ya
+  rechazado). **Receta:** `-DENABLE_PCH=ON` al configure (el resto de la
+  receta, «Entorno local»); perfilado: `-ftime-trace=<ruta>` por objeto +
+  agregación de pares `Source`.
 
 - ✅ LTO opt-in (`-DENABLE_LTO`, off por defecto, `check_ipo_supported`)
 - ✅ **Experimento LTO A/B (medido 2026-10-09, GCC 16.2, -j2)**: LTO soportado
@@ -495,6 +558,17 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   de decisión (los fixes son backportables en dialecto viejo)
 
 ## Tarea actual
+
+**Iteración 8 (2026-10-17): perfilado `-ftime-trace` + PCH con gate A/B**
+(elección propia del agente tras «Sorpréndeme»; el candidato de deuda
+`web_auth_token` se refutó como ya resuelto — ver la entrada rectificada
+más abajo). Perfil del build completo → la práctica totalidad del coste de
+compilación es re-parseo de headers (§5). Implementación, A/B, validación
+y decisiones: §6 (`ENABLE_PCH` adoptado OFF por defecto; limpio −16,3 %,
+incremental −15 %, smoke byte-idéntico, suite verde). Commits: `4bfb795`
+(código) + este commit (docs). Pendiente natural: retomar la deuda viva
+de `char_make_new_char` (logging mínimo de los rechazos silenciosos) o
+el siguiente elemento del backlog a elección del usuario.
 
 **Lote backlog 2026-10-17 (Gogogo — tres iteraciones de familia):**
 `efdc506` (ARR_FIND template+shim, 254 sitios sin editar), `9f54a03`
@@ -569,12 +643,16 @@ jobs) y decisión de PR.
   cambiar la lógica).
 
 **Deuda registrada (2026-10-11, migración login a InnoDB):**
-- Candidato a bug independiente (NO corregido en la migración): el retry de
+- ~~Candidato a bug independiente (NO corregido en la migración): el retry de
   `web_auth_token` (`src/login/account.cpp`, `mmo_auth_tosql`) condiciona el
-  ciclo a error 1062 pero nunca incrementa `i`, por lo que ante 1062
-  persistente no termina en `MAX_RETRIES` (y el aviso de `i == MAX_RETRIES`
-  es inalcanzable). Colisión real casi imposible (token aleatorio), pero el
-  contador muerto debe revisarse en un slice propio.
+  ciclo a error 1062 pero nunca incrementa `i`~~ → **RECTIFICADO
+  (2026-10-17): la deuda estaba caducada — ya estaba cerrada antes de la base
+  de esta rama** por `e3ab393` (`fix(login): bound web_auth_token retries with
+  exact attempt count`) + `ed2d1f4` (test de contrato), ambos 2026-10-11:
+  hoy el helper `mmo_auth_token_retry` (`src/login/token_retry.hpp`) acota
+  `attempts` en `max_retries`, rompe en errores distintos de 1062 y el
+  `ShowError` con el recuento es alcanzable; verificado en el código y con
+  `tools/token-retry-check` (10/10 de la suite, gcc+clang).
 
 **Fase 6 — experimento LTO A/B (cerrado): no se adopta** (crash reproducible
 0xC0000374 al salir en map/char; tamaños -11%/-56% pero con regresión —
@@ -659,8 +737,8 @@ MariaDB solamente).
 (buffer safety ✅, ownership ✅ refutado, macros ✅), `login` cerrado (bug DNSBL
 de strtok corregido), `char` cerrado (premisa refutada), `map` cerrado (buffer
 safety: 11 overflows corregidos; ownership: refutado) y `tools` cerrado
-(premisa refutada). Restante en la fase: la
-evaluación PCH/unity/Modules. Siguiente fase del roadmap: **3 (arquitectura)**.
+(premisa refutada). Restante en la fase: **Modules**
+(PCH evaluado y adoptado opt-in el 2026-10-17 — §6; unity ya rechazado — §2). Siguiente fase del roadmap: **3 (arquitectura)**.
 
 ## Reglas permanentes
 
