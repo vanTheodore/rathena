@@ -18,7 +18,22 @@ void findfile(const char *p, const char *pat, void (func)(const char*));
 bool exists(const char* filename);
 
 /// Caps values to min/max
-#define cap_value(a, min, max) (((a) >= (max)) ? (max) : ((a) <= (min)) ? (min) : (a))
+/// Function template (not a macro), the same treatment apply_rate below
+/// got: the body is the legacy macro's ternary verbatim — same operands,
+/// same usual arithmetic conversions, same result type — so every one of
+/// the ~498 call sites keeps compiling unchanged and without new
+/// -Wconversion/-Wsign-conversion diagnostics, but each argument is
+/// evaluated exactly once (the macro re-evaluated `a` up to three times
+/// and each bound up to twice) and the result works in constant
+/// expressions. Every call-site argument is a pure read/query (audited:
+/// atoi/stoi, pc_maxparameter, apply_rate, script_getnum64, getSCE, ...),
+/// so single evaluation preserves every observable result. Pinned by
+/// tools/cap-value-check.cpp.
+template <typename A, typename LO, typename HI>
+constexpr auto cap_value(A a, LO lo, HI hi)
+{
+	return (a >= hi) ? hi : (a <= lo) ? lo : a;
+}
 
 /// Apply rate for val, divided by 100)
 /// Function template (not a macro): each argument is evaluated exactly once,
