@@ -978,12 +978,26 @@ void  linkdb_foreach (struct linkdb_node** head, LinkDBFunc func, ...);
 /// @param __end     End index (ex: size of the array)
 /// @param __var     Index variable
 /// @param __cmp     Expression that returns true when the target entry is found
+///
+/// Contract (identical to the historic for-loop macro; pinned by
+/// tools/arr-find-check.cpp): __var starts at __start, __cmp is evaluated
+/// once per visited index with __var at that index, and __var is left at
+/// the first index >= __end (== __end for a normal scan) when nothing
+/// matches. The bounds are evaluated once, up front — the old loop
+/// re-evaluated __end on every iteration (all 254 call sites pass pure
+/// bounds: 0/ARRAYLENGTH/BHEAP_LENGTH/.size(), audit 2026-10-17).
+template <typename I, typename S, typename E, typename Pred>
+constexpr I arr_find(I &var, S start, E end, Pred pred) {
+	for (var = start; var < end; ++var)
+		if (pred())
+			return var;
+	return var;
+}
+
 #define ARR_FIND(__start, __end, __var, __cmp) \
-	do{ \
-		for( (__var) = (__start); (__var) < (__end); ++(__var) ) \
-			if( __cmp ) \
-				break; \
-	}while(0)
+	do { \
+		(__var) = arr_find((__var), (__start), (__end), [&]() -> bool { return !!(__cmp); }); \
+	} while(0)
 
 
 
