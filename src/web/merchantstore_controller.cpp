@@ -22,11 +22,11 @@ HANDLER_FUNC(merchantstore_save) {
 		return;
 	}
 
-	auto account_id = std::stoi(web_get_form_value(req, "AID"));
-	auto char_id = std::stoi(web_get_form_value(req, "GID"));
+	auto account_id = a2i(web_get_form_value(req, "AID"));
+	auto char_id = a2i(web_get_form_value(req, "GID"));
 	auto world_name_str = web_get_form_value(req, "WorldName");
 	auto world_name = world_name_str.c_str();
-	auto store_type = std::stoi(web_get_form_value(req, "Type"));
+	auto store_type = a2i(web_get_form_value(req, "Type"));
 	std::string data;
 
 	if (web_has_form_value(req, "data")) {
@@ -108,11 +108,11 @@ HANDLER_FUNC(merchantstore_load) {
 		// return;
 	// }
 
-	auto account_id = std::stoi(web_get_form_value(req, "AID"));
-	auto char_id = std::stoi(web_get_form_value(req, "GID"));
+	auto account_id = a2i(web_get_form_value(req, "AID"));
+	auto char_id = a2i(web_get_form_value(req, "GID"));
 	auto world_name_str = web_get_form_value(req, "WorldName");
 	auto world_name = world_name_str.c_str();
-	auto store_type = std::stoi(web_get_form_value(req, "Type"));
+	auto store_type = a2i(web_get_form_value(req, "Type"));
 
 	SQLLock sl(WEB_SQL_LOCK);
 	sl.lock();

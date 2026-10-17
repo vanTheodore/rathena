@@ -6,6 +6,7 @@
 
 #include <cstdarg>
 #include <cstdlib>  // std::strtol for a2i()
+#include <string>   // std::string overload of a2i()
 #if !defined(__USE_GNU)
 #define __USE_GNU  // required to enable strnlen on some platforms
 #define __USED_GNU
@@ -62,6 +63,13 @@ inline int32 a2i(const char* str) {
 	if (value < INT_MIN)
 		return INT_MIN;
 	return static_cast<int32>(value);
+}
+
+/// std::string overload (drop-in for std::stoi call sites, which threw
+/// uncaught std::invalid_argument/std::out_of_range on malformed input —
+/// no catch block exists anywhere in those translation units).
+inline int32 a2i(const std::string& str) {
+	return a2i(str.c_str());
 }
 
 /// strncpy that always nul-terminates the string

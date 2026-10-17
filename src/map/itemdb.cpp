@@ -4098,69 +4098,69 @@ static bool itemdb_read_sqldb_sub(std::vector<std::string> str) {
 	jobs |= ryml::MAP;
 
 	if (!str[++index].empty())
-		jobs["All"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["All"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Acolyte"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Acolyte"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Alchemist"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Alchemist"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Archer"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Archer"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Assassin"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Assassin"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["BardDancer"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["BardDancer"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Blacksmith"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Blacksmith"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Crusader"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Crusader"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Gunslinger"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Gunslinger"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Hunter"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Hunter"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Knight"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Knight"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Mage"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Mage"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Merchant"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Merchant"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Monk"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Monk"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Ninja"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Ninja"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Novice"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Novice"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Priest"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Priest"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Rogue"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Rogue"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Sage"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Sage"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["SoulLinker"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["SoulLinker"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["StarGladiator"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["StarGladiator"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["SuperNovice"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["SuperNovice"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Swordman"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Swordman"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Taekwon"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Taekwon"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Thief"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Thief"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Wizard"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Wizard"] << (a2i(str[index]) ? "true" : "false");
 
 	ryml::NodeRef classes = rootNode["Classes"];
 	classes |= ryml::MAP;
 
 	if (!str[++index].empty())
-		classes["All"] << (std::stoi(str[index]) ? "true" : "false");
+		classes["All"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		classes["Normal"] << (std::stoi(str[index]) ? "true" : "false");
+		classes["Normal"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		classes["Upper"] << (std::stoi(str[index]) ? "true" : "false");
+		classes["Upper"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		classes["Baby"] << (std::stoi(str[index]) ? "true" : "false");
+		classes["Baby"] << (a2i(str[index]) ? "true" : "false");
 
 	if (!str[++index].empty())
 		rootNode["Gender"] << str[index];
@@ -4169,47 +4169,47 @@ static bool itemdb_read_sqldb_sub(std::vector<std::string> str) {
 	locations |= ryml::MAP;
 
 	if (!str[++index].empty())
-		locations["Head_Top"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Head_Top"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Head_Mid"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Head_Mid"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Head_Low"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Head_Low"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Armor"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Armor"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Right_Hand"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Right_Hand"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Left_Hand"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Left_Hand"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Garment"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Garment"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Shoes"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Shoes"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Right_Accessory"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Right_Accessory"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Left_Accessory"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Left_Accessory"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Costume_Head_Top"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Costume_Head_Top"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Costume_Head_Mid"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Costume_Head_Mid"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Costume_Head_Low"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Costume_Head_Low"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Costume_Garment"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Costume_Garment"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Ammo"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Ammo"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Shadow_Armor"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Shadow_Armor"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Shadow_Weapon"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Shadow_Weapon"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Shadow_Shield"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Shadow_Shield"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Shadow_Shoes"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Shadow_Shoes"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Shadow_Right_Accessory"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Shadow_Right_Accessory"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		locations["Shadow_Left_Accessory"] << (std::stoi(str[index]) ? "true" : "false");
+		locations["Shadow_Left_Accessory"] << (a2i(str[index]) ? "true" : "false");
 
 	if (!str[++index].empty())
 		rootNode["WeaponLevel"] << str[index];
@@ -4220,7 +4220,7 @@ static bool itemdb_read_sqldb_sub(std::vector<std::string> str) {
 	if (!str[++index].empty())
 		rootNode["EquipLevelMax"] << str[index];
 	if (!str[++index].empty())
-		rootNode["Refineable"] << (std::stoi(str[index]) ? "true" : "false");
+		rootNode["Refineable"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
 		rootNode["View"] << str[index];
 	if (!str[++index].empty())
@@ -4230,19 +4230,19 @@ static bool itemdb_read_sqldb_sub(std::vector<std::string> str) {
 	flags |= ryml::MAP;
 
 	if (!str[++index].empty())
-		flags["BuyingStore"] << (std::stoi(str[index]) ? "true" : "false");
+		flags["BuyingStore"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		flags["DeadBranch"] << (std::stoi(str[index]) ? "true" : "false");
+		flags["DeadBranch"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		flags["Container"] << (std::stoi(str[index]) ? "true" : "false");
+		flags["Container"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		flags["UniqueId"] << (std::stoi(str[index]) ? "true" : "false");
+		flags["UniqueId"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		flags["BindOnEquip"] << (std::stoi(str[index]) ? "true" : "false");
+		flags["BindOnEquip"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		flags["DropAnnounce"] << (std::stoi(str[index]) ? "true" : "false");
+		flags["DropAnnounce"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		flags["NoConsume"] << (std::stoi(str[index]) ? "true" : "false");
+		flags["NoConsume"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
 		flags["DropEffect"] << str[index];
 	rootNode["Flags"] = flags;
@@ -4261,13 +4261,13 @@ static bool itemdb_read_sqldb_sub(std::vector<std::string> str) {
 	if (!str[++index].empty())
 		stack["Amount"] << str[index];
 	if (!str[++index].empty())
-		stack["Inventory"] << (std::stoi(str[index]) ? "true" : "false");
+		stack["Inventory"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		stack["Cart"] << (std::stoi(str[index]) ? "true" : "false");
+		stack["Cart"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		stack["Storage"] << (std::stoi(str[index]) ? "true" : "false");
+		stack["Storage"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		stack["GuildStorage"] << (std::stoi(str[index]) ? "true" : "false");
+		stack["GuildStorage"] << (a2i(str[index]) ? "true" : "false");
 
 
 	ryml::NodeRef nouse = rootNode["NoUse"];
@@ -4276,7 +4276,7 @@ static bool itemdb_read_sqldb_sub(std::vector<std::string> str) {
 	if (!str[++index].empty())
 		nouse["Override"] << str[index];
 	if (!str[++index].empty())
-		nouse["Sitting"] << (std::stoi(str[index]) ? "true" : "false");
+		nouse["Sitting"] << (a2i(str[index]) ? "true" : "false");
 
 	ryml::NodeRef trade = rootNode["Trade"];
 	trade |= ryml::MAP;
@@ -4284,23 +4284,23 @@ static bool itemdb_read_sqldb_sub(std::vector<std::string> str) {
 	if (!str[++index].empty())
 		trade["Override"] << str[index];
 	if (!str[++index].empty())
-		trade["NoDrop"] << (std::stoi(str[index]) ? "true" : "false");
+		trade["NoDrop"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		trade["NoTrade"] << (std::stoi(str[index]) ? "true" : "false");
+		trade["NoTrade"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		trade["TradePartner"] << (std::stoi(str[index]) ? "true" : "false");
+		trade["TradePartner"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		trade["NoSell"] << (std::stoi(str[index]) ? "true" : "false");
+		trade["NoSell"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		trade["NoCart"] << (std::stoi(str[index]) ? "true" : "false");
+		trade["NoCart"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		trade["NoStorage"] << (std::stoi(str[index]) ? "true" : "false");
+		trade["NoStorage"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		trade["NoGuildStorage"] << (std::stoi(str[index]) ? "true" : "false");
+		trade["NoGuildStorage"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		trade["NoMail"] << (std::stoi(str[index]) ? "true" : "false");
+		trade["NoMail"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		trade["NoAuction"] << (std::stoi(str[index]) ? "true" : "false");
+		trade["NoAuction"] << (a2i(str[index]) ? "true" : "false");
 
 	if (!str[++index].empty())
 		rootNode["Script"] << str[index];
@@ -4313,23 +4313,23 @@ static bool itemdb_read_sqldb_sub(std::vector<std::string> str) {
 	if (!str[++index].empty())
 		rootNode["MagicAttack"] << str[index];
 	if (!str[++index].empty())
-		classes["Third"] << (std::stoi(str[index]) ? "true" : "false");
+		classes["Third"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		classes["Third_Upper"] << (std::stoi(str[index]) ? "true" : "false");
+		classes["Third_Upper"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		classes["Third_Baby"] << (std::stoi(str[index]) ? "true" : "false");
+		classes["Third_Baby"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		classes["Fourth"] << (std::stoi(str[index]) ? "true" : "false");
+		classes["Fourth"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["KagerouOboro"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["KagerouOboro"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Rebellion"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Rebellion"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Summoner"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Summoner"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		jobs["Spirit_Handler"] << (std::stoi(str[index]) ? "true" : "false");
+		jobs["Spirit_Handler"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		rootNode["Gradable"] << (std::stoi(str[index]) ? "true" : "false");
+		rootNode["Gradable"] << (a2i(str[index]) ? "true" : "false");
 #endif
 
 	if( !jobs.has_children() ){

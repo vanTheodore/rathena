@@ -19,9 +19,12 @@
 #include <climits>
 #include <cstdio>
 #include <cstdlib>
+#include <stdexcept>
+#include <string>
 #include <type_traits>
 
 static int failures = 0;
+static int stoi_threw = 0; // inputs where std::stoi would have terminated
 
 static void expect(bool ok, const char* what) {
 	if (!ok) {
@@ -79,6 +82,62 @@ int main() {
 
 	// ---- nullptr: defined 0 (libc atoi on nullptr is a crash; not called).
 	expect(a2i(nullptr) == 0, "nullptr -> 0");
+
+	// ---- Part 3: std::stoi migration parity (the 167 replaced sites).
+	// Where std::stoi produced a value it must match; where std::stoi
+	// THREW (invalid_argument on no-conversion: "", "abc", "- 5", ...)
+	// — the uncaught-terminate cases the migration removed — a2i must
+	// keep atoi's documented 0.
+	for (const char* s : parity) {
+		const std::string as_string(s);
+		int stoi_result = 0;
+		bool stoi_ok = true;
+		try {
+			stoi_result = std::stoi(as_string);
+		} catch (const std::exception&) {
+			stoi_ok = false;
+		}
+		if (stoi_ok) {
+			if (a2i(as_string) != stoi_result || a2i(s) != stoi_result) {
+				std::printf("FAIL: stoi parity for '%s': stoi=%d a2i=%d\n",
+					s, stoi_result, a2i(s));
+				++failures;
+			}
+		} else {
+			if (a2i(as_string) != 0 || a2i(s) != 0) {
+				std::printf("FAIL: stoi threw for '%s' but a2i=%d (want 0)\n",
+					s, a2i(s));
+				++failures;
+			}
+			++stoi_threw;
+		}
+	}
+	std::printf("stoi-parity cases: %zu (%d were throw-and-terminate class)\n",
+		sizeof(parity) / sizeof(parity[0]), stoi_threw);
+
+	// ---- Part 4: the crash classes the migration removed. std::stoi
+	// THROWS on these and no translation unit contained a catch —
+	// uncaught => std::terminate. a2i returns a defined value instead.
+	{
+		bool threw_invalid = false;
+		try {
+			(void)std::stoi(std::string("abc"));
+		} catch (const std::invalid_argument&) {
+			threw_invalid = true;
+		}
+		expect(threw_invalid, "control: stoi('abc') throws invalid_argument");
+		expect(a2i(std::string("abc")) == 0, "a2i('abc') -> 0 instead of terminate");
+
+		bool threw_range = false;
+		try {
+			(void)std::stoi(std::string("999999999999"));
+		} catch (const std::out_of_range&) {
+			threw_range = true;
+		}
+		expect(threw_range, "control: stoi(overflow) throws out_of_range");
+		expect(a2i(std::string("999999999999")) == INT_MAX,
+			"a2i(overflow) -> INT_MAX instead of terminate");
+	}
 
 	// ---- Return type contract: int32, usable where atoi was.
 	static_assert(std::is_same_v<decltype(a2i("1")), int32>,

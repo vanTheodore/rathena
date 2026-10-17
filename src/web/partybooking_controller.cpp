@@ -115,8 +115,8 @@ HANDLER_FUNC(partybooking_add){
 		return;
 	}
 
-	uint32 aid = std::stoi( web_get_form_value(req, "AID") );
-	uint32 cid = std::stoi( web_get_form_value(req, "GID") );
+	uint32 aid = a2i( web_get_form_value(req, "AID") );
+	uint32 cid = a2i( web_get_form_value(req, "GID") );
 
 	SQLLock csl( CHAR_SQL_LOCK );
 	csl.lock();
@@ -158,13 +158,13 @@ HANDLER_FUNC(partybooking_add){
 	entry.account_id = aid;
 	entry.char_id = cid;
 	entry.char_name = web_get_form_value(req, "CharName");
-	entry.purpose = std::stoi( web_get_form_value(req, "Type") );
-	entry.assist = std::stoi( web_get_form_value(req, "Assist") ) != 0;
-	entry.damagedealer = std::stoi( web_get_form_value(req, "Dealer") ) != 0;
-	entry.healer = std::stoi( web_get_form_value(req, "Healer") ) != 0;
-	entry.tanker = std::stoi( web_get_form_value(req, "Tanker") ) != 0;
-	entry.minimum_level = std::stoi( web_get_form_value(req, "MinLV") );
-	entry.maximum_level = std::stoi( web_get_form_value(req, "MaxLV") );
+	entry.purpose = a2i( web_get_form_value(req, "Type") );
+	entry.assist = a2i( web_get_form_value(req, "Assist") ) != 0;
+	entry.damagedealer = a2i( web_get_form_value(req, "Dealer") ) != 0;
+	entry.healer = a2i( web_get_form_value(req, "Healer") ) != 0;
+	entry.tanker = a2i( web_get_form_value(req, "Tanker") ) != 0;
+	entry.minimum_level = a2i( web_get_form_value(req, "MinLV") );
+	entry.maximum_level = a2i( web_get_form_value(req, "MaxLV") );
 	entry.comment = web_get_form_value(req, "Memo");
 
 	if( entry.char_name.length() > NAME_LENGTH ){
@@ -243,7 +243,7 @@ HANDLER_FUNC(partybooking_delete){
 	}
 
 	auto world_name = web_get_form_value(req, "WorldName");
-	auto account_id = std::stoi( web_get_form_value(req, "AID") );
+	auto account_id = a2i( web_get_form_value(req, "AID") );
 
 	if( world_name.length() > WORLD_NAME_LENGTH ){
 		res.status = HTTP_BAD_REQUEST;
@@ -283,7 +283,7 @@ HANDLER_FUNC(partybooking_get){
 	}
 
 	auto world_name = web_get_form_value(req, "WorldName");
-	auto account_id = std::stoi( web_get_form_value(req, "AID") );
+	auto account_id = a2i( web_get_form_value(req, "AID") );
 
 	if( world_name.length() > WORLD_NAME_LENGTH ){
 		res.status = HTTP_BAD_REQUEST;
@@ -320,7 +320,7 @@ HANDLER_FUNC(partybooking_info){
 	}
 
 	auto world_name = web_get_form_value(req, "WorldName");
-	auto account_id = std::stoi( web_get_form_value(req, "QueryAID") );
+	auto account_id = a2i( web_get_form_value(req, "QueryAID") );
 
 	if( world_name.length() > WORLD_NAME_LENGTH ){
 		res.status = HTTP_BAD_REQUEST;
@@ -416,12 +416,12 @@ HANDLER_FUNC(partybooking_search){
 	s_party_booking_entry entry;
 
 	// Unconditional
-	entry.minimum_level = std::stoi( web_get_form_value(req, "MinLV") );
-	entry.maximum_level = std::stoi( web_get_form_value(req, "MaxLV") );
+	entry.minimum_level = a2i( web_get_form_value(req, "MinLV") );
+	entry.maximum_level = a2i( web_get_form_value(req, "MaxLV") );
 
 	// Conditional
 	if( web_has_form_value(req, "Type") ){
-		entry.purpose = std::stoi( web_get_form_value(req, "Type") );
+		entry.purpose = a2i( web_get_form_value(req, "Type") );
 
 		if( entry.purpose >= BOOKING_PURPOSE_MAX ){
 			res.status = HTTP_BAD_REQUEST;
@@ -434,25 +434,25 @@ HANDLER_FUNC(partybooking_search){
 	}
 
 	if( web_has_form_value(req, "Assist") ){
-		entry.assist = std::stoi( web_get_form_value(req, "Assist") ) != 0;
+		entry.assist = a2i( web_get_form_value(req, "Assist") ) != 0;
 	}else{
 		entry.assist = false;
 	}
 
 	if( web_has_form_value(req, "Dealer") ){
-		entry.damagedealer = std::stoi( web_get_form_value(req, "Dealer") ) != 0;
+		entry.damagedealer = a2i( web_get_form_value(req, "Dealer") ) != 0;
 	}else{
 		entry.damagedealer = false;
 	}
 
 	if( web_has_form_value(req, "Healer") ){
-		entry.healer = std::stoi( web_get_form_value(req, "Healer") ) != 0;
+		entry.healer = a2i( web_get_form_value(req, "Healer") ) != 0;
 	}else{
 		entry.healer = false;
 	}
 
 	if( web_has_form_value(req, "Tanker") ){
-		entry.tanker = std::stoi( web_get_form_value(req, "Tanker") ) != 0;
+		entry.tanker = a2i( web_get_form_value(req, "Tanker") ) != 0;
 	}else{
 		entry.tanker = false;
 	}

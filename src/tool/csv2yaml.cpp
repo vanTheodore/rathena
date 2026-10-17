@@ -2376,10 +2376,10 @@ static bool quest_read_db( char *split[], size_t columns, size_t current ){
 
 			time_str.erase(0, 3); // Remove "HH:"
 
-			if (std::stoi(hour) > 0)
-				output = std::to_string(std::stoi(hour)) + "h";
-			if (std::stoi(time_str) > 0)
-				output += std::to_string(std::stoi(time_str)) + "mn";
+			if (a2i(hour) > 0)
+				output = std::to_string(a2i(hour)) + "h";
+			if (a2i(time_str) > 0)
+				output += std::to_string(a2i(time_str)) + "mn";
 
 			body << YAML::Key << "TimeLimit" << YAML::Value << output; // No quests in TXT format had days, default to 0
 		}
@@ -3368,9 +3368,9 @@ static bool mob_readdb_sub( char *fields[], size_t columns, size_t current ){
 	if (strtol(fields[11], nullptr, 10) > 0)
 		body << YAML::Key << "Attack2" << YAML::Value << fields[11];
 	if (strtol(fields[12], nullptr, 10) > 0)
-		body << YAML::Key << "Defense" << YAML::Value << cap_value(std::stoi(fields[12]), DEFTYPE_MIN, DEFTYPE_MAX);
+		body << YAML::Key << "Defense" << YAML::Value << cap_value(a2i(fields[12]), DEFTYPE_MIN, DEFTYPE_MAX);
 	if (strtol(fields[13], nullptr, 10) > 0)
-		body << YAML::Key << "MagicDefense" << YAML::Value << cap_value(std::stoi(fields[13]), DEFTYPE_MIN, DEFTYPE_MAX);
+		body << YAML::Key << "MagicDefense" << YAML::Value << cap_value(a2i(fields[13]), DEFTYPE_MIN, DEFTYPE_MAX);
 	if (strtol(fields[14], nullptr, 10) != 1)
 		body << YAML::Key << "Str" << YAML::Value << fields[14];
 	if (strtol(fields[15], nullptr, 10) != 1)
@@ -3431,7 +3431,7 @@ static bool mob_readdb_sub( char *fields[], size_t columns, size_t current ){
 		body << YAML::Key << "ElementLevel" << YAML::Value << floor(ele / 20.);
 	}
 	if (strtol(fields[26], nullptr, 10) > 0)
-		body << YAML::Key << "WalkSpeed" << YAML::Value << cap_value(std::stoi(fields[26]), MIN_WALK_SPEED, MAX_WALK_SPEED);
+		body << YAML::Key << "WalkSpeed" << YAML::Value << cap_value(a2i(fields[26]), MIN_WALK_SPEED, MAX_WALK_SPEED);
 	if (strtol(fields[27], nullptr, 10) > 0)
 		body << YAML::Key << "AttackDelay" << YAML::Value << fields[27];
 	if (strtol(fields[28], nullptr, 10) > 0)
@@ -3601,7 +3601,7 @@ static bool mob_readdb_sub( char *fields[], size_t columns, size_t current ){
 
 				body << YAML::BeginMap;
 				body << YAML::Key << "Item" << YAML::Value << *item_name;
-				body << YAML::Key << "Rate" << YAML::Value << cap_value(std::stoi(fields[32 + i * 2]), 1, 10000);
+				body << YAML::Key << "Rate" << YAML::Value << cap_value(a2i(fields[32 + i * 2]), 1, 10000);
 				body << YAML::EndMap;
 			}
 
@@ -3662,7 +3662,7 @@ static bool mob_readdb_sub( char *fields[], size_t columns, size_t current ){
 
 				body << YAML::BeginMap;
 				body << YAML::Key << "Item" << YAML::Value << *item_name;
-				body << YAML::Key << "Rate" << YAML::Value << cap_value(std::stoi(fields[k + 1]), 1, 10000);
+				body << YAML::Key << "Rate" << YAML::Value << cap_value(a2i(fields[k + 1]), 1, 10000);
 				if (i > 6) // Slots 8, 9, and 10 are inherently protected
 					body << YAML::Key << "StealProtected" << YAML::Value << "true";
 				body << YAML::EndMap;
@@ -4684,7 +4684,7 @@ static bool mercenary_readdb( char* str[], size_t columns, size_t current ){
 		body << YAML::Key << "ElementLevel" << YAML::Value << floor(ele / 20.);
 
 	if (a2i(str[22]) != 0)
-		body << YAML::Key << "WalkSpeed" << YAML::Value << cap_value(std::stoi(str[22]), MIN_WALK_SPEED, MAX_WALK_SPEED);
+		body << YAML::Key << "WalkSpeed" << YAML::Value << cap_value(a2i(str[22]), MIN_WALK_SPEED, MAX_WALK_SPEED);
 	if (a2i(str[23]) != 0)
 		body << YAML::Key << "AttackDelay" << YAML::Value << str[23];
 	if (a2i(str[24]) != 0)
