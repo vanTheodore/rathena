@@ -397,6 +397,60 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 - ⏳ Repetir la medición del baseline para verificar reproducibilidad:
   pendiente
 
+- ✅ **Benchmark runtime + A/B de flags (2026-10-17, iteración del lote;
+  elección del usuario: medir antes que optimizar)**: harness
+  `tools/bench-runtime.cpp` (`998e2c0`) — kernels sobre infra REAL
+  (`idb` 50k puts+5 lookups, churn `aMalloc/aFree`, familia
+  `atoi/a2i/stoi/atol/a2l/atof/a2f` con matriz de 8 inputs fijos
+  (2 inválidos), `StringBuf` vs `snprintf` vs `std::format`), mediana
+  de réplicas, workload idéntico entre patas, sink anti-DCE.
+  **4 patas** (zig/clang 22.1.8, x86_64, sandbox 3.8GB): B1 Release
+  `-O2` (baseline del CMakeLists) · B2 `-O3` (RelWithDebInfo con flags
+  forzados) · B3 `-O2`+thin-LTO · B4 `-O3`+thin-LTO; IPO forzado con
+  `-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE` (el `check_ipo_supported`
+  de CMake falla con el shim zig; `CMAKE_CXX_COMPILER_AR/RANLIB` →
+  wrappers `zig ar`/`zig ranlib`), 5 rondas **intercaladas**,
+  min-of-5 ns/op:
+
+  | kernel | O2 | O3 | O2+LTO | O3+LTO | veredicto |
+  |---|---|---|---|---|---|
+  | db-idb put+5×lookup | 28.95 | 28.70 | 28.33 | 28.51 | ruido (spread 4.0%) |
+  | memmgr aMalloc/aFree | 11.42 | 11.22 | 11.05 | 11.15 | ruido (3.3%) |
+  | parse atoi | 1.71 | 1.69 | 1.75 | 1.74 | ruido |
+  | parse a2i | 1.80 | 1.78 | 1.80 | 1.80 | ruido (spread 10.2%) |
+  | parse std::stoi(string) | 970.00 | 968.60 | 959.85 | 954.40 | ruido |
+  | parse atol / a2l | 1.76/1.70 | 1.71/1.74 | 1.73/1.77 | 1.82/1.83 | ruido (spread ~8.5%) |
+  | parse atof / a2f | 31.4/31.3 | 31.8/31.3 | 31.3/31.2 | 31.2/31.2 | ruido |
+  | strbuf StringBuf_Printf | 96.35 | 95.79 | 93.37 | 96.28 | LTO −3.1% ≈ borde |
+  | snprintf stack | 94.88 | 93.86 | 89.67 | 92.88 | LTO −5.5% > spread (3.9%), señal débil |
+  | std::format | 126.76 | 129.38 | 126.96 | 129.35 | ruido (spread 24.7%) |
+
+  **Conclusiones (gate respondido):** (1) **`-O3` NO está justificado**
+  — todas las diferencias ≤ ±3% dentro del ruido de la máquina, así
+  que el criterio escrito en `CMakeLists.txt` ("unless measurements
+  justify -O3") queda sin cumplir y **se mantiene `-O2`**. (2) **LTO:
+  velocidad = ruido, tamaño = −19.8% real** (binario del bench
+  9.985.584 → 8.007.488 bytes); **el link LTO de map-server completo
+  aborta por OOM en este sandbox de 3.8 GB** (3 kills en dmesg, aun
+  con `-flto-jobs=1`; zig rechaza `-Wl,--thinlto-jobs`) → **no se
+  activa `ENABLE_LTO` por defecto**; follow-up: host ≥6-8 GB o
+  toolchain GCC. (3) Cross-kernel: `stoi` ≈ 970 ns vs `a2i` ≈ 1.8 ns
+  (~540×, dominado por la ruta de excepción de los 2/8 inputs
+  inválidos — en producción sin catch eso era `terminate`, no
+  lentitud); `atof/a2f` ≈ 31 ns (strtod domina); `StringBuf` ≈
+  `snprintf` (diseño barato confirmado); `std::format` más lento aquí.
+  (4) `[[assume]]`/`std::unreachable` **siguen rechazados** sin
+  perfil end-to-end: el harness es ahora el gate, y medir rutas de
+  battle/script requiere BD+clientes (fuera de alcance).
+  **Receta:** por pata — configure con los flags arriba, `rm -f lib/*.a`
+  (¡`lib/` es salida compartida entre configs!), build de
+  `common_base common ryml yaml-cpp`, y link manual del bench contra
+  los archives de ESA config (Release → `*r.a`, RelWithDebInfo →
+  planos) + `-L<prefix> -lpthread -lz -lpcre2-8 -lmariadb -lssl -lcrypto`;
+  luego rondas intercaladas `bench 2` ×5. **Limitaciones:** sandbox
+  compartido (spread hasta 24.7% en kernels sub-ns), micro-kernels de
+  `common/` ≠ throughput del server, tiempos de build no instrumentados.
+
 ### 6. Optimización de compilación — parcial
 
 - ✅ LTO opt-in (`-DENABLE_LTO`, off por defecto, `check_ipo_supported`)
