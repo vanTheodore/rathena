@@ -313,7 +313,15 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   throw-and-terminate anclados en el test. Verificación de args
   multi-`pos`: 0 reales (los 35 del heuristic eran comas anidadas).
   Tras la migración, 0 llamadas `std::sto*` en posición de código en
-  `src/`. **Medición honesta del lote (full limpio 194 TUs): 22.752
+  `src/`. ~~`atol`~~ ✅ **cerrado (`e4c6a10`)**: 10 sitios → `a2l()`
+  (guard de nullptr; todos los sites se alimentan de `Sql_GetData`,
+  que devuelve `nullptr` sin fila → `atol(NULL)` = segfault real hoy en
+  rutas de login/char); valores idénticos a `atol` en todo lo que
+  sobrevivía antes (paridad 15/15 anclada, `long` de ancho de plataforma
+  intacto para los casts `(uint32)` circundantes); el 11º token es el
+  comentario doc. **`atof` (3 sitios) queda pendiente de decisión**:
+  sus sitios interesantes alimentan casts a `uint32` donde el clamp del
+  rango float exige decidir tipo destino (no hacer a ciegas). **Medición honesta del lote (full limpio 194 TUs): 22.752
   warnings vs 22.713 del full limpio de alineación = +39 netos, 0
   atribuidos a `a2i`/strlib, delta por archivo migrado ≈ 0 (mob +2 de
   atribución).** Lección: los deltas −359/−727 de iteraciones previas
@@ -431,12 +439,17 @@ suite de regresión completa verde (cap-value, storage-sort,
 script-sort, apply-rate, rnd-chance, arr-find ×2, arr-move ×2, a2i ×2)
 y boot smoke ×3 servidores = exit 1 sin panics. **Totales corregidos
 (medición):** solo el full limpio es comparable — 22.713 (alineación)
-→ **22.752 (tras las 4 iteraciones, 194 TUs)** = +39 netos con 0
-warnings atribuidos a `a2i`/strlib; los "−359/−727" previos eran
-parciales (101–116 TUs) y quedan rectificados en la entrada de
-backlog. Cuarta iteración: `6f3d5be` (`stoi`/`stoul` → `a2i`, 169
-sitios, controllers web sin-terminate). CI: `9f54a03` = **7/7 SUCCESS**
-(ambos runs); `018ebdc` en curso.
+→ **22.754 (cierre del lote de 5 iteraciones, 194 TUs)** = +41 netos
+con 0 warnings atribuidos a `a2i`/`a2l`/strlib (per-archivo migrado ≈ 0);
+los "−359/−727" previos eran parciales (101–116 TUs) y quedan
+rectificados en la entrada de backlog. Iteraciones 4ª y 5ª: `6f3d5be`
+(`stoi`/`stoul` → `a2i`, 169 sitios, controllers web sin-terminate) y
+`e4c6a10` (`atol` → `a2l`, 10 sitios, crash `Sql_GetData` NULL).
+**CI del lote — todos los ciclos 7/7 SUCCESS en ambos runs:**
+`9f54a03` (ARR_FIND+ARR_MOVE), `018ebdc` (a2i+docs; jobs verificados
+14/14), `13854a3` (stoi+corrección docs), `e4c6a10` (a2l; jobs
+verificados 14/14 — windows-msvc, gcc Debug+Release, clang, arm64,
+pcre-regress, sanitizers).
 
 **Cierre de sesión 2026-10-17 (host Linux sandbox — ver «Entorno local»):**
 3 commits en la rama (`be0bab1`, `fbcee01`, `192cc2f`):
