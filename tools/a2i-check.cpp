@@ -164,6 +164,79 @@ int main() {
 	}
 	expect(a2l(nullptr) == 0, "a2l(nullptr) -> 0 instead of segfault");
 
+	// ---- Part 6: a2f (atof migration). In-range parity with libc
+	// atof; NULL / "nan" / "inf" / overflow become 0.0 — the values
+	// that used to reach float->int casts as NaN/±inf (undefined).
+	static const char* const float_parity[] = {
+		"0", "1.5", "-2.25", "0.0", "  3.14", "-.5", "5.", "1e2",
+		"12abc", "abc", "", "  ", "12.34.56", "-0.0",
+	};
+	for (const char* s : float_parity) {
+		const double want = std::atof(s);
+		const double got = a2f(s);
+		if (got != want) {
+			std::printf("FAIL: a2f parity for '%s': atof=%g a2f=%g\n", s, want, got);
+			++failures;
+		}
+	}
+	{
+		struct nonfinite_case { const char* in; };
+		static const nonfinite_case cases[] = {
+			{"nan"}, {"NaN"}, {"inf"}, {"-inf"}, {"infinity"}, {"1e400"}, {"-1e400"},
+		};
+		for (const auto& c : cases) {
+			const double libc_value = std::atof(c.in); // control: ±inf or NaN
+			if (a2f(c.in) != 0.0) {
+				std::printf("FAIL: a2f('%s') = %g, want 0 (libc=%g)\n",
+					c.in, a2f(c.in), libc_value);
+				++failures;
+			}
+		}
+		std::printf("a2f non-finite/overflow cases: %zu all -> 0 (libc gave %g / %g)\n",
+			sizeof(cases) / sizeof(cases[0]), std::atof("nan"), std::atof("1e400"));
+	}
+	expect(a2f(nullptr) == 0.0, "a2f(nullptr) -> 0");
+
+	// ---- Site A/B: the @rates clamp now happens in the double domain
+	// before the (int32) cast. For every input where the legacy cast
+	// was defined, the result must be identical.
+	for (const char* message : {"0", "0.5", "1", "100", "100.5", "50.99",
+			"-3", "-0.001", "33.333", "99.999", "100.0", "101", "500"}) {
+		int32 legacy_rate;
+		{
+			double drate = std::atof(message);
+			legacy_rate = (int32)(drate * 100);
+			if (legacy_rate < 0) legacy_rate = 0;
+			if (legacy_rate > 10000) legacy_rate = 10000;
+		}
+		int32 new_rate;
+		{
+			double drate = a2f(message) * 100;
+			if (drate < 0) new_rate = 0;
+			else if (drate > 10000) new_rate = 10000;
+			else new_rate = (int32)drate;
+			if (new_rate < 0) new_rate = 0;
+			if (new_rate > 10000) new_rate = 10000;
+		}
+		if (legacy_rate != new_rate) {
+			std::printf("FAIL: rates A/B for '%s': legacy=%d new=%d\n",
+				message, legacy_rate, new_rate);
+			++failures;
+		}
+	}
+
+	// ---- The pc_split_atoui chain now sees finite doubles only:
+	// a2f("nan") = 0 falls into its <0/else branches definedly where
+	// the raw NaN used to fall through both comparisons into a UB cast.
+	{
+		const double f = a2f("nan");
+		uint32 value;
+		if (f < 0) value = 0;
+		else if (f > UINT_MAX) value = UINT_MAX;
+		else value = static_cast<uint32>(f);
+		expect(value == 0, "pc_split chain with former-NaN input -> 0 defined");
+	}
+
 	if (failures == 0) {
 		std::printf("ALL A2I CHECKS PASSED\n");
 		return 0;

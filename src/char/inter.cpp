@@ -922,7 +922,7 @@ int32 inter_config_read(const char* cfgName)
 		else if(!strcmpi(w1,"default_codepage"))
 			default_codepage = w2;
 		else if(!strcmpi(w1,"party_share_level"))
-			party_share_level = (uint32)atof(w2);
+			party_share_level = static_cast<uint32>(a2i(w2)); // integer level, like log_inter below
 		else if(!strcmpi(w1,"log_inter"))
 			charserv_config.log_inter = a2i(w2);
 		else if(!strcmpi(w1,"inter_server_conf"))

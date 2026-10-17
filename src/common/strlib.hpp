@@ -5,6 +5,7 @@
 #define STRLIB_HPP
 
 #include <cstdarg>
+#include <cmath>    // std::isfinite for a2f()
 #include <cstdlib>  // std::strtol for a2i()
 #include <string>   // std::string overload of a2i()
 #if !defined(__USE_GNU)
@@ -82,6 +83,21 @@ inline long a2l(const char* str) {
 	if (str == nullptr)
 		return 0;
 	return std::strtol(str, nullptr, 10);
+}
+
+/// atof() with defined behaviour for unparseable input. NULL, "nan",
+/// "inf" and out-of-range magnitudes (glibc returns ±HUGE_VAL) become
+/// 0.0 instead of propagating NaN/inf into downstream float→int casts,
+/// which are undefined behaviour the moment they fall outside the
+/// target type. In-range values are byte-identical to libc atof
+/// (pinned against the real atof in tools/a2i-check.cpp).
+inline double a2f(const char* str) {
+	if (str == nullptr)
+		return 0.0;
+	const double value = std::strtod(str, nullptr);
+	if (!std::isfinite(value))
+		return 0.0;
+	return value;
 }
 
 /// strncpy that always nul-terminates the string

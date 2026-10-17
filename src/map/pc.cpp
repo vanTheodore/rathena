@@ -13379,7 +13379,7 @@ int32 pc_split_atoui(char* str, uint32* val, char sep, int32 max)
 	for (i=0; i<max; i++) {
 		double f;
 		if (!str) break;
-		f = atof(str);
+		f = a2f(str); // NaN-proof: the f<0 / f>UINT_MAX chain below assumed finite
 		if (f < 0)
 			val[i] = 0;
 		else if (f > UINT_MAX) {

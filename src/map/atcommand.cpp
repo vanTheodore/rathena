@@ -6996,8 +6996,19 @@ ACMD_FUNC(autoloot)
 			rate = 10000;
 	} else {
 		double drate;
-		drate = atof(message);
-		rate = (int32)(drate*100);
+		// Clamp in the double domain before the (int32) cast — an
+		// out-of-range cast is UB and it ran before the shared
+		// rate<0/rate>10000 clamps below. a2f() guarantees no NaN;
+		// -inf falls in the <0 branch, +inf in the >10000 branch, so
+		// the cast only ever sees a finite value in [0,10000].
+		// Same [0,10000] result for every valid input as before.
+		drate = a2f(message)*100;
+		if (drate < 0)
+			rate = 0;
+		else if (drate > 10000)
+			rate = 10000;
+		else
+			rate = (int32)drate;
 	}
 	if (rate < 0) rate = 0;
 	if (rate > 10000) rate = 10000;
