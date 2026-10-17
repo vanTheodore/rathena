@@ -278,7 +278,30 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   consistente + contrato de orden con slots vacíos + 2 controles
   negativos: inconsistencia legacy both-way y overflow de resta en ids
   2^31 aparte; verde GCC 12.2 y Clang 22.1.8). ~~`cap_value`~~ ✅ ver la
-  entrada de arriba. **Siguiente del backlog:** `ARR_FIND`, `atoi`,
+  entrada de arriba. ~~`ARR_FIND`~~ ✅ **cerrado (`efdc506`)**: template
+  `arr_find` + shim que liga `__var` por referencia (los 254 sitios
+  reales compilan sin editar; auditoría previa: todos 4 args, `__cmp`
+  siempre referencia la variable, bounds puros, sin colisiones); contrato
+  idéntico salvo bounds evaluados 1× en vez de N+1 (control del test
+  `legacy=5 modern=1`, seguro porque todo bound es puro); test
+  `tools/arr-find-check.cpp` verde GCC 12.2/Clang 22.1.8; rebuild 0
+  errores y −359 warnings. ~~`ARR_MOVE`~~ ✅ **cerrado (`9f54a03`)**:
+  shim sobre `std::rotate` para los 2 sitios reales (char_mapif,
+  `fame_list` POD); resultado byte-idéntico al legacy de 3 `memmove`
+  (grid A/B + layouts esperados), ahora constexpr y bien definido para
+  tipos no triviales (pin con `std::string`); `ARR_MOVERIGHT/LEFT` sin
+  call sites se mantienen como API upstream; test
+  `tools/arr-move-check.cpp` verde GCC/Clang. ~~`atoi`~~ ✅ **cerrado
+  (`e29a68f`)**: `a2i()` en strlib.hpp = `(int)strtol` + saturación a
+  `[INT_MIN, INT_MAX]` — paridad exacta con libc `atoi` en rango
+  (34/34) y, fuera de rango, el resultado Windows sobre todas las
+  plataformas (glibc hoy devuelve −1/0/cast-wrap: divergencia
+  Windows/Linux real sobre el mismo input); `nullptr → 0`. Migración
+  mecanizada con guardas (comentarios/strings/`BUILDIN_*`/`src/custom`
+  verbatim): **707 sitios → 0 restantes**, 41 archivos, diff
+  línea-equilibrado; `timer.cpp` único TU sin el header (lo resolvió el
+  compilador, `-k` lo probó); test `tools/a2i-check.cpp` verde
+  GCC/Clang sin warnings; −727 warnings. **Siguiente del backlog:**
   `expected`, `string_view`/`span` (aparcados por alcance);
   `NULL→nullptr` y `to_underlying` rechazados (estética)
 - ✅ `StringBuf` (diseño evaluado, **se mantiene**): ~494 usos
@@ -380,6 +403,16 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   de decisión (los fixes son backportables en dialecto viejo)
 
 ## Tarea actual
+
+**Lote backlog 2026-10-17 (Gogogo — tres iteraciones de familia):**
+`efdc506` (ARR_FIND template+shim, 254 sitios sin editar), `9f54a03`
+(ARR_MOVE via `std::rotate`, 2 sitios), `e29a68f` (`a2i` + migración de
+707 `atoi`). Validación del lote: full rebuild 0 errores, **21 625
+warnings** (−727 vs 22 352; burn-down acumulado 22 716 → 21 625);
+suite de regresión completa verde (cap-value, storage-sort,
+script-sort, apply-rate, rnd-chance, arr-find ×2, arr-move ×2, a2i ×2)
+y boot smoke ×3 servidores = exit 1 sin panics. CI: push `9f54a03`
+en curso; `e29a68f` + este docs pendientes de push.
 
 **Cierre de sesión 2026-10-17 (host Linux sandbox — ver «Entorno local»):**
 3 commits en la rama (`be0bab1`, `fbcee01`, `192cc2f`):
