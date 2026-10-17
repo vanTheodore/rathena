@@ -89,3 +89,11 @@ if( INSTALL_COMPONENT_RUNTIME )
 	)
 	install (TARGETS )
 endif( INSTALL_COMPONENT_RUNTIME )
+
+if( ENABLE_PCH )
+	# estos bins convierten YAML: heredan pch.hpp vía rathena_cxx23 y
+	# adjuntan la cadena database/ryml (medición en MODERNIZATION-ROADMAP §5)
+	foreach( _yamltgt mapcache csv2yaml yaml2sql yamlupgrade )
+		target_precompile_headers( ${_yamltgt} PRIVATE "${CMAKE_SOURCE_DIR}/src/common/pch-database.hpp" )
+	endforeach()
+endif()

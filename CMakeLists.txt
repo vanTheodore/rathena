@@ -156,6 +156,16 @@ target_compile_features( rathena_cxx23 INTERFACE cxx_std_23 )
 set_target_properties( rathena_cxx23 PROPERTIES CXX_EXTENSIONS OFF )
 target_link_libraries( rathena_cxx23 INTERFACE rathena_warnings )
 
+# PCH opt-in (off por defecto): la cabecera base se propaga por rathena_cxx23
+# a todos los targets de primera parte; los targets que cargan YAML adjuntan
+# pch-database.hpp en su propio CMakeLists (receta y medición en
+# doc/MODERNIZATION-ROADMAP.md §5).
+option( ENABLE_PCH "Precompile base headers for first-party targets" OFF )
+if( ENABLE_PCH )
+	target_precompile_headers( rathena_cxx23 INTERFACE
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/common/pch.hpp" )
+endif()
+
 #
 # Prevent building in the source directory by default
 #
