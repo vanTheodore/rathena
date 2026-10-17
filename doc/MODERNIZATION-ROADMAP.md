@@ -110,7 +110,31 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   (descarga de logs bloqueada desde este host; anotaciones = solo exit 1).
   Fix de diagnóstico `f7b7530`: los dos pasos bachean el log y emiten
   las primeras 10 líneas de error como anotaciones `::error` (mismo
-  dominio API) — ciclo de CI en curso para capturar la causa raíz real.
+  dominio API) — **las anotaciones funcionaron y revelaron las 3 causas
+  raíz reales (2026-10-17)**:
+  1. **`windows-msvc` a)** `3rdparty/httplib/httplib.cc` incluía
+     `<windows.h>` antes que `httplib.h` sin `winsock2`/`NOMINMAX`
+     delante → `winsock.h` v1 + `winsock2.h` = C2011 (hostent/timeval/
+     fd_set/sockaddr) en MSVC; MinGW lo toleraba (por eso pasó validación
+     local). Fix `8f63ed0`: orden canónico `winsock2`→`NOMINMAX`→
+     `windows.h` (conservando `winnls.h` para `MultiByteToWideChar`).
+  2. **`windows-msvc` b)** `libconfig/scanner.h` (flex) protege su
+     `#include <unistd.h>` con `YY_NO_UNISTD_H`, macro que solo define
+     `scanner.c` — `libconfig.c` (compilado por minicore/common_base)
+     la incluye sin el guard → C1083 en MSVC. Fix `8f63ed0`: la define
+     el build de Windows (CMake + los 4 configs del `libconfig.vcxproj`).
+  3. **`linux-sanitizers`** `undefined reference to 'typeinfo for
+     SkillImpl'` al linkar `csv2yaml`: las 9 virtuals base de
+     `SkillImpl` estaban en `skill_impl.cpp` → key function → typeinfo
+     solo en un TU que ninguna tool linkea; `map/skill.hpp:322` exige
+     el tipo completo (`unique_ptr<const SkillImpl>`) y solo el build
+     ASan+UBSan emitía la referencia RTTI. Fix `82e200a`: virtuals base
+     inline `// no-op` (sin key function → typeinfo weak en quien lo
+     necesite); el include en `yaml.hpp` es obligatorio y queda
+     documentado. Validación local: rebuild total + smoke + tools con
+     clang+UBSan verdes; el combo exacto GCC14+ASan+UBSan = juez CI
+     (repro local imposible: zig sin libasan y gcc12 <14).
+  Ciclo de CI con los 3 fixes en curso.
 
 ### 2. Modernización C++20/23 — parcial
 
