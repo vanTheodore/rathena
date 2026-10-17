@@ -3,7 +3,7 @@
 
 #include "storage.hpp"
 
-#include <cstdlib>
+#include <algorithm> // std::sort
 #include <cstring>
 #include <map>
 
@@ -56,29 +56,34 @@ bool storage_exists(uint8 id) {
 }
 
 /**
- * Storage item comparator (for qsort)
- * sort by itemid and amount
- * @param _i1 : item a
- * @param _i2 : item b
- * @return i1<=>i2
- */
-static int32 storage_comp_item(const void *_i1, const void *_i2)
-{
-	struct item *i1 = (struct item *)_i1;
-	struct item *i2 = (struct item *)_i2;
+ * Storage item ordering (was the qsort callback storage_comp_item).
+ * Non-empty items (nameid != 0 && amount != 0) sort ascending by nameid —
+ * identical to the legacy comparator result on every pair where the legacy
+ * comparator was consistent. Empty slots (nameid == 0 || amount == 0) sort
+ * after all non-empty items and compare equivalent among themselves: the
+ * legacy comparator ordered two empties inconsistently (it returned > 0 in
+ * both directions), so their old relative order was unspecified, and
+ * std::sort requires a strict weak ordering that the old subtracting
+ * comparator was not. operator< on the uint32 nameid also drops the legacy
+ * int32 subtraction that inverted items whose ids sit 2^31 apart.
+ * Pinned by tools/storage-sort-check.cpp.
+ * @param i1 : item a
+ * @param i2 : item b
+ * @return true if i1 sorts before i2
+ **/
+static bool storage_item_less( const struct item &i1, const struct item &i2 ){
+	const bool empty1 = ( i1.nameid == 0 || i1.amount == 0 );
+	const bool empty2 = ( i2.nameid == 0 || i2.amount == 0 );
 
-	if (i1->nameid == i2->nameid)
-		return 0;
-	else if (!(i1->nameid) || !(i1->amount))
-		return 1;
-	else if (!(i2->nameid) || !(i2->amount))
-		return -1;
-
-	return i1->nameid - i2->nameid;
+	if( empty1 != empty2 )
+		return empty2; // non-empty items first
+	if( empty1 )
+		return false; // empty slots are equivalent
+	return i1.nameid < i2.nameid;
 }
 
 /**
- * Sort item by storage_comp_item (nameid)
+ * Sort item by storage_item_less (nameid)
  * used when we open up our storage or guild_storage
  * @param items : list of items to sort
  * @param size : number of item in list
@@ -87,8 +92,12 @@ void storage_sortitem(struct item* items, uint32 size)
 {
 	nullpo_retv(items);
 
-	if( battle_config.client_sort_storage )
-		qsort(items, size, sizeof(struct item), storage_comp_item);
+	if( battle_config.client_sort_storage ){
+		// std::sort has the same non-stability guarantee as the old qsort,
+		// which is all the slot scan in clif.cpp needs; the comparator is a
+		// strict weak ordering, unlike the legacy qsort callback.
+		std::sort( items, items + size, storage_item_less );
+	}
 }
 
 /**
