@@ -134,7 +134,38 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
      documentado. Validación local: rebuild total + smoke + tools con
      clang+UBSan verdes; el combo exacto GCC14+ASan+UBSan = juez CI
      (repro local imposible: zig sin libasan y gcc12 <14).
-  Ciclo de CI con los 3 fixes en curso.
+  Ciclo de CI con los 3 fixes en curso → **primer resultado (`6b4edea`):
+  `linux-sanitizers` ✅ VERDE — el fix `82e200a` pasó el juez exacto
+  (GCC14 + ASan + UBSan); los 5 jobs Linux ya eran ✅. `windows-msvc`
+  avanzó: los errores de httplib desaparecieron y apareció la siguiente
+  capa — (a) `minicore` seguía sin recibir `-DYY_NO_UNISTD_H`
+  (target_compile_definitions con string con espacio → `/D` roto en el
+  generador VS, mientras `common_base` por COMPILE_FLAGS ya pasaba) y
+  (b) `LNK2019 __imp_PathIsRelativeA` (falta `shlwapi.lib`). Fix ronda
+  2 = `5e8ef39` (lista `;` en minicore + `#pragma comment(lib)` en
+  wincompat.h, precedente de patches locales en ese archivo) — ciclo de
+  CI en curso.
+- ⚠️ **ABIERTO (local-only, fuera de CI): el `map-server` local (zig
+  0.17.0) aborta en `db_init`** con `panic: member access within
+  misaligned address ... struct unit_head`. Repro mínimo confirmó que
+  `zig c++` activa por defecto `-fsanitize=alignment` y lo trata como
+  fatal; la causa es **UB latente real y preexistente del memory
+  manager** (igual en upstream): `struct block::data` cae en el offset
+  36 (3 punteros + 6×uint16) mientras `unit_head` exige alineación 8 →
+  toda unidad dentro del bloque queda a 4 mod 8. GCC/Clang-plain y MSVC
+  no lo revisan (CI verde hoy: el smoke del job gcc-14 sanitizers pasó);
+  los binarios x86-64 lo toleran en la práctica, pero es UB. Flip no
+  reconciliado en timebox: boot1–3 (mismo árbol/toolchain) pasaron
+  `db_init` y las reconstrucciones posteriores abortan de forma
+  determinista. **Alternativas (no se aplica sin decisión — regla de
+  arquitectura/core):** (1) `alignas(8)`/padding antes de `data` en
+  `struct block` (offset 36→40, layout efectivamente alineado, cambios
+  mínimos, `-16B` de espacio); (2) colocar `unit_head` solo en
+  posiciones alineadas con `unit_size ≡ 4 mod 8` (hash rounds ya dan
+  múltiplos de 16 — haría `data` el único candidato); (3) cast a
+  `std::uintptr_t` + `memcpy` de miembros (honesto pero verboso);
+  (4) `-fno-sanitize=alignment` en el toolchain zig local (oculta el UB,
+  no recomendado). Pendiente de decisión del usuario.
 
 ### 2. Modernización C++20/23 — parcial
 
