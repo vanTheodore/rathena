@@ -145,27 +145,28 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   2 = `5e8ef39` (lista `;` en minicore + `#pragma comment(lib)` en
   wincompat.h, precedente de patches locales en ese archivo) — ciclo de
   CI en curso.
-- ⚠️ **ABIERTO (local-only, fuera de CI): el `map-server` local (zig
-  0.17.0) aborta en `db_init`** con `panic: member access within
-  misaligned address ... struct unit_head`. Repro mínimo confirmó que
-  `zig c++` activa por defecto `-fsanitize=alignment` y lo trata como
-  fatal; la causa es **UB latente real y preexistente del memory
-  manager** (igual en upstream): `struct block::data` cae en el offset
-  36 (3 punteros + 6×uint16) mientras `unit_head` exige alineación 8 →
-  toda unidad dentro del bloque queda a 4 mod 8. GCC/Clang-plain y MSVC
-  no lo revisan (CI verde hoy: el smoke del job gcc-14 sanitizers pasó);
-  los binarios x86-64 lo toleran en la práctica, pero es UB. Flip no
-  reconciliado en timebox: boot1–3 (mismo árbol/toolchain) pasaron
-  `db_init` y las reconstrucciones posteriores abortan de forma
-  determinista. **Alternativas (no se aplica sin decisión — regla de
-  arquitectura/core):** (1) `alignas(8)`/padding antes de `data` en
-  `struct block` (offset 36→40, layout efectivamente alineado, cambios
-  mínimos, `-16B` de espacio); (2) colocar `unit_head` solo en
-  posiciones alineadas con `unit_size ≡ 4 mod 8` (hash rounds ya dan
-  múltiplos de 16 — haría `data` el único candidato); (3) cast a
-  `std::uintptr_t` + `memcpy` de miembros (honesto pero verboso);
-  (4) `-fno-sanitize=alignment` en el toolchain zig local (oculta el UB,
-  no recomendado). Pendiente de decisión del usuario.
+- ✅ **CERRADO (2026-10-17): la alternativa (1) aprobada + su segunda
+  capa, commit `e3db3f5`.** Dos UBs latentes de upstream en el memory
+  manager, expuestos por el `-fsanitize=alignment` por defecto de zig
+  0.17: (a) `struct block::data` en offset 36 → cada `unit_head`
+  in-block a 4 mod 8 (`block2unit` usa `&data[k*unit_size]` y los
+  strides son múltiplos de 16) → fix `alignas(8)` (offset 40;
+  `sizeof(struct block)` **igual antes y después: 41000** — 40996 ya
+  redondeaba a la alineación del struct) + `static_assert` que pinnea
+  el contrato; (b) el canary `FREED_POINTER` en `head+24+size` cae
+  desalineado para `size%8≠0` (2.ª capa: panic en `_mstrdup` de un
+  nombre de timer de 20 bytes) → los 4 accesos (`*(long*)` ×2 writes,
+  ×2 reads en `_mfree`) migran a `canary_put`/`canary_ok` con `memcpy`
+  byte-wise (mismos bytes, formato heap intacto).
+  **A/B:** repro mínimo zig ±`alignas` = abort 134 vs exit 0
+  (`data_off=40`); servidores antes = abort 134 en dos sitios, después
+  = los 3 salen exit 1 (convención sin BD) con 0 panics; full rebuild
+  limpio = 0 errores, **22.713 warnings vs baseline 22.716 (−3)**;
+  tests `ALL CAPPED` + `ALL SORTED` verdes; higiene de warnings de
+  `skill_impl` en `5bd45b3` (329 → 0). Juez cruzado = job
+  `linux-sanitizers` de CI (GCC no activa `-fsanitize=alignment` por
+  defecto). Equivalencia del canary: `memcpy` escribe exactamente los
+  mismos 8 bytes que el store anterior.
 
 ### 2. Modernización C++20/23 — parcial
 
