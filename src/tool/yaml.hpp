@@ -57,6 +57,9 @@
 #include <map/script.hpp>
 #include <map/skill.hpp>
 #include <map/storage.hpp>
+// Required: map/skill.hpp holds a std::unique_ptr<const SkillImpl> member
+// (skill.hpp:322), so every TU destroying that class needs SkillImpl's
+// complete type here.
 #include <map/skills/skill_impl.hpp>
 
 using namespace rathena;
