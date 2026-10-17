@@ -10,10 +10,32 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 
 ## Entorno local
 
-- MinGW-w64 ucrt64: GCC 16.2.0, Clang 22.1.8; CMake 4.4.4 + Ninja
-- 4 núcleos; máximo `-j2` (regla permanente); sin Docker
-- No disponible en este host: MSVC (la carpeta de VS 2022 está vacía), `pkg-config`,
-  servidor MySQL/MariaDB local, host Linux, ARM64
+- **Host de sesión 2026-10-17 (sandbox Linux, Debian 12, 2 núcleos, `-j2`):**
+  GCC 12.2 (NO sirve para el gate ≥14 — solo para tests standalone);
+  **zig 0.17.0 vía pypi `ziglang` = Clang 22.1.8** (compilador de referencia
+  del proyecto) con wrappers `/tmp/tools/zig{cc,cxx}`; **CMake 3.28.3 vía
+  pypi** (= el cmake de ubuntu-24.04 que usa CI; CMake 4.4.4 también
+  configura bien) + Ninja 1.13.2. Deps construidas en `/tmp/deps/prefix`
+  (**fuera del repo: no persisten entre sesiones**; receta:
+  codeload de `madler/zlib v1.3.2`, `PCRE2Project/pcre2 pcre2-10.49`,
+  `openssl-openssl-3.0.17` (`linux-x86_64 no-shared`, libs a `lib64` →
+  symlinks en `lib/`), `mariadb-corporation/mariadb-connector-c v3.4.11`
+  con `-DWITH_SSL=OPENSSL -DWITH_EXTERNAL_ZLIB=ON -DBUILD_SHARED_LIBS=OFF`
+  — `WITH_SSL=OFF` **no compila** en 3.4.11 (la rama de auth sin TLS
+  rompe `MA_HASH_CTX`) — luego symlinks `libmariadb.so{,.3}` en `lib/`).
+  Configure: `cmake -S . -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+  -DCMAKE_C_COMPILER=/tmp/tools/zigcc -DCMAKE_CXX_COMPILER=/tmp/tools/zigcxx
+  -DCMAKE_PREFIX_PATH=/tmp/deps/prefix -DZLIB_USE_STATIC_LIBS=ON`.
+  **Generador Unix Makefiles, no Ninja (local-only):** el Ninja generator de
+  CMake ≥3.28 exige `clang-scan-deps` para Clang (reglas `.ddi`/p1689
+  generadas aunque no haya módulos); lo trae el paquete de distro de CI
+  (clang-18) y zig no lo incluye — probado con un probe mínimo, afecta a
+  cualquier Clang sin su `clang-scan-deps`, no al código. sin Docker,
+  sin MSVC, sin pkg-config, sin servidor MySQL/MariaDB local, sin ARM64;
+  `raw.githubusercontent.com` bloqueado (usar api.github.com/codeload)
+- **Host previo (MinGW-w64 ucrt64):** GCC 16.2.0, Clang 22.1.8; CMake 4.4.4
+  + Ninja; 4 núcleos; máximo `-j2` (regla permanente); sin Docker; sin MSVC,
+  sin `pkg-config`, sin BD local, sin host Linux, sin ARM64
 
 ## Estado por fases
 
@@ -60,6 +82,28 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 - ⏳ Smoke de arranque con sanitizers: pendiente (Linux-CI)
 - ✅ CI: `.github/workflows/modern-toolchain.yml` (linux-gcc, linux-clang,
   linux-pcre-regress, linux-sanitizers, linux-arm64, windows-msvc)
+- ✅ **CI roja desde el primer push — diagnosticada y corregida (2026-10-17).**
+  Los 10 runs de `modern-toolchain` (2026-10-11 → 2026-10-13) fallaron; solo
+  `linux-pcre-regress` fue verde. Causas raíz (los logs completos no se
+  pueden descargar en este host — dominio de resultados bloqueado; evidencia:
+  anotaciones de la API de jobs + reproducción local exacta):
+  (1) **todos los jobs de build** (linux-gcc/clang/sanitizers, windows-msvc):
+      el root commit se creó con el patrón `/src/custom` del .gitignore
+      activo, así que `git add` omitió los 8 archivos que upstream trackea
+      en `src/custom/` (defines_pre/defines_post + 6 `.inc`) — un clone
+      fresco no compila (`src/config/core.hpp:12: fatal error: custom/
+      defines_pre.hpp`) y `Makefile.in` pierde sus prerequisitos
+      `../custom/*.inc`; reproducido localmente con el primer TU;
+      (2) **linux-arm64** moría en el paso Configure: `gcc` genérico en
+      ubuntu-24.04(-arm) es **GCC 13** (tabla oficial de GCC de Ubuntu;
+      gcc-defaults de noble = 13) < piso GCC 14 de CMakeLists.txt; los jobs
+      x86 instalan `gcc-14` explícito, el de arm64 no.
+  Fixes en esta rama: `be0bab1` (restauración byte-idéntica a upstream
+  vía contents API de GitHub; `.gitignore` intacto — upstream también
+  ignora `/src/custom` y trackea estos archivos) y `fbcee01` (arm64 espejo
+  de x86: `gcc-14 g++-14` + `-DCMAKE_C_COMPILER/-DCMAKE_CXX_COMPILER`).
+  `windows-msvc` se asume causa (1) — pendiente de run. **Ejecución del CI
+  pendiente de autorización de push** (regla permanente).
 
 ### 2. Modernización C++20/23 — parcial
 
@@ -149,10 +193,16 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   int32 firmado como la comparación original); test permanente
   `tools/rnd-chance-check.cpp` verde en GCC/Clang; build sin warnings nuevos
 - ⏳ Backlog priorizado (una por iteración, con test de equivalencia):
-  `qsort` ×2 → `std::sort`; `cap_value` (499 sitios, transversal —
-  requiere plan); `ARR_FIND`, `atoi`, `expected`, `string_view`/`span`
-  aparcados por alcance; `NULL→nullptr` y `to_underlying` rechazados
-  (estética)
+  ~~`qsort` ×2 → `std::sort`~~ ✅ **cerrado (2026-10-17)**: script.cpp ya
+  estaba (`tools/script-sort-check.cpp`); el último —`storage.cpp`—
+  migrado en `192cc2f` con test permanente
+  `tools/storage-sort-check.cpp` (acuerdos legacy/moderno en el dominio
+  consistente + contrato de orden con slots vacíos + 2 controles
+  negativos: inconsistencia legacy both-way y overflow de resta en ids
+  2^31 aparte; verde GCC 12.2 y Clang 22.1.8). **Siguiente del backlog:**
+  `cap_value` (499 sitios, transversal — requiere plan); después
+  `ARR_FIND`, `atoi`, `expected`, `string_view`/`span` (aparcados por
+  alcance); `NULL→nullptr` y `to_underlying` rechazados (estética)
 - ✅ `StringBuf` (diseño evaluado, **se mantiene**): ~494 usos
   (common/char/map). Ya es RAII (ctor/dtor) y su valor frente a `std::string`
   es la integración con el memory manager (aMalloc2/aRealloc2 con ALC_MARK →
@@ -252,6 +302,45 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   de decisión (los fixes son backportables en dialecto viejo)
 
 ## Tarea actual
+
+**Cierre de sesión 2026-10-17 (host Linux sandbox — ver «Entorno local»):**
+3 commits en la rama (`be0bab1`, `fbcee01`, `192cc2f`):
+
+1. **`fix(build)`: restauración de `src/custom/` (8 archivos).**
+   Diagnóstico: los 10 runs de CI rojos + clone fresco no-compilable;
+   evidencia: `GET /repos/vanTheodore/rathena/contents/src/custom` → 404,
+   reproduce local del fatal error en el primer TU, tamaños verificados
+   contra el contents API de upstream. Cambios: 8 archivos byte-idénticos
+   a `rathena/rathena` master. Pruebas: ver (3). Limitaciones: `windows-msvc`
+   asume la misma causa — confirmar en el próximo run.
+2. **`ci(arm64)`: GCC 14 explícito.** Mecanismo: gcc-defaults de noble = 13
+   (tabla oficial Ubuntu) vs gate ≥14; evidencia: paso fallido = Configure
+   en arm64 vs Build en x86 en el run 38482270991. Limitación: sin host
+   ARM64 ni run de CI aún — el fix es espejo exacto del job x86 verde en
+   configure.
+3. **`modernize(storage)`: último `qsort` → `std::sort`.** Racional de
+   corrección: el comparador legacy **no era orden débil estricto** (dos
+   slots vacíos → >0 en ambos sentidos; reutilizarlo en `std::sort` es UB)
+   y su resta con signo invertía ids a 2^31. Tests: `tools/storage-sort-check`
+   verde en GCC 12.2 y Clang 22.1.8 (equivalencia legacy/moderno donde
+   legacy era consistente, contrato de orden, 2 controles negativos que
+   se disparan como se espera).
+
+**Validación local de CI completa (2026-10-17, réplica del job
+`linux-gcc` Release con Clang 22.1.8/CMake 3.28.3):** configure con TODAS
+las aserciones de CI en verde (`Enabled PCRE code`, `Configuring for system
+MYSQL - done`, `Found MYSQL: .*mariadb` → 3.4.11, `Using MYSQL: ...
+(MariaDB Connector/C `, sin `client floor`); **build completo 100% exit 0**
+(0 errores; 22 716 warnings Clang — baseline de la suite de warnings, el
+burn-down sigue siendo follow-up); todos los binarios generados; **boot
+smoke** de map-server = exit 1 esperado (sin BD) + línea
+`MySQL client library: 3.4.11` (grep de CI ✓); regresión PCRE2 local =
+48 casos byte-for-byte vs baseline PCRE 8.33 con PCRE2 10.49 ✓ (sin ASan;
+la variante ASan es de CI). Limitaciones: no es GCC ni MSVC ni arm64
+(hosts/compilers ausentes), sin BD real (smoke = el mismo nivel que CI),
+`cmake -G Ninja` local requiere `clang-scan-deps` (ver Entorno local).
+**Pendiente de autorización:** push de la rama (dispara el CI en todos los
+jobs) y decisión de PR.
 
 **Deuda registrada (2026-10-11, slices SQL UAF+retry integrados):**
 - `tools/proto-smoke.ps1`, prueba `2b-char-list`: RESUELTO en
