@@ -33,6 +33,16 @@ set( LIBCONFIG_DEFINITIONS
 	"-DLIBCONFIG_STATIC"
 	CACHE INTERNAL "libconfig definitions" )
 
+if( WIN32 )
+	# scanner.h (flex) wraps its #include <unistd.h> in
+	# `#ifndef YY_NO_UNISTD_H`, but only scanner.c defines the macro;
+	# libconfig.c also includes scanner.h and MSVC has no <unistd.h>
+	# (C1083 at scanner.h:460 in minicore/common_base). The scanner
+	# needs nothing from unistd on Windows; MinGW ships the header but
+	# takes the same path so both Windows toolchains agree.
+	set( LIBCONFIG_DEFINITIONS "${LIBCONFIG_DEFINITIONS} -DYY_NO_UNISTD_H" CACHE INTERNAL "libconfig definitions" )
+endif()
+
 include(CheckIncludeFile)
 check_include_file(xlocale.h HAVE_LOCALE_H)
 
