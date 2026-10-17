@@ -102,8 +102,15 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   vía contents API de GitHub; `.gitignore` intacto — upstream también
   ignora `/src/custom` y trackea estos archivos) y `fbcee01` (arm64 espejo
   de x86: `gcc-14 g++-14` + `-DCMAKE_C_COMPILER/-DCMAKE_CXX_COMPILER`).
-  `windows-msvc` se asume causa (1) — pendiente de run. **Ejecución del CI
-  pendiente de autorización de push** (regla permanente).
+- ✅ **Primer run verde en gran parte (2026-10-17, run 38997249679,
+  tras `be0bab1`+`fbcee01`):** **5/6 jobs SUCCESS** — linux-gcc Release,
+  linux-gcc Debug, linux-clang, **linux-arm64 (rojo en los 10 runs
+  previos)** y linux-pcre-regress. Rojos restantes: `linux-sanitizers` y
+  `windows-msvc`, ambos en «Build all servers + tools» sin log legible
+  (descarga de logs bloqueada desde este host; anotaciones = solo exit 1).
+  Fix de diagnóstico `f7b7530`: los dos pasos bachean el log y emiten
+  las primeras 10 líneas de error como anotaciones `::error` (mismo
+  dominio API) — ciclo de CI en curso para capturar la causa raíz real.
 
 ### 2. Modernización C++20/23 — parcial
 
@@ -187,6 +194,21 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   template 1×) + `static_assert`s; verde en GCC 16.2 y Clang 22.1.8.
   Revisión semántica por sitio (tipos de retorno, promociones, negativos,
   overflow): sin diferencias reales — veredicto GO. 24 call sites intactos
+- ✅ **`cap_value` (2026-10-17, `3019b9a`, iteración elegida)**: los 498
+  call sites migrados SIN editarlos (cuerpo del template = ternario
+  literal de la macro → mismas conversiones y mismo tipo de resultado).
+  Auditoría: 0 usos lvalue/`&`/`sizeof` del resultado, 0 argumentos con
+  efectos laterales, 0 llamadas multi-línea, 0 sitios en headers, 0 `.c`;
+  inventario de funciones en argumentos (atoi ×13, pc_maxparameter ×12,
+  apply_rate ×6, stoi ×6, script_getnum64, getSCE, consultas puras) —
+  todo lectura/query ⇒ evaluación única preserva todo resultado observable
+  (y elimina la trampa de triple evaluación). Test
+  `tools/cap-value-check.cpp` con el header REAL: rejilla legacy-vs-template
+  de las formas de call site + igualdad de tipo + `static_assert` constexpr
+  + control negativo legacy=3 evals / template=1. Verde GCC 12.2 y
+  Clang 22.1.8 con la suite de warnings; rebuild completo exit 0 (líneas
+  de warning atribuidas a cap_value 687→249, clase preexistente) + boot
+  smoke verde
 - ✅ `rand %100` ×4 en battle → `rnd_chance()` (`modernize/rnd-chance-battle`):
   elimina RNG libc sin seed (secuencia idéntica por boot), salida débil y
   sesgo de módulo; probabilidades preservadas (bordes 0/≥100 exactos,
@@ -195,14 +217,14 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 - ⏳ Backlog priorizado (una por iteración, con test de equivalencia):
   ~~`qsort` ×2 → `std::sort`~~ ✅ **cerrado (2026-10-17)**: script.cpp ya
   estaba (`tools/script-sort-check.cpp`); el último —`storage.cpp`—
-  migrado en `192cc2f` con test permanente
+  migrado en `9619735` con test permanente
   `tools/storage-sort-check.cpp` (acuerdos legacy/moderno en el dominio
   consistente + contrato de orden con slots vacíos + 2 controles
   negativos: inconsistencia legacy both-way y overflow de resta en ids
-  2^31 aparte; verde GCC 12.2 y Clang 22.1.8). **Siguiente del backlog:**
-  `cap_value` (499 sitios, transversal — requiere plan); después
-  `ARR_FIND`, `atoi`, `expected`, `string_view`/`span` (aparcados por
-  alcance); `NULL→nullptr` y `to_underlying` rechazados (estética)
+  2^31 aparte; verde GCC 12.2 y Clang 22.1.8). ~~`cap_value`~~ ✅ ver la
+  entrada de arriba. **Siguiente del backlog:** `ARR_FIND`, `atoi`,
+  `expected`, `string_view`/`span` (aparcados por alcance);
+  `NULL→nullptr` y `to_underlying` rechazados (estética)
 - ✅ `StringBuf` (diseño evaluado, **se mantiene**): ~494 usos
   (common/char/map). Ya es RAII (ctor/dtor) y su valor frente a `std::string`
   es la integración con el memory manager (aMalloc2/aRealloc2 con ALC_MARK →
