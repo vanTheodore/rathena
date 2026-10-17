@@ -119,6 +119,14 @@ extern int posix_fsync(int fd);
 #endif
 
 #include <Shlwapi.h>
+/* rAthena: PathIsRelativeA needs shlwapi.lib at link; the MSVC toolchains
+ * reach this TU through both the CMake build and rAthena.sln, and neither
+ * lists it in AdditionalDependencies (link error LNK2019 __imp_
+ * PathIsRelativeA under windows-msvc). The pragma covers both build systems;
+ * this branch is MSVC-only (the MinGW path below uses unistd/fileno). */
+#ifdef _MSC_VER
+#pragma comment(lib, "Shlwapi.lib")
+#endif
 #define IS_RELATIVE_PATH(P) \
   (PathIsRelativeA(P))
 
