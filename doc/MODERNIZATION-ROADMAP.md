@@ -319,16 +319,28 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   rutas de login/char); valores idénticos a `atol` en todo lo que
   sobrevivía antes (paridad 15/15 anclada, `long` de ancho de plataforma
   intacto para los casts `(uint32)` circundantes); el 11º token es el
-  comentario doc. **`atof` (3 sitios) queda pendiente de decisión**:
-  sus sitios interesantes alimentan casts a `uint32` donde el clamp del
-  rango float exige decidir tipo destino (no hacer a ciegas). **Medición honesta del lote (full limpio 194 TUs): 22.752
+  comentario doc. ~~`atof`~~ ✅ **cerrado (`823a3fb`, elección
+  del usuario)**: `a2f()` = NULL/NaN/±inf/desborde → 0.0, en-rango
+  byte-idéntico a `atof` (paridad 14/14 + 7 controles no-finitos).
+  Sitios (decisión de tipo destino resuelta con evidencia):
+  `party_share_level` era config **entera** (su hermano `log_inter` ya
+  usaba `a2i`) → `a2i`; `@rates` castaba `(int32)(atof*100)` **antes**
+  de los clamps compartidos → clamp en dominio double con A/B de 13
+  mensajes idénticos donde el cast legacy era definido;
+  `pc_split_atoui` ya tenía cadena de guardas pero **NaN** las
+  esquivaba hacia un cast UB → `a2f` elimina el NaN de la entrada.
+  **Censo final de la familia en posiciones de código: `atoi` 0,
+  `atol` 0, `atof` 0, `std::sto*` 0** — toda la conversión
+  cadena→número de `src/` pasa por wrappers con test (los
+  `strtol`/`strtoul` deliberados quedan: ya eran el uso correcto). **Medición honesta del lote (full limpio 194 TUs): 22.752
   warnings vs 22.713 del full limpio de alineación = +39 netos, 0
   atribuidos a `a2i`/strlib, delta por archivo migrado ≈ 0 (mob +2 de
   atribución).** Lección: los deltas −359/−727 de iteraciones previas
   (commits `efdc506`/`e29a68f`, texto histórico no reescribible)
   comparaban logs parciales — desde ahora solo full-limpio-contra-full-
   limpio. **Siguiente del backlog:**
-  `expected`, `string_view`/`span` (aparcados por alcance);
+  `expected`, `string_view`/`span` (aparcados por alcance — retomarlos
+  requiere decisión del usuario);
   `NULL→nullptr` y `to_underlying` rechazados (estética)
 - ✅ `StringBuf` (diseño evaluado, **se mantiene**): ~494 usos
   (common/char/map). Ya es RAII (ctor/dtor) y su valor frente a `std::string`
@@ -444,7 +456,9 @@ con 0 warnings atribuidos a `a2i`/`a2l`/strlib (per-archivo migrado ≈ 0);
 los "−359/−727" previos eran parciales (101–116 TUs) y quedan
 rectificados en la entrada de backlog. Iteraciones 4ª y 5ª: `6f3d5be`
 (`stoi`/`stoul` → `a2i`, 169 sitios, controllers web sin-terminate) y
-`e4c6a10` (`atol` → `a2l`, 10 sitios, crash `Sql_GetData` NULL).
+`e4c6a10` (`atol` → `a2l`, 10 sitios, crash `Sql_GetData` NULL),
+`823a3fb` (`a2f` + los 3 `atof` — cierre de familia, censo ALL ZERO,
+full limpio 194 TUs = 22.754 warnings, Δ0 vs iteración anterior).
 **CI del lote — todos los ciclos 7/7 SUCCESS en ambos runs:**
 `9f54a03` (ARR_FIND+ARR_MOVE), `018ebdc` (a2i+docs; jobs verificados
 14/14), `13854a3` (stoi+corrección docs), `e4c6a10` (a2l; jobs
