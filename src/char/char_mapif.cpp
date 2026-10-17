@@ -1453,7 +1453,7 @@ int32 chmapif_parse_reqcharban(int32 fd){
 
 			Sql_GetData(sql_handle, 0, &data, nullptr); t_aid = a2i(data);
 			Sql_GetData(sql_handle, 1, &data, nullptr); t_cid = a2i(data);
-			Sql_GetData(sql_handle, 2, &data, nullptr); unban_time = atol(data);
+			Sql_GetData(sql_handle, 2, &data, nullptr); unban_time = a2l(data);
 			Sql_FreeResult(sql_handle);
 
 			if(timediff<0 && unban_time==0) 

@@ -72,6 +72,18 @@ inline int32 a2i(const std::string& str) {
 	return a2i(str.c_str());
 }
 
+/// atol() that returns 0 instead of dereferencing nullptr. Every legacy
+/// atol call site feeds it Sql_GetData() output, which returns nullptr
+/// for missing columns/rows — a NULL result set used to crash the
+/// server inside atol. Values are strtol's, so the in-range and
+/// saturation behaviour is unchanged (pinned against real libc atol in
+/// tools/a2i-check.cpp); long stays platform-width exactly as before.
+inline long a2l(const char* str) {
+	if (str == nullptr)
+		return 0;
+	return std::strtol(str, nullptr, 10);
+}
+
 /// strncpy that always nul-terminates the string
 char* safestrncpy(char* dst, const char* src, size_t n);
 

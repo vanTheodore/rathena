@@ -533,17 +533,17 @@ static bool mmo_auth_fromsql(AccountDB_SQL* db, struct mmo_account* acc, uint32 
 	Sql_GetData(sql_handle,  4, &data, nullptr); safestrncpy(acc->email, data, sizeof(acc->email));
 	Sql_GetData(sql_handle,  5, &data, nullptr); acc->group_id = (uint32)a2i(data);
 	Sql_GetData(sql_handle,  6, &data, nullptr); acc->state = (uint32)strtoul(data, nullptr, 10);
-	Sql_GetData(sql_handle,  7, &data, nullptr); acc->unban_time = atol(data);
-	Sql_GetData(sql_handle,  8, &data, nullptr); acc->expiration_time = atol(data);
+	Sql_GetData(sql_handle,  7, &data, nullptr); acc->unban_time = a2l(data);
+	Sql_GetData(sql_handle,  8, &data, nullptr); acc->expiration_time = a2l(data);
 	Sql_GetData(sql_handle,  9, &data, nullptr); acc->logincount = (uint32)strtoul(data, nullptr, 10);
 	Sql_GetData(sql_handle, 10, &data, nullptr); safestrncpy(acc->lastlogin, data==nullptr?"":data, sizeof(acc->lastlogin));
 	Sql_GetData(sql_handle, 11, &data, nullptr); safestrncpy(acc->last_ip, data, sizeof(acc->last_ip));
 	Sql_GetData(sql_handle, 12, &data, nullptr); safestrncpy(acc->birthdate, data==nullptr?"":data, sizeof(acc->birthdate));
 	Sql_GetData(sql_handle, 13, &data, nullptr); acc->char_slots = (uint8) a2i(data);
 	Sql_GetData(sql_handle, 14, &data, nullptr); safestrncpy(acc->pincode, data, sizeof(acc->pincode));
-	Sql_GetData(sql_handle, 15, &data, nullptr); acc->pincode_change = atol(data);
+	Sql_GetData(sql_handle, 15, &data, nullptr); acc->pincode_change = a2l(data);
 #ifdef VIP_ENABLE
-	Sql_GetData(sql_handle, 16, &data, nullptr); acc->vip_time = atol(data);
+	Sql_GetData(sql_handle, 16, &data, nullptr); acc->vip_time = a2l(data);
 	Sql_GetData(sql_handle, 17, &data, nullptr); acc->old_group = a2i(data);
 #endif
 	Sql_FreeResult(sql_handle);
@@ -805,7 +805,7 @@ void mmo_send_global_accreg(AccountDB* self, int32 fd, uint32 account_id, uint32
 
 		Sql_GetData(sql_handle, 1, &data, nullptr);
 
-		WFIFOL(fd, plen) = (uint32)atol(data);
+		WFIFOL(fd, plen) = (uint32)a2l(data);
 		plen += 4;
 
 		Sql_GetData(sql_handle, 2, &data, nullptr);
@@ -872,7 +872,7 @@ void mmo_send_global_accreg(AccountDB* self, int32 fd, uint32 account_id, uint32
 
 		Sql_GetData(sql_handle, 1, &data, nullptr);
 
-		WFIFOL(fd, plen) = (uint32)atol(data);
+		WFIFOL(fd, plen) = (uint32)a2l(data);
 		plen += 4;
 
 		Sql_GetData(sql_handle, 2, &data, nullptr);

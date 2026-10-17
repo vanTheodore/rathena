@@ -143,6 +143,27 @@ int main() {
 	static_assert(std::is_same_v<decltype(a2i("1")), int32>,
 		"a2i returns int32");
 
+	// ---- Part 5: a2l (atol migration). In-range and saturation parity
+	// with the real libc atol; nullptr is the new defined case (legacy
+	// atol(NULL) segfaulted — and every atol site fed it Sql_GetData()
+	// output that can legitimately be nullptr on an empty result set).
+	static const char* const long_parity[] = {
+		"0", "42", "-42", "  7", "12abc", "", "abc", "-0",
+		"2147483647", "-2147483648", "4294967296", "-4294967296",
+		"9223372036854775807", "-9223372036854775807",
+		"99999999999999999999999", "-99999999999999999999999",
+	};
+	for (const char* s : long_parity) {
+		const long want = std::atol(s);
+		const long got = a2l(s);
+		if (got != want) {
+			std::printf("FAIL: a2l parity for '%s': atol=%ld a2l=%ld\n",
+				s, want, got);
+			++failures;
+		}
+	}
+	expect(a2l(nullptr) == 0, "a2l(nullptr) -> 0 instead of segfault");
+
 	if (failures == 0) {
 		std::printf("ALL A2I CHECKS PASSED\n");
 		return 0;

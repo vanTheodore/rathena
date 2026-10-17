@@ -731,7 +731,7 @@ int32 inter_accreg_fromsql(uint32 account_id, uint32 char_id, int32 fd, int32 ty
 		Sql_GetData(sql_handle, 1, &data, nullptr);
 
 		{
-			uint32 v = (uint32)atol(data);
+			uint32 v = (uint32)a2l(data);
 			memcpy(WFIFOP(fd,plen), &v, sizeof(v));
 		}
 		plen += 4;
@@ -834,7 +834,7 @@ int32 inter_accreg_fromsql(uint32 account_id, uint32 char_id, int32 fd, int32 ty
 		Sql_GetData(sql_handle, 1, &data, nullptr);
 
 		{
-			uint32 v = (uint32)atol(data);
+			uint32 v = (uint32)a2l(data);
 			memcpy(WFIFOP(fd,plen), &v, sizeof(v));
 		}
 		plen += 4;

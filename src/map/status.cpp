@@ -15762,7 +15762,7 @@ static bool status_readdb_status_disabled( char **str, size_t columns, size_t cu
 		return false;
 	}
 
-	SCDisabled[type] = (uint32)atol(str[1]);
+	SCDisabled[type] = (uint32)a2l(str[1]);
 	return true;
 }
 
