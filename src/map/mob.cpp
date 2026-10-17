@@ -6451,7 +6451,7 @@ static bool mob_parse_row_mobskilldb( char** str, size_t columns, size_t current
 	int32 mob_id;
 	int32 j, tmp;
 
-	mob_id = atoi(str[0]);
+	mob_id = a2i(str[0]);
 
 	std::shared_ptr<s_mob_db> mob = mob_db.find(mob_id);
 
@@ -6498,7 +6498,7 @@ static bool mob_parse_row_mobskilldb( char** str, size_t columns, size_t current
 	}
 
 	//Skill ID
-	j = atoi(str[3]);
+	j = a2i(str[3]);
 	if ( !skill_db.exists( j ) ){
 		if (mob_id < 0)
 			ShowError("mob_parse_row_mobskilldb: Invalid Skill ID (%d) for all mobs\n", j);
@@ -6509,11 +6509,11 @@ static bool mob_parse_row_mobskilldb( char** str, size_t columns, size_t current
 	ms->skill_id = j;
 
 	//Skill lvl
-	j = atoi(str[4]) <= 0 ? 1 : atoi(str[4]);
+	j = a2i(str[4]) <= 0 ? 1 : a2i(str[4]);
 	ms->skill_lv = j > battle_config.mob_max_skilllvl ? battle_config.mob_max_skilllvl : j; //we strip max skill level
 
 	//Apply battle_config modifiers to rate (permillage) and delay [Skotlex]
-	tmp = atoi(str[5]);
+	tmp = a2i(str[5]);
 	if (battle_config.mob_skill_rate != 100)
 		tmp = tmp*battle_config.mob_skill_rate/100;
 	if (tmp > 10000)
@@ -6522,13 +6522,13 @@ static bool mob_parse_row_mobskilldb( char** str, size_t columns, size_t current
 		ms->permillage = 1;
 	else
 		ms->permillage = tmp;
-	ms->casttime = atoi(str[6]);
-	ms->delay = atoi(str[7]);
+	ms->casttime = a2i(str[6]);
+	ms->delay = a2i(str[7]);
 	if (battle_config.mob_skill_delay != 100)
 		ms->delay = ms->delay*battle_config.mob_skill_delay/100;
 	if (ms->delay < 0 || ms->delay > MOB_MAX_DELAY) //time overflow?
 		ms->delay = MOB_MAX_DELAY;
-	ms->cancel = atoi(str[8]);
+	ms->cancel = a2i(str[8]);
 	if( strcmp(str[8],"yes")==0 )
 		ms->cancel=1;
 
@@ -6569,7 +6569,7 @@ static bool mob_parse_row_mobskilldb( char** str, size_t columns, size_t current
 
 	//Cond2
 	// numeric value
-	ms->cond2 = atoi(str[11]);
+	ms->cond2 = a2i(str[11]);
 	// or special constant
 	ARR_FIND( 0, ARRAYLENGTH(cond2), j, strcmp(str[11],cond2[j].str) == 0 );
 	if( j < ARRAYLENGTH(cond2) )
@@ -6597,7 +6597,7 @@ static bool mob_parse_row_mobskilldb( char** str, size_t columns, size_t current
 	}
 
 	if(*str[17])
-		ms->emotion = atoi(str[17]);
+		ms->emotion = a2i(str[17]);
 	else
 		ms->emotion = -1;
 

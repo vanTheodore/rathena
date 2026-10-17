@@ -332,12 +332,12 @@ int32 chmapif_parse_askscdata(int32 fd){
 			}
 			for( count = 0; count < 50 && SQL_SUCCESS == Sql_NextRow(sql_handle); ++count )
 			{
-				Sql_GetData(sql_handle, 0, &data, nullptr); scdata.type = atoi(data);
+				Sql_GetData(sql_handle, 0, &data, nullptr); scdata.type = a2i(data);
 				Sql_GetData(sql_handle, 1, &data, nullptr); scdata.tick = strtoll( data, nullptr, 10 );
-				Sql_GetData(sql_handle, 2, &data, nullptr); scdata.val1 = atoi(data);
-				Sql_GetData(sql_handle, 3, &data, nullptr); scdata.val2 = atoi(data);
-				Sql_GetData(sql_handle, 4, &data, nullptr); scdata.val3 = atoi(data);
-				Sql_GetData(sql_handle, 5, &data, nullptr); scdata.val4 = atoi(data);
+				Sql_GetData(sql_handle, 2, &data, nullptr); scdata.val1 = a2i(data);
+				Sql_GetData(sql_handle, 3, &data, nullptr); scdata.val2 = a2i(data);
+				Sql_GetData(sql_handle, 4, &data, nullptr); scdata.val3 = a2i(data);
+				Sql_GetData(sql_handle, 5, &data, nullptr); scdata.val4 = a2i(data);
 				memcpy(WFIFOP(fd, 14+count*sizeof(struct status_change_data)), &scdata, sizeof(struct status_change_data));
 			}
 			if (count >= 50)
@@ -656,7 +656,7 @@ int32 chmapif_parse_req_skillcooldown(int32 fd){
 			}
 			for( count = 0; count < MAX_SKILLCOOLDOWN && SQL_SUCCESS == Sql_NextRow(sql_handle); ++count )
 			{
-				Sql_GetData(sql_handle, 0, &data, nullptr); scd.skill_id = atoi(data);
+				Sql_GetData(sql_handle, 0, &data, nullptr); scd.skill_id = a2i(data);
 				Sql_GetData(sql_handle, 1, &data, nullptr); scd.tick = strtoll( data, nullptr, 10 );
 				memcpy(WFIFOP(fd,14+count*sizeof(s_skill_cooldown_data)), &scd, sizeof(s_skill_cooldown_data));
 			}
@@ -917,8 +917,8 @@ int32 chmapif_parse_fwlog_changestatus(int32 fd){
 			int32 t_cid; // target char id
 			char* data;
 
-			Sql_GetData(sql_handle, 0, &data, nullptr); t_aid = atoi(data);
-			Sql_GetData(sql_handle, 1, &data, nullptr); t_cid = atoi(data);
+			Sql_GetData(sql_handle, 0, &data, nullptr); t_aid = a2i(data);
+			Sql_GetData(sql_handle, 1, &data, nullptr); t_cid = a2i(data);
 			Sql_FreeResult(sql_handle);
 
 			if(!chlogif_isconnected())
@@ -1451,8 +1451,8 @@ int32 chmapif_parse_reqcharban(int32 fd){
 			time_t now = time(nullptr);
 			SqlStmt stmt{ *sql_handle };
 
-			Sql_GetData(sql_handle, 0, &data, nullptr); t_aid = atoi(data);
-			Sql_GetData(sql_handle, 1, &data, nullptr); t_cid = atoi(data);
+			Sql_GetData(sql_handle, 0, &data, nullptr); t_aid = a2i(data);
+			Sql_GetData(sql_handle, 1, &data, nullptr); t_cid = a2i(data);
 			Sql_GetData(sql_handle, 2, &data, nullptr); unban_time = atol(data);
 			Sql_FreeResult(sql_handle);
 

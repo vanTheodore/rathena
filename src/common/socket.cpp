@@ -1312,7 +1312,7 @@ int32 socket_config_read(const char* cfgName)
 			continue;
 
 		if (!strcmpi(w1, "stall_time")) {
-			stall_time = atoi(w2);
+			stall_time = a2i(w2);
 			if( stall_time < 3 )
 				stall_time = 3;/* a minimum is required to refrain it from killing itself */
 		}
@@ -1340,16 +1340,16 @@ int32 socket_config_read(const char* cfgName)
 				ShowError("socket_config_read: Invalid ip or ip range '%s'!\n", line);
 		}
 		else if (!strcmpi(w1,"ddos_interval"))
-			ddos_interval = atoi(w2);
+			ddos_interval = a2i(w2);
 		else if (!strcmpi(w1,"ddos_count"))
-			ddos_count = atoi(w2);
+			ddos_count = a2i(w2);
 		else if (!strcmpi(w1,"ddos_autoreset"))
-			ddos_autoreset = atoi(w2);
+			ddos_autoreset = a2i(w2);
 		else if (!strcmpi(w1,"debug"))
 			access_debug = config_switch(w2);
 #ifdef SOCKET_EPOLL
 		else if( !strcmpi( w1, "epoll_maxevents" ) ){
-			epoll_maxevents = atoi(w2);
+			epoll_maxevents = a2i(w2);
 
 			// minimum that seems to be useful
 			if( epoll_maxevents < 16 ){

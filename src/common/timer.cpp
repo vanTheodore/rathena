@@ -12,6 +12,7 @@
 #include "malloc.hpp"
 #include "nullpo.hpp"
 #include "showmsg.hpp"
+#include "strlib.hpp" // a2i()
 #include "utils.hpp"
 #ifdef WIN32
 #include "winapi.hpp" // GetTickCount()
@@ -474,7 +475,7 @@ double solve_time(char* modif_p) {
 	nullpo_retr(0,modif_p);
 
 	while (modif_p[0] != '\0') {
-		int32 value = atoi(modif_p);
+		int32 value = a2i(modif_p);
 		if (value == 0)
 			modif_p++;
 		else {

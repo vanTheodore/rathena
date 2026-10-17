@@ -655,9 +655,9 @@ int32 chlogif_parse_ackchangecharsex(int32 char_id, int32 sex)
 		return 1;
 	}
 
-	Sql_GetData(sql_handle, 0, &data, nullptr); account_id = atoi(data);
-	Sql_GetData(sql_handle, 1, &data, nullptr); class_ = atoi(data);
-	Sql_GetData(sql_handle, 2, &data, nullptr); guild_id = atoi(data);
+	Sql_GetData(sql_handle, 0, &data, nullptr); account_id = a2i(data);
+	Sql_GetData(sql_handle, 1, &data, nullptr); class_ = a2i(data);
+	Sql_GetData(sql_handle, 2, &data, nullptr); guild_id = a2i(data);
 	Sql_FreeResult(sql_handle);
 
 	chlogif_parse_change_sex_sub(sex, account_id, char_id, class_, guild_id);

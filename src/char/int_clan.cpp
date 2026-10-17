@@ -66,7 +66,7 @@ std::shared_ptr<struct clan> inter_clan_fromsql(int32 clan_id){
 	memcpy( clan->master, data, std::min( len, static_cast<decltype(len)>( NAME_LENGTH ) ) );
 	Sql_GetData( sql_handle,  2, &data, &len );
 	memcpy( clan->map, data, std::min( len, static_cast<decltype(len)>( MAP_NAME_LENGTH_EXT ) ) );
-	Sql_GetData(sql_handle,  3, &data, nullptr); clan->max_member = atoi(data);
+	Sql_GetData(sql_handle,  3, &data, nullptr); clan->max_member = a2i(data);
 
 	clan->connect_member = 0;
 
@@ -85,8 +85,8 @@ std::shared_ptr<struct clan> inter_clan_fromsql(int32 clan_id){
 	for( i = 0; i < MAX_CLANALLIANCE && SQL_SUCCESS == Sql_NextRow(sql_handle); i++ ){
 		struct clan_alliance* a = &clan->alliance[i];
 
-		Sql_GetData(sql_handle, 0, &data, nullptr); a->opposition = atoi(data);
-		Sql_GetData(sql_handle, 1, &data, nullptr); a->clan_id = atoi(data);
+		Sql_GetData(sql_handle, 0, &data, nullptr); a->opposition = a2i(data);
+		Sql_GetData(sql_handle, 1, &data, nullptr); a->clan_id = a2i(data);
 		Sql_GetData(sql_handle, 2, &data, &len); memcpy(a->name, data, zmin(len, NAME_LENGTH));
 	}
 
@@ -231,7 +231,7 @@ int32 inter_clan_init(void){
 	while( SQL_SUCCESS == Sql_NextRow( sql_handle ) ){
 		char* data;
 		Sql_GetData( sql_handle,  0, &data, nullptr );
-		clan_ids.push_back( atoi( data ) );
+		clan_ids.push_back( a2i( data ) );
 	}
 
 	Sql_FreeResult( sql_handle );

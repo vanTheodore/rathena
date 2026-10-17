@@ -958,7 +958,7 @@ bool chclif_parse_select_accessible_map( int32 fd, struct char_session_data& sd 
 		return 1;
 	}
 
-	uint32 char_id = atoi( data );
+	uint32 char_id = a2i( data );
 	Sql_FreeResult( sql_handle );
 
 	// Prevent select a char while retrieving guild bound items
@@ -1118,7 +1118,7 @@ bool chclif_parse_charselect( int32 fd, struct char_session_data& sd ){
 		return 1;
 	}
 
-	uint32 char_id = atoi(data);
+	uint32 char_id = a2i(data);
 	Sql_FreeResult(sql_handle);
 
 	// Prevent select a char while retrieving guild bound items

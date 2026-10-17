@@ -5,6 +5,7 @@
 #define STRLIB_HPP
 
 #include <cstdarg>
+#include <cstdlib>  // std::strtol for a2i()
 #if !defined(__USE_GNU)
 #define __USE_GNU  // required to enable strnlen on some platforms
 #define __USED_GNU
@@ -39,6 +40,29 @@ uint64 strtoull(const char* str, char** endptr, int32 base);
 
 int32 e_mail_check(char* email);
 int32 config_switch(const char* str);
+
+/// atoi() with defined behaviour on overflow and null input.
+///
+/// Identical to the C library atoi() for every in-range conversion
+/// (leading whitespace, optional sign, stop at first non-digit, 0 when no
+/// digits) — it is implemented as (int)strtol with a saturation step —
+/// but out-of-range input clamps to [INT_MIN, INT_MAX] instead of the
+/// undefined "(int)strtol" narrowing: glibc's atoi yields the
+/// platform-divergent -1/0 for huge magnitudes while 32-bit long
+/// platforms (Windows) already saturate, so this wrapper is exactly the
+/// Windows result everywhere and removes a Windows/Linux parse
+/// difference. nullptr returns 0 instead of crashing. Pinned by
+/// tools/a2i-check.cpp against the real libc atoi.
+inline int32 a2i(const char* str) {
+	if (str == nullptr)
+		return 0;
+	const long value = std::strtol(str, nullptr, 10);
+	if (value > INT_MAX)
+		return INT_MAX;
+	if (value < INT_MIN)
+		return INT_MIN;
+	return static_cast<int32>(value);
+}
 
 /// strncpy that always nul-terminates the string
 char* safestrncpy(char* dst, const char* src, size_t n);

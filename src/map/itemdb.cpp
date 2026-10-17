@@ -3771,7 +3771,7 @@ static bool itemdb_read_noequip( char* str[], size_t columns, size_t current ){
 	int32 flag;
 
 	nameid = strtoul(str[0], nullptr, 10);
-	flag = atoi(str[1]);
+	flag = a2i(str[1]);
 
 	std::shared_ptr<item_data> id = item_db.find(nameid);
 
@@ -3970,10 +3970,10 @@ bool itemdb_parse_roulette_db(void)
 			uint16 amount;
 			int32 level, flag;
 
-			Sql_GetData(mmysql_handle, 1, &data, nullptr); level = atoi(data);
+			Sql_GetData(mmysql_handle, 1, &data, nullptr); level = a2i(data);
 			Sql_GetData(mmysql_handle, 2, &data, nullptr); item_id = strtoul(data, nullptr, 10);
-			Sql_GetData(mmysql_handle, 3, &data, nullptr); amount = atoi(data);
-			Sql_GetData(mmysql_handle, 4, &data, nullptr); flag = atoi(data);
+			Sql_GetData(mmysql_handle, 3, &data, nullptr); amount = a2i(data);
+			Sql_GetData(mmysql_handle, 4, &data, nullptr); flag = a2i(data);
 
 			if (!item_db.exists(item_id)) {
 				ShowWarning("itemdb_parse_roulette_db: Unknown item ID '%u' in level '%d'\n", item_id, level);

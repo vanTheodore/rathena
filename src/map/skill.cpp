@@ -15914,12 +15914,12 @@ uint64 MagicMushroomDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
  * Structure: SkillID,Flag
  */
 static bool skill_parse_row_nocastdb( char* split[], size_t columns, size_t current ){
-	std::shared_ptr<s_skill_db> skill = skill_db.find(atoi(split[0]));
+	std::shared_ptr<s_skill_db> skill = skill_db.find(a2i(split[0]));
 
 	if (!skill)
 		return false;
 
-	skill->nocast |= atoi(split[1]);
+	skill->nocast |= a2i(split[1]);
 
 	return true;
 }
@@ -15929,7 +15929,7 @@ static bool skill_parse_row_nocastdb( char* split[], size_t columns, size_t curr
  */
 static bool skill_parse_row_producedb( char* split[], size_t columns, size_t current ){
 	uint16 x, y;
-	uint16 id = atoi(split[0]);
+	uint16 id = a2i(split[0]);
 	t_itemid nameid = 0;
 	bool found = false;
 
@@ -15952,13 +15952,13 @@ static bool skill_parse_row_producedb( char* split[], size_t columns, size_t cur
 	}
 
 	skill_produce_db[id].nameid = nameid;
-	skill_produce_db[id].itemlv = atoi(split[2]);
-	skill_produce_db[id].req_skill = atoi(split[3]);
-	skill_produce_db[id].req_skill_lv = atoi(split[4]);
+	skill_produce_db[id].itemlv = a2i(split[2]);
+	skill_produce_db[id].req_skill = a2i(split[3]);
+	skill_produce_db[id].req_skill_lv = a2i(split[4]);
 
 	for (x = 5, y = 0; x+1 < columns && split[x] && split[x+1] && y < MAX_PRODUCE_RESOURCE; x += 2, y++) {
 		skill_produce_db[id].mat_id[y] = strtoul(split[x], nullptr, 10);
-		skill_produce_db[id].mat_amount[y] = atoi(split[x+1]);
+		skill_produce_db[id].mat_amount[y] = a2i(split[x+1]);
 	}
 
 	if (!found)
@@ -16117,9 +16117,9 @@ uint64 AbraDatabase::parseBodyNode(const ryml::ConstNodeRef& node) {
  * Structure: ProductID,BaseRate,MakeAmount1,MakeAmountRate1...,MakeAmount5,MakeAmountRate5
  */
 static bool skill_parse_row_changematerialdb( char* split[], size_t columns, size_t current ){
-	uint16 id = atoi(split[0]);
+	uint16 id = a2i(split[0]);
 	t_itemid nameid = strtoul(split[1], nullptr, 10);
-	int16 rate = atoi(split[2]);
+	int16 rate = a2i(split[2]);
 	bool found = false;
 	int32 x, y;
 
@@ -16158,8 +16158,8 @@ static bool skill_parse_row_changematerialdb( char* split[], size_t columns, siz
 	skill_changematerial_db[id].rate = rate;
 
 	for (x = 3, y = 0; x+1 < columns && split[x] && split[x+1] && y < MAX_SKILL_CHANGEMATERIAL_SET; x += 2, y++) {
-		skill_changematerial_db[id].qty[y] = atoi(split[x]);
-		skill_changematerial_db[id].qty_rate[y] = atoi(split[x+1]);
+		skill_changematerial_db[id].qty[y] = a2i(split[x]);
+		skill_changematerial_db[id].qty_rate[y] = a2i(split[x+1]);
 	}
 
 	if (!found)

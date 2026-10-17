@@ -287,7 +287,7 @@ int32 skill_split_atoi(char *str, int32 *val, int32 max = MAX_SKILL_LEVEL) {
 	for (i = 0; i < max; i++) {
 		if (!str)
 			break;
-		val[i] = atoi(str);
+		val[i] = a2i(str);
 		str = strchr(str, ':');
 		if (str)
 			*str++ = 0;
@@ -303,7 +303,7 @@ int32 skill_split_atoi(char *str, int32 *val, int32 max = MAX_SKILL_LEVEL) {
 }
 
 /**
- * Split string to int32 by constant value (const.yml) or atoi()
+ * Split string to int32 by constant value (const.yml) or a2i()
  * @param *str: String input
  * @param *val: Temporary storage
  * @param *delim: Delimiter (for multiple value support)
@@ -321,7 +321,7 @@ uint8 skill_split_atoi2(char *str, int64 *val, const char *delim, int32 min_valu
 		trim(p);
 
 		if (ISDIGIT(p[0])) // If using numeric
-			n = atoi(p);
+			n = a2i(p);
 		else {
 			n = constant_lookup_int(p);
 			p = strtok(nullptr, delim);
@@ -350,7 +350,7 @@ static void itemdb_re_split_atoi(char* str, int32* val1, int32* val2) {
 	for (i = 0; i < 2; i++) {
 		if (!str)
 			break;
-		val[i] = atoi(str);
+		val[i] = a2i(str);
 		str = strchr(str, ':');
 		if (str)
 			*str++ = 0;
@@ -523,7 +523,7 @@ static bool parse_item_constants_txt(const char *path) {
 
 		aegis_itemnames[item_id] = std::string(name);
 
-		if (atoi(str[14]) & (EQP_HELM | EQP_COSTUME_HELM) && util::umap_find(aegis_itemviewid, view_id) == nullptr)
+		if (a2i(str[14]) & (EQP_HELM | EQP_COSTUME_HELM) && util::umap_find(aegis_itemviewid, view_id) == nullptr)
 			aegis_itemviewid[view_id] = item_id;
 
 		count++;
@@ -598,7 +598,7 @@ void ItemDatabase::loadingFinished() {
 ItemDatabase item_db;
 
 static bool parse_mob_constants_txt( char *split[], size_t columns, size_t current ){
-	uint16 mob_id = atoi(split[0]);
+	uint16 mob_id = a2i(split[0]);
 	char *name = trim(split[1]);
 
 	aegis_mobnames[mob_id] = std::string(name);
@@ -607,7 +607,7 @@ static bool parse_mob_constants_txt( char *split[], size_t columns, size_t curre
 }
 
 static bool parse_skill_constants_txt( char *split[], size_t columns, size_t current ){
-	uint16 skill_id = atoi(split[0]);
+	uint16 skill_id = a2i(split[0]);
 	char *name = trim(split[16]);
 
 	aegis_skillnames[skill_id] = std::string(name);

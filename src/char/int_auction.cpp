@@ -205,25 +205,25 @@ void inter_auctions_fromsql(void)
 		struct item *item;
 		std::shared_ptr<struct auction_data> auction = std::make_shared<struct auction_data>();
 
-		Sql_GetData(sql_handle, 0, &data, nullptr); auction->auction_id = atoi(data);
-		Sql_GetData(sql_handle, 1, &data, nullptr); auction->seller_id = atoi(data);
+		Sql_GetData(sql_handle, 0, &data, nullptr); auction->auction_id = a2i(data);
+		Sql_GetData(sql_handle, 1, &data, nullptr); auction->seller_id = a2i(data);
 		Sql_GetData(sql_handle, 2, &data, nullptr); safestrncpy(auction->seller_name, data, NAME_LENGTH);
-		Sql_GetData(sql_handle, 3, &data, nullptr); auction->buyer_id = atoi(data);
+		Sql_GetData(sql_handle, 3, &data, nullptr); auction->buyer_id = a2i(data);
 		Sql_GetData(sql_handle, 4, &data, nullptr); safestrncpy(auction->buyer_name, data, NAME_LENGTH);
-		Sql_GetData(sql_handle, 5, &data, nullptr); auction->price	= atoi(data);
-		Sql_GetData(sql_handle, 6, &data, nullptr); auction->buynow = atoi(data);
-		Sql_GetData(sql_handle, 7, &data, nullptr); auction->hours = atoi(data);
-		Sql_GetData(sql_handle, 8, &data, nullptr); auction->timestamp = atoi(data);
+		Sql_GetData(sql_handle, 5, &data, nullptr); auction->price	= a2i(data);
+		Sql_GetData(sql_handle, 6, &data, nullptr); auction->buynow = a2i(data);
+		Sql_GetData(sql_handle, 7, &data, nullptr); auction->hours = a2i(data);
+		Sql_GetData(sql_handle, 8, &data, nullptr); auction->timestamp = a2i(data);
 
 		item = &auction->item;
 		Sql_GetData(sql_handle, 9, &data, nullptr); item->nameid = strtoul(data, nullptr, 10);
 		Sql_GetData(sql_handle,10, &data, nullptr); safestrncpy(auction->item_name, data, ITEM_NAME_LENGTH);
-		Sql_GetData(sql_handle,11, &data, nullptr); auction->type = atoi(data);
+		Sql_GetData(sql_handle,11, &data, nullptr); auction->type = a2i(data);
 
-		Sql_GetData(sql_handle,12, &data, nullptr); item->refine = atoi(data);
-		Sql_GetData(sql_handle,13, &data, nullptr); item->attribute = atoi(data);
+		Sql_GetData(sql_handle,12, &data, nullptr); item->refine = a2i(data);
+		Sql_GetData(sql_handle,13, &data, nullptr); item->attribute = a2i(data);
 		Sql_GetData(sql_handle,14, &data, nullptr); item->unique_id = strtoull(data, nullptr, 10);
-		Sql_GetData(sql_handle,15, &data, nullptr); item->enchantgrade = atoi(data);
+		Sql_GetData(sql_handle,15, &data, nullptr); item->enchantgrade = a2i(data);
 
 		item->identify = 1;
 		item->amount = 1;
@@ -237,11 +237,11 @@ void inter_auctions_fromsql(void)
 
 		for (i = 0; i < MAX_ITEM_RDM_OPT; i++) {
 			Sql_GetData(sql_handle, 16 + MAX_SLOTS + i*3, &data, nullptr);
-			item->option[i].id = atoi(data);
+			item->option[i].id = a2i(data);
 			Sql_GetData(sql_handle, 17 + MAX_SLOTS + i*3, &data, nullptr);
-			item->option[i].value = atoi(data);
+			item->option[i].value = a2i(data);
 			Sql_GetData(sql_handle, 18 + MAX_SLOTS + i*3, &data, nullptr);
-			item->option[i].param = atoi(data);
+			item->option[i].param = a2i(data);
 		}
 
 		if( auction->timestamp > now )

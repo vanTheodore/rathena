@@ -369,23 +369,23 @@ std::shared_ptr<CharGuild> inter_guild_fromsql( int32 guild_id ){
 	g->guild.guild_id = guild_id;
 	Sql_GetData(sql_handle,  0, &data, &len); memcpy(g->guild.name, data, zmin(len, NAME_LENGTH));
 	Sql_GetData(sql_handle,  1, &data, &len); memcpy(g->guild.master, data, zmin(len, NAME_LENGTH));
-	Sql_GetData(sql_handle,  2, &data, nullptr); g->guild.guild_lv = atoi(data);
-	Sql_GetData(sql_handle,  3, &data, nullptr); g->guild.connect_member = atoi(data);
-	Sql_GetData(sql_handle,  4, &data, nullptr); g->guild.max_member = atoi(data);
+	Sql_GetData(sql_handle,  2, &data, nullptr); g->guild.guild_lv = a2i(data);
+	Sql_GetData(sql_handle,  3, &data, nullptr); g->guild.connect_member = a2i(data);
+	Sql_GetData(sql_handle,  4, &data, nullptr); g->guild.max_member = a2i(data);
 	if( g->guild.max_member > MAX_GUILD )
 	{	// Fix reduction of MAX_GUILD [PoW]
 		ShowWarning("Guild %d:%s specifies higher capacity (%d) than MAX_GUILD (%d)\n", guild_id, g->guild.name, g->guild.max_member, MAX_GUILD);
 		g->guild.max_member = MAX_GUILD;
 	}
-	Sql_GetData(sql_handle,  5, &data, nullptr); g->guild.average_lv = atoi(data);
+	Sql_GetData(sql_handle,  5, &data, nullptr); g->guild.average_lv = a2i(data);
 	Sql_GetData(sql_handle,  6, &data, nullptr); g->guild.exp = strtoull(data, nullptr, 10);
 	Sql_GetData(sql_handle,  7, &data, nullptr); g->guild.next_exp = strtoull(data, nullptr, 10);
-	Sql_GetData(sql_handle,  8, &data, nullptr); g->guild.skill_point = atoi(data);
+	Sql_GetData(sql_handle,  8, &data, nullptr); g->guild.skill_point = a2i(data);
 	Sql_GetData(sql_handle,  9, &data, &len); memcpy(g->guild.mes1, data, zmin(len, sizeof(g->guild.mes1)));
 	Sql_GetData(sql_handle, 10, &data, &len); memcpy(g->guild.mes2, data, zmin(len, sizeof(g->guild.mes2)));
-	Sql_GetData(sql_handle, 11, &data, &len); g->guild.emblem_len = atoi(data);
-	Sql_GetData(sql_handle, 12, &data, &len); g->guild.emblem_id = atoi(data);
-	Sql_GetData(sql_handle, 13, &data, nullptr); g->guild.last_leader_change = atoi(data);
+	Sql_GetData(sql_handle, 11, &data, &len); g->guild.emblem_len = a2i(data);
+	Sql_GetData(sql_handle, 12, &data, &len); g->guild.emblem_id = a2i(data);
+	Sql_GetData(sql_handle, 13, &data, nullptr); g->guild.last_leader_change = a2i(data);
 	Sql_GetData(sql_handle, 14, &data, &len);
 	// convert emblem data from hexadecimal to binary
 	//TODO: why not store it in the db as binary directly? [ultramage]
@@ -420,10 +420,10 @@ std::shared_ptr<CharGuild> inter_guild_fromsql( int32 guild_id ){
 	{
 		struct guild_member* m = &g->guild.member[i];
 
-		Sql_GetData(sql_handle,  0, &data, nullptr); m->account_id = atoi(data);
-		Sql_GetData(sql_handle,  1, &data, nullptr); m->char_id = atoi(data);
-		Sql_GetData(sql_handle,  2, &data, nullptr); m->hair = atoi(data);
-		Sql_GetData(sql_handle,  3, &data, nullptr); m->hair_color = atoi(data);
+		Sql_GetData(sql_handle,  0, &data, nullptr); m->account_id = a2i(data);
+		Sql_GetData(sql_handle,  1, &data, nullptr); m->char_id = a2i(data);
+		Sql_GetData(sql_handle,  2, &data, nullptr); m->hair = a2i(data);
+		Sql_GetData(sql_handle,  3, &data, nullptr); m->hair_color = a2i(data);
 		Sql_GetData(sql_handle,  4, &data, nullptr);
 		switch( *data ){
 			case 'F':
@@ -437,15 +437,15 @@ std::shared_ptr<CharGuild> inter_guild_fromsql( int32 guild_id ){
 				m->gender = SEX_MALE;
 				break;
 		}
-		Sql_GetData(sql_handle,  5, &data, nullptr); m->class_ = atoi(data);
-		Sql_GetData(sql_handle,  6, &data, nullptr); m->lv = atoi(data);
+		Sql_GetData(sql_handle,  5, &data, nullptr); m->class_ = a2i(data);
+		Sql_GetData(sql_handle,  6, &data, nullptr); m->lv = a2i(data);
 		Sql_GetData(sql_handle,  7, &data, nullptr); m->exp = strtoull(data, nullptr, 10);
-		Sql_GetData(sql_handle,  8, &data, nullptr); m->online = atoi(data);
-		Sql_GetData(sql_handle,  9, &data, nullptr); m->position = atoi(data);
+		Sql_GetData(sql_handle,  8, &data, nullptr); m->online = a2i(data);
+		Sql_GetData(sql_handle,  9, &data, nullptr); m->position = a2i(data);
 		if( m->position >= MAX_GUILDPOSITION ) // Fix reduction of MAX_GUILDPOSITION [PoW]
 			m->position = MAX_GUILDPOSITION - 1;
 		Sql_GetData(sql_handle, 10, &data, &len); memcpy(m->name, data, zmin(len, NAME_LENGTH));
-		Sql_GetData(sql_handle, 11, &data, nullptr); m->last_login = atoi(data);
+		Sql_GetData(sql_handle, 11, &data, nullptr); m->last_login = a2i(data);
 		m->modified = GS_MEMBER_UNMODIFIED;
 	}
 
@@ -460,13 +460,13 @@ std::shared_ptr<CharGuild> inter_guild_fromsql( int32 guild_id ){
 		int32 position;
 		struct guild_position* gpos;
 
-		Sql_GetData(sql_handle, 0, &data, nullptr); position = atoi(data);
+		Sql_GetData(sql_handle, 0, &data, nullptr); position = a2i(data);
 		if( position < 0 || position >= MAX_GUILDPOSITION )
 			continue;// invalid position
 		gpos = &g->guild.position[position];
 		Sql_GetData(sql_handle, 1, &data, &len); memcpy(gpos->name, data, zmin(len, NAME_LENGTH));
-		Sql_GetData(sql_handle, 2, &data, nullptr); gpos->mode = atoi(data);
-		Sql_GetData(sql_handle, 3, &data, nullptr); gpos->exp_mode = atoi(data);
+		Sql_GetData(sql_handle, 2, &data, nullptr); gpos->mode = a2i(data);
+		Sql_GetData(sql_handle, 3, &data, nullptr); gpos->exp_mode = a2i(data);
 		gpos->modified = GS_POSITION_UNMODIFIED;
 	}
 
@@ -480,8 +480,8 @@ std::shared_ptr<CharGuild> inter_guild_fromsql( int32 guild_id ){
 	{
 		struct guild_alliance* a = &g->guild.alliance[i];
 
-		Sql_GetData(sql_handle, 0, &data, nullptr); a->opposition = atoi(data);
-		Sql_GetData(sql_handle, 1, &data, nullptr); a->guild_id = atoi(data);
+		Sql_GetData(sql_handle, 0, &data, nullptr); a->opposition = a2i(data);
+		Sql_GetData(sql_handle, 1, &data, nullptr); a->guild_id = a2i(data);
 		Sql_GetData(sql_handle, 2, &data, &len); memcpy(a->name, data, zmin(len, NAME_LENGTH));
 	}
 
@@ -495,7 +495,7 @@ std::shared_ptr<CharGuild> inter_guild_fromsql( int32 guild_id ){
 	{
 		struct guild_expulsion *e = &g->guild.expulsion[i];
 
-		Sql_GetData(sql_handle, 0, &data, nullptr); e->account_id = atoi(data);
+		Sql_GetData(sql_handle, 0, &data, nullptr); e->account_id = a2i(data);
 		Sql_GetData(sql_handle, 1, &data, &len); memcpy(e->name, data, zmin(len, NAME_LENGTH));
 		Sql_GetData(sql_handle, 2, &data, &len); memcpy(e->mes, data, zmin(len, sizeof(e->mes)));
 		Sql_GetData(sql_handle, 3, &data, nullptr); e->char_id = strtoul(data, nullptr, 10);
@@ -516,10 +516,10 @@ std::shared_ptr<CharGuild> inter_guild_fromsql( int32 guild_id ){
 	while( SQL_SUCCESS == Sql_NextRow(sql_handle) )
 	{
 		int32 id;
-		Sql_GetData(sql_handle, 0, &data, nullptr); id = atoi(data) - GD_SKILLBASE;
+		Sql_GetData(sql_handle, 0, &data, nullptr); id = a2i(data) - GD_SKILLBASE;
 		if( id < 0 || id >= MAX_GUILDSKILL )
 			continue;// invalid guild skill
-		Sql_GetData(sql_handle, 1, &data, nullptr); g->guild.skill[id].lv = atoi(data);
+		Sql_GetData(sql_handle, 1, &data, nullptr); g->guild.skill[id].lv = a2i(data);
 	}
 	Sql_FreeResult(sql_handle);
 
@@ -610,17 +610,17 @@ std::shared_ptr<struct guild_castle> inter_guildcastle_fromsql( int32 castle_id 
 	gc->castle_id = castle_id;
 
 	if (SQL_SUCCESS == Sql_NextRow(sql_handle)) {
-		Sql_GetData(sql_handle, CD_GUILD_ID, &data, nullptr); gc->guild_id =  atoi(data);
-		Sql_GetData(sql_handle, CD_CURRENT_ECONOMY, &data, nullptr); gc->economy = atoi(data);
-		Sql_GetData(sql_handle, CD_CURRENT_DEFENSE, &data, nullptr); gc->defense = atoi(data);
-		Sql_GetData(sql_handle, CD_INVESTED_ECONOMY, &data, nullptr); gc->triggerE = atoi(data);
-		Sql_GetData(sql_handle, CD_INVESTED_DEFENSE, &data, nullptr); gc->triggerD = atoi(data);
-		Sql_GetData(sql_handle, CD_NEXT_TIME, &data, nullptr); gc->nextTime = atoi(data);
-		Sql_GetData(sql_handle, CD_PAY_TIME, &data, nullptr); gc->payTime = atoi(data);
-		Sql_GetData(sql_handle, CD_CREATE_TIME, &data, nullptr); gc->createTime = atoi(data);
-		Sql_GetData(sql_handle, CD_ENABLED_KAFRA, &data, nullptr); gc->visibleC = atoi(data);
+		Sql_GetData(sql_handle, CD_GUILD_ID, &data, nullptr); gc->guild_id =  a2i(data);
+		Sql_GetData(sql_handle, CD_CURRENT_ECONOMY, &data, nullptr); gc->economy = a2i(data);
+		Sql_GetData(sql_handle, CD_CURRENT_DEFENSE, &data, nullptr); gc->defense = a2i(data);
+		Sql_GetData(sql_handle, CD_INVESTED_ECONOMY, &data, nullptr); gc->triggerE = a2i(data);
+		Sql_GetData(sql_handle, CD_INVESTED_DEFENSE, &data, nullptr); gc->triggerD = a2i(data);
+		Sql_GetData(sql_handle, CD_NEXT_TIME, &data, nullptr); gc->nextTime = a2i(data);
+		Sql_GetData(sql_handle, CD_PAY_TIME, &data, nullptr); gc->payTime = a2i(data);
+		Sql_GetData(sql_handle, CD_CREATE_TIME, &data, nullptr); gc->createTime = a2i(data);
+		Sql_GetData(sql_handle, CD_ENABLED_KAFRA, &data, nullptr); gc->visibleC = a2i(data);
 		for (i = CD_ENABLED_GUARDIAN00; i < CD_MAX; i++) {
-			Sql_GetData(sql_handle, i, &data, nullptr); gc->guardian[i - CD_ENABLED_GUARDIAN00].visible = atoi(data);
+			Sql_GetData(sql_handle, i, &data, nullptr); gc->guardian[i - CD_ENABLED_GUARDIAN00].visible = a2i(data);
 		}
 	}
 	Sql_FreeResult(sql_handle);
@@ -651,7 +651,7 @@ int32 inter_guild_CharOnline(uint32 char_id, int32 guild_id)
 			char* data;
 
 			Sql_GetData(sql_handle, 0, &data, nullptr);
-			guild_id = atoi(data);
+			guild_id = a2i(data);
 		}
 		else
 		{
@@ -702,7 +702,7 @@ int32 inter_guild_CharOffline(uint32 char_id, int32 guild_id)
 			char* data;
 
 			Sql_GetData(sql_handle, 0, &data, nullptr);
-			guild_id = atoi(data);
+			guild_id = a2i(data);
 		}
 		else
 		{
@@ -838,7 +838,7 @@ int32 search_guildname(char *str)
 		char* data;
 
 		Sql_GetData(sql_handle, 0, &data, nullptr);
-		guild_id = atoi(data);
+		guild_id = a2i(data);
 	}
 	else
 	{

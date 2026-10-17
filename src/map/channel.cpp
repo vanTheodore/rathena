@@ -1199,7 +1199,7 @@ int32 channel_pcsetopt(map_session_data *sd, char *chname, const char *option, c
 			clif_displaymessage(sd->fd, output);
 		}
 	} else {
-		int32 v = atoi(val);
+		int32 v = a2i(val);
 		if( opt == CHAN_OPT_MSG_DELAY ) {
 			if( v < 0 || v > 10 ) {
 				sprintf(output, msg_txt(sd,1451), v, opt_str[k]);// Value '%d' for option '%s' is out of range (limit 0-10).

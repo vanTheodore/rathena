@@ -128,7 +128,7 @@ bool web_config_read(const char* cfgName, bool normal) {
 			if (!strcmpi(w1, "bind_ip")) {
 				web_config.web_ip = w2;
 			} else if (!strcmpi(w1, "web_port"))
-				web_config.web_port = (uint16)atoi(w2);
+				web_config.web_port = (uint16)a2i(w2);
 		}
 
 		if (!strcmpi(w1, "timestamp_format"))
@@ -138,12 +138,12 @@ bool web_config_read(const char* cfgName, bool normal) {
 		else if (!strcmpi(w1, "stdout_with_ansisequence"))
 			stdout_with_ansisequence = config_switch(w2);
 		else if (!strcmpi(w1, "console_silent")) {
-			msg_silent = atoi(w2);
+			msg_silent = a2i(w2);
 			if (msg_silent) /* only bother if we have actually this enabled */
 				ShowInfo("Console Silent Setting: %d\n", msg_silent);
 		}
 		else if (!strcmpi(w1, "console_msg_log"))
-			console_msg_log = atoi(w2);
+			console_msg_log = a2i(w2);
 		else if (!strcmpi(w1, "console_log_filepath"))
 			safestrncpy(console_log_filepath, w2, sizeof(console_log_filepath));
 		else if (!strcmpi(w1, "print_req_res"))
@@ -211,7 +211,7 @@ int32 inter_config_read(const char* cfgName)
 			continue;
 
 		if (!strcmpi(w1, "emblem_transparency_limit"))
-			inter_config.emblem_woe_change = atoi(w2);
+			inter_config.emblem_woe_change = a2i(w2);
 		else if (!strcmpi(w1, "emblem_transparency_limit"))
 			inter_config.emblem_woe_change = config_switch(w2) == 1;
 		else if(!strcmpi(w1,"login_server_ip"))

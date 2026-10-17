@@ -80,18 +80,18 @@ int32 inter_pet_fromsql(int32 pet_id, struct s_pet* p)
 	if( SQL_SUCCESS == Sql_NextRow(sql_handle) )
 	{
 		p->pet_id = pet_id;
-		Sql_GetData(sql_handle,  1, &data, nullptr); p->class_ = atoi(data);
+		Sql_GetData(sql_handle,  1, &data, nullptr); p->class_ = a2i(data);
 		Sql_GetData(sql_handle,  2, &data, &len); memcpy(p->name, data, zmin(len, NAME_LENGTH));
-		Sql_GetData(sql_handle,  3, &data, nullptr); p->account_id = atoi(data);
-		Sql_GetData(sql_handle,  4, &data, nullptr); p->char_id = atoi(data);
-		Sql_GetData(sql_handle,  5, &data, nullptr); p->level = atoi(data);
+		Sql_GetData(sql_handle,  3, &data, nullptr); p->account_id = a2i(data);
+		Sql_GetData(sql_handle,  4, &data, nullptr); p->char_id = a2i(data);
+		Sql_GetData(sql_handle,  5, &data, nullptr); p->level = a2i(data);
 		Sql_GetData(sql_handle,  6, &data, nullptr); p->egg_id = strtoul(data, nullptr, 10);
 		Sql_GetData(sql_handle,  7, &data, nullptr); p->equip = strtoul(data, nullptr, 10);
-		Sql_GetData(sql_handle,  8, &data, nullptr); p->intimate = atoi(data);
-		Sql_GetData(sql_handle,  9, &data, nullptr); p->hungry = atoi(data);
-		Sql_GetData(sql_handle, 10, &data, nullptr); p->rename_flag = atoi(data);
-		Sql_GetData(sql_handle, 11, &data, nullptr); p->incubate = atoi(data);
-		Sql_GetData(sql_handle, 12, &data, nullptr); p->autofeed = atoi(data) != 0;
+		Sql_GetData(sql_handle,  8, &data, nullptr); p->intimate = a2i(data);
+		Sql_GetData(sql_handle,  9, &data, nullptr); p->hungry = a2i(data);
+		Sql_GetData(sql_handle, 10, &data, nullptr); p->rename_flag = a2i(data);
+		Sql_GetData(sql_handle, 11, &data, nullptr); p->incubate = a2i(data);
+		Sql_GetData(sql_handle, 12, &data, nullptr); p->autofeed = a2i(data) != 0;
 
 		Sql_FreeResult(sql_handle);
 

@@ -1201,7 +1201,7 @@ void Sql_inter_server_read(const char* cfgName, bool first) {
 			continue;
 
 		if(!strcmpi(w1,"mysql_reconnect_type")) {
-			mysql_reconnect_type = atoi(w2);
+			mysql_reconnect_type = a2i(w2);
 			switch( mysql_reconnect_type ) {
 				case 1:
 				case 2:
@@ -1212,7 +1212,7 @@ void Sql_inter_server_read(const char* cfgName, bool first) {
 					break;
 			}
 		} else if(!strcmpi(w1,"mysql_reconnect_count")) {
-			mysql_reconnect_count = atoi(w2);
+			mysql_reconnect_count = a2i(w2);
 			if( mysql_reconnect_count < 1 )
 				mysql_reconnect_count = 1;
 		} else if(!strcmpi(w1,"import"))

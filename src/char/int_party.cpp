@@ -223,10 +223,10 @@ std::shared_ptr<struct party_data> inter_party_fromsql( int32 party_id ){
 
 	p->party.party_id = party_id;
 	Sql_GetData(sql_handle, 1, &data, &len); memcpy(p->party.name, data, zmin(len, NAME_LENGTH));
-	Sql_GetData(sql_handle, 2, &data, nullptr); p->party.exp = (atoi(data) ? 1 : 0);
-	Sql_GetData(sql_handle, 3, &data, nullptr); p->party.item = atoi(data);
-	Sql_GetData(sql_handle, 4, &data, nullptr); leader_id = atoi(data);
-	Sql_GetData(sql_handle, 5, &data, nullptr); leader_char = atoi(data);
+	Sql_GetData(sql_handle, 2, &data, nullptr); p->party.exp = (a2i(data) ? 1 : 0);
+	Sql_GetData(sql_handle, 3, &data, nullptr); p->party.item = a2i(data);
+	Sql_GetData(sql_handle, 4, &data, nullptr); leader_id = a2i(data);
+	Sql_GetData(sql_handle, 5, &data, nullptr); leader_char = a2i(data);
 	Sql_FreeResult(sql_handle);
 
 	// Load members
@@ -238,13 +238,13 @@ std::shared_ptr<struct party_data> inter_party_fromsql( int32 party_id ){
 	for( i = 0; i < MAX_PARTY && SQL_SUCCESS == Sql_NextRow(sql_handle); ++i )
 	{
 		m = &p->party.member[i];
-		Sql_GetData(sql_handle, 0, &data, nullptr); m->account_id = atoi(data);
-		Sql_GetData(sql_handle, 1, &data, nullptr); m->char_id = atoi(data);
+		Sql_GetData(sql_handle, 0, &data, nullptr); m->account_id = a2i(data);
+		Sql_GetData(sql_handle, 1, &data, nullptr); m->char_id = a2i(data);
 		Sql_GetData(sql_handle, 2, &data, &len); memcpy(m->name, data, zmin(len, NAME_LENGTH));
-		Sql_GetData(sql_handle, 3, &data, nullptr); m->lv = atoi(data);
+		Sql_GetData(sql_handle, 3, &data, nullptr); m->lv = a2i(data);
 		Sql_GetData(sql_handle, 4, &data, &len); memcpy(m->map, data, zmin(len, sizeof(m->map)));
-		Sql_GetData(sql_handle, 5, &data, nullptr); m->online = (atoi(data) ? 1 : 0);
-		Sql_GetData(sql_handle, 6, &data, nullptr); m->class_ = atoi(data);
+		Sql_GetData(sql_handle, 5, &data, nullptr); m->online = (a2i(data) ? 1 : 0);
+		Sql_GetData(sql_handle, 6, &data, nullptr); m->class_ = a2i(data);
 		m->leader = (m->account_id == leader_id && m->char_id == leader_char ? 1 : 0);
 	}
 	Sql_FreeResult(sql_handle);
@@ -290,7 +290,7 @@ std::shared_ptr<struct party_data> search_partyname( char* str ){
 	else if( SQL_SUCCESS == Sql_NextRow(sql_handle) )
 	{
 		Sql_GetData(sql_handle, 0, &data, nullptr);
-		p = inter_party_fromsql(atoi(data));
+		p = inter_party_fromsql(a2i(data));
 	}
 	Sql_FreeResult(sql_handle);
 
@@ -940,7 +940,7 @@ int32 inter_party_CharOnline(uint32 char_id, int32 party_id)
 			return 0; //Eh? No party?
 
 		Sql_GetData(sql_handle, 0, &data, nullptr);
-		party_id = atoi(data);
+		party_id = a2i(data);
 		Sql_FreeResult(sql_handle);
 	}
 	if (party_id == 0)
@@ -986,7 +986,7 @@ int32 inter_party_CharOffline(uint32 char_id, int32 party_id) {
 			return 0; //Eh? No party?
 
 		Sql_GetData(sql_handle, 0, &data, nullptr);
-		party_id = atoi(data);
+		party_id = a2i(data);
 		Sql_FreeResult(sql_handle);
 	}
 	if (party_id == 0)

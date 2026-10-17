@@ -61,20 +61,20 @@ bool mapif_elemental_load(int32 ele_id, uint32 char_id, struct s_elemental *ele)
 		return false;
 	}
 
-	Sql_GetData(sql_handle,  0, &data, nullptr); ele->class_ = atoi(data);
-	Sql_GetData(sql_handle,  1, &data, nullptr); ele->mode = (e_mode)atoi(data);
-	Sql_GetData(sql_handle,  2, &data, nullptr); ele->hp = atoi(data);
-	Sql_GetData(sql_handle,  3, &data, nullptr); ele->sp = atoi(data);
-	Sql_GetData(sql_handle,  4, &data, nullptr); ele->max_hp = atoi(data);
-	Sql_GetData(sql_handle,  5, &data, nullptr); ele->max_sp = atoi(data);
-	Sql_GetData(sql_handle,  6, &data, nullptr); ele->atk = atoi(data);
-	Sql_GetData(sql_handle,  7, &data, nullptr); ele->atk2 = atoi(data);
-	Sql_GetData(sql_handle,  8, &data, nullptr); ele->matk = atoi(data);
-	Sql_GetData(sql_handle,  9, &data, nullptr); ele->amotion = atoi(data);
-	Sql_GetData(sql_handle, 10, &data, nullptr); ele->def = atoi(data);
-	Sql_GetData(sql_handle, 11, &data, nullptr); ele->mdef = atoi(data);
-	Sql_GetData(sql_handle, 12, &data, nullptr); ele->flee = atoi(data);
-	Sql_GetData(sql_handle, 13, &data, nullptr); ele->hit = atoi(data);
+	Sql_GetData(sql_handle,  0, &data, nullptr); ele->class_ = a2i(data);
+	Sql_GetData(sql_handle,  1, &data, nullptr); ele->mode = (e_mode)a2i(data);
+	Sql_GetData(sql_handle,  2, &data, nullptr); ele->hp = a2i(data);
+	Sql_GetData(sql_handle,  3, &data, nullptr); ele->sp = a2i(data);
+	Sql_GetData(sql_handle,  4, &data, nullptr); ele->max_hp = a2i(data);
+	Sql_GetData(sql_handle,  5, &data, nullptr); ele->max_sp = a2i(data);
+	Sql_GetData(sql_handle,  6, &data, nullptr); ele->atk = a2i(data);
+	Sql_GetData(sql_handle,  7, &data, nullptr); ele->atk2 = a2i(data);
+	Sql_GetData(sql_handle,  8, &data, nullptr); ele->matk = a2i(data);
+	Sql_GetData(sql_handle,  9, &data, nullptr); ele->amotion = a2i(data);
+	Sql_GetData(sql_handle, 10, &data, nullptr); ele->def = a2i(data);
+	Sql_GetData(sql_handle, 11, &data, nullptr); ele->mdef = a2i(data);
+	Sql_GetData(sql_handle, 12, &data, nullptr); ele->flee = a2i(data);
+	Sql_GetData(sql_handle, 13, &data, nullptr); ele->hit = a2i(data);
 	Sql_GetData(sql_handle, 14, &data, nullptr); ele->life_time = strtoll( data, nullptr, 10 );
 	Sql_FreeResult(sql_handle);
 	if( charserv_config.save_log )
