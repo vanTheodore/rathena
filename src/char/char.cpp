@@ -1336,40 +1336,57 @@ int32 char_check_char_name(char * name, char * esc_name)
 	int32 i;
 
 	// check length of character name
-	if( name[0] == '\0' )
+	if( name[0] == '\0' ){
+		ShowWarning( "char_check_char_name: rejected empty character name...\n" );
 		return -2; // empty character name
+	}
 	/**
 	 * By default the client does not allow you to create names with less than 4 characters,
 	 * however the use of WPE can bypass this, and this fixes the exploit.
 	 * It can also be changed in the configuration file in conjunction with the
 	 * 'Remove 4/6 letter Character Name Limit' client diff patch.
 	 **/
-	if( strlen( name ) < charserv_config.char_config.char_name_min_length )
+	if( strlen( name ) < charserv_config.char_config.char_name_min_length ){
+		ShowWarning( "char_check_char_name: rejected too-short character name '%s' (%d chars, minimum %d)...\n",
+			name, (int)strlen( name ), charserv_config.char_config.char_name_min_length );
 		return -2;
+	}
 	// check content of character name
-	if( remove_control_chars(name) )
+	if( remove_control_chars(name) ){
+		ShowWarning( "char_check_char_name: rejected character name '%s': control characters present...\n", name );
 		return -2; // control chars in name
+	}
 
 	// check for reserved names
-	if( strcmpi(name, charserv_config.wisp_server_name) == 0 )
+	if( strcmpi(name, charserv_config.wisp_server_name) == 0 ){
+		ShowWarning( "char_check_char_name: rejected reserved character name '%s' (wisp server name)...\n", name );
 		return -1; // nick reserved for internal server messages
+	}
 
 	// check for the channel symbol
-	if( name[0] == '#' )
+	if( name[0] == '#' ){
+		ShowWarning( "char_check_char_name: rejected character name '%s': channel symbol '#' not allowed...\n", name );
 		return -2;
+	}
 
 	// Check Authorised letters/symbols in the name of the character
 	if( charserv_config.char_config.char_name_option == 1 )
 	{ // only letters/symbols in char_name_letters are authorised
 		for( i = 0; i < NAME_LENGTH && name[i]; i++ )
-			if( strchr(charserv_config.char_config.char_name_letters, name[i]) == nullptr )
+			if( strchr(charserv_config.char_config.char_name_letters, name[i]) == nullptr ){
+				ShowWarning( "char_check_char_name: rejected character name '%s': character '%c' at position %d is not in 'char_name_letters'...\n",
+					name, name[i], (int)i );
 				return -2;
+			}
 	}
 	else if( charserv_config.char_config.char_name_option == 2 )
 	{ // letters/symbols in char_name_letters are forbidden
 		for( i = 0; i < NAME_LENGTH && name[i]; i++ )
-			if( strchr(charserv_config.char_config.char_name_letters, name[i]) != nullptr )
+			if( strchr(charserv_config.char_config.char_name_letters, name[i]) != nullptr ){
+				ShowWarning( "char_check_char_name: rejected character name '%s': character '%c' at position %d is forbidden by 'char_name_letters'...\n",
+					name, name[i], (int)i );
 				return -2;
+			}
 	}
 	if( charserv_config.char_config.name_ignoring_case ) {
 		if( SQL_ERROR == Sql_Query(sql_handle, "SELECT 1 FROM `%s` WHERE BINARY `name` = '%s' LIMIT 1", schema_config.char_db, esc_name) ) {
@@ -1382,8 +1399,10 @@ int32 char_check_char_name(char * name, char * esc_name)
 			return -2;
 		}
 	}
-	if( Sql_NumRows(sql_handle) > 0 )
+	if( Sql_NumRows(sql_handle) > 0 ){
+		ShowWarning( "char_check_char_name: rejected character name '%s': already exists...\n", name );
 		return -1; // name already exists
+	}
 
 	return 0;
 }
@@ -1417,6 +1436,8 @@ int32 char_make_new_char( struct char_session_data* sd, char* name_, int32 str, 
 
 	// Check the slot
 	if( slot < 0 || slot >= sd->char_slots ){
+		ShowWarning( "char_make_new_char: rejected invalid slot %d for account %d (%d character slots)...\n",
+			slot, sd->account_id, sd->char_slots );
 		return -4; // invalid slot
 	}
 
@@ -1437,21 +1458,29 @@ int32 char_make_new_char( struct char_session_data* sd, char* name_, int32 str, 
 #if PACKETVER < 20120307
 	// All stats together always have to add up to a total of 30 points
 	if( ( str + agi + vit + int_ + dex + luk ) != 30 ){
+		ShowWarning( "char_make_new_char: rejected stats for account %d: total %d != 30...\n",
+			sd->account_id, str + agi + vit + int_ + dex + luk );
 		return -2; // invalid input
 	}
 
 	// No status can be below 1
 	if( str < 1 || agi < 1 || vit < 1 || int_ < 1 || dex < 1 || luk < 1 ){
+		ShowWarning( "char_make_new_char: rejected stats for account %d: below 1 (str/agi/vit/int/dex/luk = %d/%d/%d/%d/%d/%d)...\n",
+			sd->account_id, str, agi, vit, int_, dex, luk );
 		return -2; // invalid input
 	}
 
 	// No status can be higher than 9
 	if( str > 9 || agi > 9 || vit > 9 || int_ > 9 || dex > 9 || luk > 9 ){
+		ShowWarning( "char_make_new_char: rejected stats for account %d: above 9 (str/agi/vit/int/dex/luk = %d/%d/%d/%d/%d/%d)...\n",
+			sd->account_id, str, agi, vit, int_, dex, luk );
 		return -2; // invalid input
 	}
 
 	// The status pairs always have to add up to a total of 10 points
 	if( ( str + int_ ) != 10 || ( agi + luk ) != 10 || ( vit + dex ) != 10 ){
+		ShowWarning( "char_make_new_char: rejected stats for account %d: pairs must be 10 (str+int=%d, agi+luk=%d, vit+dex=%d)...\n",
+			sd->account_id, str + int_, agi + luk, vit + dex );
 		return -2; // invalid input
 	}
 
@@ -1464,18 +1493,26 @@ int32 char_make_new_char( struct char_session_data* sd, char* name_, int32 str, 
 	if( SQL_ERROR == Sql_Query(sql_handle, "SELECT 1 FROM `%s` WHERE `account_id` = '%d'", schema_config.char_db, sd->account_id) )
 		Sql_ShowDebug(sql_handle);
 #ifdef VIP_ENABLE
-	if( Sql_NumRows(sql_handle) >= MAX_CHARS )
+	if( Sql_NumRows(sql_handle) >= MAX_CHARS ){
+		ShowWarning( "char_make_new_char: rejected account %d: has %d characters (MAX_CHARS=%d)...\n",
+			sd->account_id, (int32)Sql_NumRows(sql_handle), (int32)MAX_CHARS );
 		return -2; // character account limit exceeded
+	}
 #else
-	if( Sql_NumRows(sql_handle) >= sd->char_slots )
+	if( Sql_NumRows(sql_handle) >= sd->char_slots ){
+		ShowWarning( "char_make_new_char: rejected account %d: has %d characters (char_slots=%d)...\n",
+			sd->account_id, (int32)Sql_NumRows(sql_handle), sd->char_slots );
 		return -2; // character account limit exceeded
+	}
 #endif
 
 	// check char slot
 	if( SQL_ERROR == Sql_Query(sql_handle, "SELECT 1 FROM `%s` WHERE `account_id` = '%d' AND `char_num` = '%d' LIMIT 1", schema_config.char_db, sd->account_id, slot) )
 		Sql_ShowDebug(sql_handle);
-	if( Sql_NumRows(sql_handle) > 0 )
+	if( Sql_NumRows(sql_handle) > 0 ){
+		ShowWarning( "char_make_new_char: rejected account %d: slot %d already in use...\n", sd->account_id, slot );
 		return -2; // slot already in use
+	}
 
 	// validation success, log result
 	if (charserv_config.log_char) {
@@ -1487,8 +1524,11 @@ int32 char_make_new_char( struct char_session_data* sd, char* name_, int32 str, 
 
 #if PACKETVER >= 20151001
 	if(!(start_job == JOB_NOVICE && (charserv_config.allowed_job_flag&1)) && 
-		!(start_job == JOB_SUMMONER && (charserv_config.allowed_job_flag&2)))
+		!(start_job == JOB_SUMMONER && (charserv_config.allowed_job_flag&2))){
+		ShowWarning( "char_make_new_char: rejected account %d: start job %d not allowed (allowed_job_flag=0x%x)...\n",
+			sd->account_id, start_job, charserv_config.allowed_job_flag );
 		return -2; // Invalid job
+	}
 
 	// Check for Doram based information.
 	if (start_job == JOB_SUMMONER) { // Check for just this job for now.
