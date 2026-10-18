@@ -44,7 +44,10 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   symlinks `lib/libmariadb.so{,.3}` + `libmariadb.a`; `-ftime-trace` de zig
   solo escribe con ruta explícita (`-ftime-trace=<ruta>`) — el wrapper local
   `/tmp/tools/zig{cc,cxx}` la genera por objeto (herramienta de diagnóstico,
-  no se committea).
+  no se committea). Esta receta se re-ejecutó **íntegra y funcionando** en la
+  tercera re-provisión del contenedor (2026-10-17, ≈5 min: pip + zlib + pcre2
+  + openssl + mariadb; `/tmp` no persiste — los pasos de arriba son el
+  guion).
 
 ## Estado por fases
 
@@ -559,6 +562,35 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 
 ## Tarea actual
 
+**Iteración 9 (2026-10-17): logging de los rechazos silenciosos de creación
+de personaje (deuda viva de 2026-10-11).** Diagnóstico: `chclif_createnewchar`
+solo enviaba el paquete de rechazo al cliente (cero log server-side) y ni
+`char_check_char_name` (8 rechazos: vacío, largo, caracteres de control,
+reservado wisp, `'#'`, `char_name_letters` ×2, nombre existente −1) ni
+`char_make_new_char` (9: slot −4, las 4 reglas de stats, límite de cuenta ×2,
+slot en uso, job) registraban nada → validación indistinguible de un fallo de
+BD. Cambio: 17 `ShowWarning` con contexto (AID/slot/valores/nombre), **log-only**:
+auditoría del diff = las 12 líneas «borradas» son solo cabeceras `if` que ganan
+`{`; los 17 `return` y sus condiciones idénticos; +52/−12 en un único archivo
+(`src/char/char.cpp`); efecto colateral deseado: los dos flujos de rename
+(`chclif_parse_reqrename` y el switch de rename de `char.cpp`) quedan
+diagnosticables con las mismas líneas. **Validación:** full build con la receta
+del baseline rc=0; warnings 22.722 vs 22.714 = **+8 de ruido del conteo** (53
+líneas interleaved por `-j2` visibles en los logs; solo `char.cpp` modificado;
+**0 warnings sobre las 17 líneas nuevas**; los 73 warnings de `char.cpp` están
+todos en líneas preexistentes — los4 del rango de la función son `status_points`
+/ `Sql_LastInsertId` / `return char_id` / `ARR_FIND` desplazados); smoke ×4
+exit 1 sin UBSan y **0 apariciones de los prefijos nuevos en el boot**; suite
+10/10 documentada en verde (gcc) + 8 extras de clang. **Limitaciones:** sin BD →
+ninguna ruta de rechazo se ejercita en vivo (la lógica es idéntica por
+construcción: mismas condiciones y retornos); el validador no recibe AID (firma
+sin sesión — el nombre único es el identificador natural); `ShowWarning` no
+tiene atributo printf (argumentos auditados a mano, el compilador no verifica
+el format); el contenedor se re-provisionó por tercera vez → los tiempos de
+build NO son comparables con la iteración 8, los warnings SÍ (mismo toolchain y
+receta; el ±8 es interleaving, no fuentes). Commits: `d22b1ab` (código) + este
+commit (docs).
+
 **Iteración 8 (2026-10-17): perfilado `-ftime-trace` + PCH con gate A/B**
 (elección propia del agente tras «Sorpréndeme»; el candidato de deuda
 `web_auth_token` se refutó como ya resuelto — ver la entrada rectificada
@@ -636,11 +668,14 @@ jobs) y decisión de PR.
 - `tools/proto-smoke.ps1`, prueba `2b-char-list`: RESUELTO en
   `modernize/smoke-positive` — verifica contenido vía `ParseCharList`
   (nombre esperado en `0x6b`), no solo el ID.
-- Creación de personaje (`char_make_new_char`, `src/char/char.cpp`): los
+- ~~Creación de personaje (`char_make_new_char`, `src/char/char.cpp`): los
   rechazos previos al INSERT (`slot inválido`, `límite de cuenta`, `-1`/`-2`/`-4`)
   son silenciosos (sin `ShowWarning`/`ShowDebug`); un fallo de validación es
   indistinguible en logs de un fallo de BD. Logging mínimo pendiente (sin
-  cambiar la lógica).
+  cambiar la lógica).~~ → **CERRADO (iteración 9, `d22b1ab`, 2026-10-17):**
+  17 `ShowWarning` (8 en `char_check_char_name` + 9 en `char_make_new_char`),
+  log-only +52/−12, misma condición y mismos retornos; cierre completo con
+  evidencia en «Tarea actual».
 
 **Deuda registrada (2026-10-11, migración login a InnoDB):**
 - ~~Candidato a bug independiente (NO corregido en la migración): el retry de
