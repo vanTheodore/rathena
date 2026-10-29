@@ -1,0 +1,134 @@
+# Native engine-level corpus loading test with an ephemeral MariaDB instance.
+# Unlike corpus-regression, this compiles and runs real login/char/map servers.
+name: engine-corpus-runtime
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: engine-corpus-runtime-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  full-corpus-boot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: local-ci-root
+          MARIADB_DATABASE: ragnarok
+          MARIADB_USER: ragnarok
+          MARIADB_PASSWORD: ragnarok
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install C++23 toolchain, dependencies and DB client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-14 g++-14 cmake ninja-build \
+            zlib1g-dev libmariadb-dev libpcre2-dev mariadb-client
+      - name: Configure and build actual rAthena servers (strict C++23)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
+          cmake --build build --parallel 2
+          test -x login-server && test -x char-server && test -x map-server
+      - name: Initialize disposable MariaDB and checked-in import templates
+        shell: bash
+        env:
+          MYSQL_PWD: local-ci-root
+        run: |
+          set -euo pipefail
+          for name in main logs web; do
+            mariadb --protocol=tcp -h127.0.0.1 -uroot ragnarok < "sql-files/${name}.sql"
+          done
+          mariadb --protocol=tcp -h127.0.0.1 -uroot ragnarok < sql-files/roulette_default_data.sql
+          mkdir -p conf/import conf/msg_conf/import db/import log .ci/logs
+          cp -a conf/import-tmpl/. conf/import/
+          cp -a conf/msg_conf/import-tmpl/. conf/msg_conf/import/
+          cp -a db/import-tmpl/. db/import/
+          # main.sql seeds the s1/p1 internal server account. This DB exists
+          # solely in GitHub Actions and is never connected to production.
+          server_accounts=$(mariadb --protocol=tcp -h127.0.0.1 -uroot -N ragnarok \
+            -e "SELECT COUNT(*) FROM login WHERE userid='s1' AND sex='S'")
+          test "${server_accounts}" -eq 1
+      - name: Start login, char and map servers and assert full content load
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .ci/logs
+          pids=()
+          cleanup() {
+            for pid in "${pids[@]}"; do kill "${pid}" 2>/dev/null || true; done
+            for pid in "${pids[@]}"; do wait "${pid}" 2>/dev/null || true; done
+          }
+          trap cleanup EXIT
+
+          wait_for() {
+            local pid="$1" pattern="$2" filename="$3"
+            for attempt in $(seq 1 180); do
+              if grep -Fq "${pattern}" "${filename}"; then return 0; fi
+              if ! kill -0 "${pid}" 2>/dev/null; then
+                echo "::error::Server exited before ready: ${filename}"
+                tail -n 100 "${filename}" || true
+                return 1
+              fi
+              sleep 1
+            done
+            echo "::error::Timed out before ready: ${filename}"
+            tail -n 100 "${filename}" || true
+            return 1
+          }
+
+          ./login-server > .ci/logs/login.log 2>&1 &
+          login_pid=$!; pids+=("${login_pid}")
+          wait_for "${login_pid}" "The login-server is" .ci/logs/login.log
+          ./char-server > .ci/logs/char.log 2>&1 &
+          char_pid=$!; pids+=("${char_pid}")
+          wait_for "${char_pid}" "The char-server is" .ci/logs/char.log
+          ./map-server > .ci/logs/map.log 2>&1 &
+          map_pid=$!; pids+=("${map_pid}")
+          wait_for "${map_pid}" "Server is '" .ci/logs/map.log
+
+          # Parse exact runtime counters emitted by map.cpp and npc.cpp.
+          # Strip ANSI color sequences when present; do not weaken checks to
+          # mere process survival or a TCP port being open.
+          python3 - <<'PY'
+          import pathlib
+          import re
+          p = pathlib.Path(".ci/logs/map.log")
+          raw = p.read_text(errors="replace")
+          out = re.sub(r"\x1b\[[0-9;]*m", "", raw)
+          maps = re.findall(r"Successfully loaded '(\d+)' maps", out)
+          npcs = re.findall(r"Done loading '(\d+)' NPCs:", out)
+          assert "Server is 'ready' and listening on port" in out, "map server was not ready"
+          assert maps, "no map count logged"
+          assert npcs, "no NPC count logged"
+          map_count, npc_count = int(maps[-1]), int(npcs[-1])
+          print(f"Native C++23 runtime loaded maps={map_count}, NPCs={npc_count}")
+          assert map_count >= 1000, f"incomplete map cache: {map_count}"
+          assert npc_count >= 100, f"incomplete enabled NPC corpus: {npc_count}"
+          print("ENGINE CORPUS BOOT PASSED (full load, not gameplay E2E)")
+          PY
+      - name: Save server logs for diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-corpus-server-logs
+          path: .ci/logs/
+          if-no-files-found: warn
+          retention-days: 7
