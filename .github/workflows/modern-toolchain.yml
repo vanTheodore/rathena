@@ -46,7 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Clang 18 + CMake + Ninja
-        run: sudo apt-get update && sudo apt-get install -y clang-18 cmake ninja-build zlib1g-dev libmariadb-dev libpcre2-dev
+        run: sudo apt-get update && sudo apt-get install -y clang-18 g++-14 cmake ninja-build zlib1g-dev libmariadb-dev libpcre2-dev
       - name: Configure (Clang 18, strict C++23; requires system PCRE2)
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 2>&1 | tee configure.log
