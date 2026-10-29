@@ -1,6 +1,6 @@
 # Full engine boot against the checked-in corpus
 
-`.github/workflows/engine-corpus-runtime.yml` adds a real runtime layer
+`.github/workflows/engine-corpus-runtime.yml` provides an **on-demand** real runtime layer
 after the static YAML/NPC manifest and SQL schema validation.
 
 1. Build login-server, char-server and map-server with GCC 14 / ISO C++23,
@@ -17,6 +17,14 @@ after the static YAML/NPC manifest and SQL schema validation.
    not a separate YAML parser.
 5. Always upload logs for failure diagnosis and terminate all spawned
    servers on exit.
+
+## When to run
+
+This expensive workflow is **manual only**. From GitHub Actions select
+**engine-corpus-runtime → Run workflow** against the intended branch before
+a high-risk loader, database or NPC parser change, or after a substantial
+dependency upgrade. For ordinary C++23 utility refactors, the faster contracts
+and full compiler/sanitizer matrix are more relevant.
 
 ## Boundaries
 
