@@ -15751,7 +15751,7 @@ static bool status_readdb_status_disabled( char **str, size_t columns, size_t cu
 	int64 type = SC_NONE;
 
 	if (ISDIGIT(str[0][0]))
-		type = atoi(str[0]);
+		type = a2i(str[0]);
 	else {
 		if (!script_get_constant(str[0],&type))
 			type = SC_NONE;
@@ -15762,7 +15762,7 @@ static bool status_readdb_status_disabled( char **str, size_t columns, size_t cu
 		return false;
 	}
 
-	SCDisabled[type] = (uint32)atol(str[1]);
+	SCDisabled[type] = (uint32)a2l(str[1]);
 	return true;
 }
 

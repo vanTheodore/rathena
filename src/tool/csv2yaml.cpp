@@ -581,7 +581,7 @@ bool Csv2YamlTool::initialize( int32 argc, char* argv[] ){
 // Copied and adjusted from guild.cpp
 // <skill id>,<max lv>,<req id1>,<req lv1>,<req id2>,<req lv2>,<req id3>,<req lv3>,<req id4>,<req lv4>,<req id5>,<req lv5>
 static bool guild_read_guildskill_tree_db( char* split[], size_t columns, size_t current ){
-	uint16 skill_id = (uint16)atoi(split[0]);
+	uint16 skill_id = (uint16)a2i(split[0]);
 	std::string* name = util::umap_find( aegis_skillnames, skill_id );
 
 	if( name == nullptr ){
@@ -591,15 +591,15 @@ static bool guild_read_guildskill_tree_db( char* split[], size_t columns, size_t
 
 	body << YAML::BeginMap;
 	body << YAML::Key << "Id" << YAML::Value << *name;
-	body << YAML::Key << "MaxLevel" << YAML::Value << atoi(split[1]);
+	body << YAML::Key << "MaxLevel" << YAML::Value << a2i(split[1]);
 
-	if (atoi(split[2]) > 0) {
+	if (a2i(split[2]) > 0) {
 		body << YAML::Key << "Required";
 		body << YAML::BeginSeq;
 
 		for (int32 i = 0, j = 0; i < MAX_GUILD_SKILL_REQUIRE; i++) {
-			uint16 required_skill_id = atoi(split[i * 2 + 2]);
-			uint16 required_skill_level = atoi(split[i * 2 + 3]);
+			uint16 required_skill_id = a2i(split[i * 2 + 2]);
+			uint16 required_skill_level = a2i(split[i * 2 + 3]);
 
 			if (required_skill_id == 0 || required_skill_level == 0) {
 				continue;
@@ -697,7 +697,7 @@ static bool pet_read_db( const char* file ){
 
 		str[21] = p;
 
-		uint16 mob_id = atoi( str[0] );
+		uint16 mob_id = a2i( str[0] );
 		std::string* mob_name = util::umap_find( aegis_mobnames, mob_id );
 
 		if( mob_name == nullptr ){
@@ -757,34 +757,34 @@ static bool pet_read_db( const char* file ){
 			body << YAML::Key << "FoodItem" << YAML::Value << *food_item_name;
 		}
 
-		body << YAML::Key << "Fullness" << YAML::Value << atoi(str[7]);
+		body << YAML::Key << "Fullness" << YAML::Value << a2i(str[7]);
 		// Default: 60
-		if( atoi( str[8] ) != 60 ){
-			body << YAML::Key << "HungryDelay" << YAML::Value << atoi(str[8]);
+		if( a2i( str[8] ) != 60 ){
+			body << YAML::Key << "HungryDelay" << YAML::Value << a2i(str[8]);
 		}
 		// Default: 250
-		if( atoi( str[11] ) != 250 ){
-			body << YAML::Key << "IntimacyStart" << YAML::Value << atoi(str[11]);
+		if( a2i( str[11] ) != 250 ){
+			body << YAML::Key << "IntimacyStart" << YAML::Value << a2i(str[11]);
 		}
-		body << YAML::Key << "IntimacyFed" << YAML::Value << atoi(str[9]);
+		body << YAML::Key << "IntimacyFed" << YAML::Value << a2i(str[9]);
 		// Default: -100
-		if( atoi( str[10] ) != 100 ){
-			body << YAML::Key << "IntimacyOverfed" << YAML::Value << -atoi(str[10]);
+		if( a2i( str[10] ) != 100 ){
+			body << YAML::Key << "IntimacyOverfed" << YAML::Value << -a2i(str[10]);
 		}
 		// pet_hungry_friendly_decrease battle_conf
 		//body << YAML::Key << "IntimacyHungry" << YAML::Value << -5;
 		// Default: -20
-		if( atoi( str[12] ) != 20 ){
-			body << YAML::Key << "IntimacyOwnerDie" << YAML::Value << -atoi(str[12]);
+		if( a2i( str[12] ) != 20 ){
+			body << YAML::Key << "IntimacyOwnerDie" << YAML::Value << -a2i(str[12]);
 		}
-		body << YAML::Key << "CaptureRate" << YAML::Value << atoi(str[13]);
+		body << YAML::Key << "CaptureRate" << YAML::Value << a2i(str[13]);
 		// Default: true
-		if( atoi( str[15] ) == 0 ){
+		if( a2i( str[15] ) == 0 ){
 			body << YAML::Key << "SpecialPerformance" << YAML::Value << "false";
 		}
-		body << YAML::Key << "AttackRate" << YAML::Value << atoi(str[17]);
-		body << YAML::Key << "RetaliateRate" << YAML::Value << atoi(str[18]);
-		body << YAML::Key << "ChangeTargetRate" << YAML::Value << atoi(str[19]);
+		body << YAML::Key << "AttackRate" << YAML::Value << a2i(str[17]);
+		body << YAML::Key << "RetaliateRate" << YAML::Value << a2i(str[18]);
+		body << YAML::Key << "ChangeTargetRate" << YAML::Value << a2i(str[19]);
 
 		if( *str[21] ){
 			body << YAML::Key << "Script" << YAML::Value << YAML::Literal << str[21];
@@ -806,7 +806,7 @@ static bool pet_read_db( const char* file ){
 
 // Copied and adjusted from skill.cpp
 static bool skill_parse_row_magicmushroomdb( char *split[], size_t column, size_t current ){
-	uint16 skill_id = atoi(split[0]);
+	uint16 skill_id = a2i(split[0]);
 	std::string *skill_name = util::umap_find(aegis_skillnames, skill_id);
 
 	if (skill_name == nullptr) {
@@ -823,7 +823,7 @@ static bool skill_parse_row_magicmushroomdb( char *split[], size_t column, size_
 
 // Copied and adjusted from skill.cpp
 static bool skill_parse_row_abradb( char* split[], size_t columns, size_t current ){
-	uint16 skill_id = atoi(split[0]);
+	uint16 skill_id = a2i(split[0]);
 	std::string *skill_name = util::umap_find(aegis_skillnames, skill_id);
 
 	if (skill_name == nullptr) {
@@ -863,7 +863,7 @@ static bool skill_parse_row_abradb( char* split[], size_t columns, size_t curren
 
 // Copied and adjusted from skill.cpp
 static bool skill_parse_row_spellbookdb( char* split[], size_t columns, size_t current ){
-	uint16 skill_id = atoi(split[0]);
+	uint16 skill_id = a2i(split[0]);
 	std::string *skill_name = util::umap_find(aegis_skillnames, skill_id);
 
 	if (skill_name == nullptr) {
@@ -882,7 +882,7 @@ static bool skill_parse_row_spellbookdb( char* split[], size_t columns, size_t c
 	body << YAML::BeginMap;
 	body << YAML::Key << "Skill" << YAML::Value << *skill_name;
 	body << YAML::Key << "Book" << YAML::Value << *book_name;
-	body << YAML::Key << "PreservePoints" << YAML::Value << atoi(split[1]);
+	body << YAML::Key << "PreservePoints" << YAML::Value << a2i(split[1]);
 	body << YAML::EndMap;
 
 	return true;
@@ -890,7 +890,7 @@ static bool skill_parse_row_spellbookdb( char* split[], size_t columns, size_t c
 
 // Copied and adjusted from mob.cpp
 static bool mob_readdb_mobavail( char* str[], size_t columns, size_t current ){
-	uint16 mob_id = atoi(str[0]);
+	uint16 mob_id = a2i(str[0]);
 	std::string *mob_name = util::umap_find(aegis_mobnames, mob_id);
 
 	if (mob_name == nullptr) {
@@ -901,7 +901,7 @@ static bool mob_readdb_mobavail( char* str[], size_t columns, size_t current ){
 	body << YAML::BeginMap;
 	body << YAML::Key << "Mob" << YAML::Value << *mob_name;
 
-	uint16 sprite_id = atoi(str[1]);
+	uint16 sprite_id = a2i(str[1]);
 	std::string *sprite_name = util::umap_find(aegis_mobnames, sprite_id);
 
 	if (sprite_name == nullptr) {
@@ -924,13 +924,13 @@ static bool mob_readdb_mobavail( char* str[], size_t columns, size_t current ){
 		body << YAML::Key << "Sprite" << YAML::Value << *sprite_name;
 
 	if (columns == 12) {
-		body << YAML::Key << "Sex" << YAML::Value << (atoi(str[2]) ? "Male" : "Female");
-		if (atoi(str[3]) != 0)
-			body << YAML::Key << "HairStyle" << YAML::Value << atoi(str[3]);
-		if (atoi(str[4]) != 0)
-			body << YAML::Key << "HairColor" << YAML::Value << atoi(str[4]);
-		if (atoi(str[11]) != 0)
-			body << YAML::Key << "ClothColor" << YAML::Value << atoi(str[11]);
+		body << YAML::Key << "Sex" << YAML::Value << (a2i(str[2]) ? "Male" : "Female");
+		if (a2i(str[3]) != 0)
+			body << YAML::Key << "HairStyle" << YAML::Value << a2i(str[3]);
+		if (a2i(str[4]) != 0)
+			body << YAML::Key << "HairColor" << YAML::Value << a2i(str[4]);
+		if (a2i(str[11]) != 0)
+			body << YAML::Key << "ClothColor" << YAML::Value << a2i(str[11]);
 
 		if (strtoul(str[5], nullptr, 10) != 0) {
 			t_itemid weapon_item_id = strtoul( str[5], nullptr, 10 );
@@ -1010,8 +1010,8 @@ static bool mob_readdb_mobavail( char* str[], size_t columns, size_t current ){
 			body << YAML::Key << "HeadLow" << YAML::Value << *headlow_item_name;
 		}
 
-		if (atoi(str[10]) != 0) {
-			uint32 options = atoi(str[10]);
+		if (a2i(str[10]) != 0) {
+			uint32 options = a2i(str[10]);
 
 			body << YAML::Key << "Options";
 			body << YAML::BeginMap;
@@ -1101,7 +1101,7 @@ static bool mob_readdb_mobavail( char* str[], size_t columns, size_t current ){
 			body << YAML::EndMap;
 		}
 	} else if (columns == 3) {
-		if (atoi(str[5]) != 0) {
+		if (a2i(str[5]) != 0) {
 			t_itemid peteq_item_id = strtoul( str[5], nullptr, 10 );
 			std::string *peteq_item_name = util::umap_find(aegis_itemnames, peteq_item_id);
 
@@ -1135,7 +1135,7 @@ static bool skill_parse_row_requiredb( char* split[], size_t columns, size_t cur
 
 	p = split[7];
 	while (p) {
-		int32 l = atoi(p);
+		int32 l = a2i(p);
 
 		if (l == 99) { // Any weapon
 			entry.weapon = 0;
@@ -1150,7 +1150,7 @@ static bool skill_parse_row_requiredb( char* split[], size_t columns, size_t cur
 
 	p = split[8];
 	while (p) {
-		int32 l = atoi(p);
+		int32 l = a2i(p);
 
 		if (l == 99) { // Any ammo type
 			entry.ammo = AMMO_TYPE_ALL;
@@ -1187,7 +1187,7 @@ static bool skill_parse_row_requiredb( char* split[], size_t columns, size_t cur
 	else entry.state = ST_NONE;	// Unknown or no state
 
 	trim(split[11]);
-	if (split[11][0] != '\0' || atoi(split[11])) {
+	if (split[11][0] != '\0' || a2i(split[11])) {
 		int64 require[MAX_SKILL_STATUS_REQUIRE];
 		int32 count;
 
@@ -1201,7 +1201,7 @@ static bool skill_parse_row_requiredb( char* split[], size_t columns, size_t cur
 	skill_split_atoi(split[12], entry.spiritball);
 
 	for (int32 i = 0; i < MAX_SKILL_ITEM_REQUIRE; i++) {
-		if (atoi(split[13 + 2 * i]) > 0) {
+		if (a2i(split[13 + 2 * i]) > 0) {
 			t_itemid item_id = strtoul( split[13 + 2 * i], nullptr, 10 );
 			std::string *item_name = util::umap_find(aegis_itemnames, item_id);
 
@@ -1211,12 +1211,12 @@ static bool skill_parse_row_requiredb( char* split[], size_t columns, size_t cur
 			}
 
 			entry.itemid[i] = item_id;
-			entry.amount[i] = atoi(split[14 + 2 * i]);
+			entry.amount[i] = a2i(split[14 + 2 * i]);
 		}
 	}
 
 	trim(split[33]);
-	if (split[33][0] != '\0' || atoi(split[33])) {
+	if (split[33][0] != '\0' || a2i(split[33])) {
 		int64 require[MAX_SKILL_EQUIP_REQUIRE];
 		int32 count;
 
@@ -1228,7 +1228,7 @@ static bool skill_parse_row_requiredb( char* split[], size_t columns, size_t cur
 		}
 	}
 
-	skill_require.insert({ atoi(split[0]), entry });
+	skill_require.insert({ a2i(split[0]), entry });
 
 	return true;
 }
@@ -1248,7 +1248,7 @@ static bool skill_parse_row_castdb( char* split[], size_t columns, size_t curren
 	skill_split_atoi(split[7], (int32 *)entry.fixed_cast);
 #endif
 
-	skill_cast.insert({atoi(split[0]), std::move(entry)});
+	skill_cast.insert({a2i(split[0]), std::move(entry)});
 
 	return true;
 }
@@ -1258,11 +1258,11 @@ static bool skill_parse_row_castdb( char* split[], size_t columns, size_t curren
 static bool skill_parse_row_castnodexdb( char* split[], size_t columns, size_t current ){
 	s_skill_db entry = {};
 
-	entry.castnodex = atoi(split[1]);
+	entry.castnodex = a2i(split[1]);
 	if (split[2]) // optional column
-		entry.delaynodex = atoi(split[2]);
+		entry.delaynodex = a2i(split[2]);
 
-	skill_castnodex.insert({atoi(split[0]), std::move(entry)});
+	skill_castnodex.insert({a2i(split[0]), std::move(entry)});
 
 	return true;
 }
@@ -1276,11 +1276,11 @@ static bool skill_parse_row_unitdb( char* split[], size_t columns, size_t curren
 	entry.unit_id2 = (uint16)strtol(split[2], nullptr, 16);
 	skill_split_atoi(split[3], entry.unit_layout_type);
 	skill_split_atoi(split[4], entry.unit_range);
-	entry.unit_interval = atoi(split[5]);
+	entry.unit_interval = a2i(split[5]);
 	entry.target_str = trim(split[6]);
 	entry.unit_flag_csv = strtol(split[7], nullptr, 16);
 
-	skill_unit.insert({atoi(split[0]), std::move(entry)});
+	skill_unit.insert({a2i(split[0]), std::move(entry)});
 
 	return true;
 }
@@ -1293,7 +1293,7 @@ static bool skill_parse_row_copyabledb( char* split[], size_t column, size_t cur
 
 	trim(split[0]);
 	if (ISDIGIT(split[0][0]))
-		skill_id = atoi(split[0]);
+		skill_id = a2i(split[0]);
 	else {
 		for (const auto &it : aegis_skillnames) {
 			if (it.second == split[0])
@@ -1306,8 +1306,8 @@ static bool skill_parse_row_copyabledb( char* split[], size_t column, size_t cur
 		}
 	}
 
-	entry.option = atoi(split[1]);
-	entry.req_opt = cap_value(atoi(split[3]), 0, (0x2000) - 1);
+	entry.option = a2i(split[1]);
+	entry.req_opt = cap_value(a2i(split[3]), 0, (0x2000) - 1);
 
 	skill_copyable.insert({ skill_id, entry });
 
@@ -1322,7 +1322,7 @@ static bool skill_parse_row_nonearnpcrangedb( char* split[], size_t column, size
 
 	trim(split[0]);
 	if (ISDIGIT(split[0][0]))
-		skill_id = atoi(split[0]);
+		skill_id = a2i(split[0]);
 	else {
 		for (const auto &it : aegis_skillnames) {
 			if (it.second == split[0])
@@ -1335,8 +1335,8 @@ static bool skill_parse_row_nonearnpcrangedb( char* split[], size_t column, size
 		}
 	}
 
-	entry.unit_nonearnpc_range = max(atoi(split[1]), 0);
-	entry.unit_nonearnpc_type = (atoi(split[2])) ? cap_value(atoi(split[2]), 1, 15) : 15;
+	entry.unit_nonearnpc_range = max(a2i(split[1]), 0);
+	entry.unit_nonearnpc_type = (a2i(split[2])) ? cap_value(a2i(split[2]), 1, 15) : 15;
 
 	skill_nearnpc.insert({skill_id, std::move(entry)});
 
@@ -1345,13 +1345,13 @@ static bool skill_parse_row_nonearnpcrangedb( char* split[], size_t column, size
 
 // Copied and adjusted from skill.cpp
 static bool skill_parse_row_skilldb( char* split[], size_t columns, size_t current ){
-	int32 arr[MAX_SKILL_LEVEL], arr_size, skill_id = atoi(split[0]);
+	int32 arr[MAX_SKILL_LEVEL], arr_size, skill_id = a2i(split[0]);
 
 	body << YAML::BeginMap;
 	body << YAML::Key << "Id" << YAML::Value << skill_id;
 	body << YAML::Key << "Name" << YAML::Value << trim(split[16]);
 	body << YAML::Key << "Description" << YAML::Value << trim(split[17]);
-	body << YAML::Key << "MaxLevel" << YAML::Value << atoi(split[7]);
+	body << YAML::Key << "MaxLevel" << YAML::Value << a2i(split[7]);
 
 	if (strcmpi(split[13], "weapon") == 0)
 		body << YAML::Key << "Type" << YAML::Value << "Weapon";
@@ -1362,8 +1362,8 @@ static bool skill_parse_row_skilldb( char* split[], size_t columns, size_t curre
 
 	std::string constant;
 
-	if (atoi(split[3]) != 0) {
-		constant = constant_lookup(atoi(split[3]), "INF_");
+	if (a2i(split[3]) != 0) {
+		constant = constant_lookup(a2i(split[3]), "INF_");
 		constant.erase(0, 4);
 		constant.erase(constant.size() - 6);
 		body << YAML::Key << "TargetType" << YAML::Value << name2Upper(constant);
@@ -1507,8 +1507,8 @@ static bool skill_parse_row_skilldb( char* split[], size_t columns, size_t curre
 		}
 	}
 
-	if (atoi(split[2]) != 0) {
-		constant = constant_lookup(atoi(split[2]), "DMG_");
+	if (a2i(split[2]) != 0) {
+		constant = constant_lookup(a2i(split[2]), "DMG_");
 		constant.erase(0, 4);
 		body << YAML::Key << "Hit" << YAML::Value << name2Upper(constant);
 	}
@@ -1729,8 +1729,8 @@ static bool skill_parse_row_skilldb( char* split[], size_t columns, size_t curre
 
 	if (strcmpi(split[9], "yes") != 0)
 		body << YAML::Key << "CastCancel" << YAML::Value << "false";
-	if (atoi(split[10]) != 0)
-		body << YAML::Key << "CastDefenseReduction" << YAML::Value << atoi(split[10]);
+	if (a2i(split[10]) != 0)
+		body << YAML::Key << "CastDefenseReduction" << YAML::Value << a2i(split[10]);
 
 	auto it_cast = skill_cast.find(skill_id);
 
@@ -2318,7 +2318,7 @@ static bool skill_parse_row_skilldb( char* split[], size_t columns, size_t curre
 
 // Copied and adjusted from quest.cpp
 static bool quest_read_db( char *split[], size_t columns, size_t current ){
-	int32 quest_id = atoi(split[0]);
+	int32 quest_id = a2i(split[0]);
 
 	if (quest_id < 0 || quest_id >= INT_MAX) {
 		ShowError("quest_read_db: Invalid quest ID '%d'.\n", quest_id);
@@ -2343,7 +2343,7 @@ static bool quest_read_db( char *split[], size_t columns, size_t current ){
 	body << YAML::Key << "Title" << YAML::Value << title;
 
 	if (strchr(split[1], ':') == nullptr) {
-		uint32 time = atoi(split[1]);
+		uint32 time = a2i(split[1]);
 
 		if (time > 0) {
 			int32 day = time / 86400;
@@ -2376,21 +2376,21 @@ static bool quest_read_db( char *split[], size_t columns, size_t current ){
 
 			time_str.erase(0, 3); // Remove "HH:"
 
-			if (std::stoi(hour) > 0)
-				output = std::to_string(std::stoi(hour)) + "h";
-			if (std::stoi(time_str) > 0)
-				output += std::to_string(std::stoi(time_str)) + "mn";
+			if (a2i(hour) > 0)
+				output = std::to_string(a2i(hour)) + "h";
+			if (a2i(time_str) > 0)
+				output += std::to_string(a2i(time_str)) + "mn";
 
 			body << YAML::Key << "TimeLimit" << YAML::Value << output; // No quests in TXT format had days, default to 0
 		}
 	}
 
-	if (atoi(split[2]) > 0) {
+	if (a2i(split[2]) > 0) {
 		body << YAML::Key << "Targets";
 		body << YAML::BeginSeq;
 
 		for (size_t i = 0; i < MAX_QUEST_OBJECTIVES; i++) {
-			int32 mob_id = (int32)atoi(split[i * 2 + 2]), count = atoi(split[i * 2 + 3]);
+			int32 mob_id = (int32)a2i(split[i * 2 + 2]), count = a2i(split[i * 2 + 3]);
 
 			if (!mob_id || !count)
 				continue;
@@ -2411,12 +2411,12 @@ static bool quest_read_db( char *split[], size_t columns, size_t current ){
 		body << YAML::EndSeq;
 	}
 
-	if (atoi(split[2 * MAX_QUEST_OBJECTIVES + 2]) > 0) {
+	if (a2i(split[2 * MAX_QUEST_OBJECTIVES + 2]) > 0) {
 		body << YAML::Key << "Drops";
 		body << YAML::BeginSeq;
 
 		for (size_t i = 0; i < MAX_QUEST_DROPS; i++) {
-			int32 mob_id = (int32)atoi(split[3 * i + (2 * MAX_QUEST_OBJECTIVES + 2)]);
+			int32 mob_id = (int32)a2i(split[3 * i + (2 * MAX_QUEST_OBJECTIVES + 2)]);
 			t_itemid nameid = strtoul(split[3 * i + (2 * MAX_QUEST_OBJECTIVES + 3)], nullptr, 10);
 
 			if (!mob_id || !nameid)
@@ -2440,7 +2440,7 @@ static bool quest_read_db( char *split[], size_t columns, size_t current ){
 			body << YAML::Key << "Mob" << YAML::Value << *mob_name;
 			body << YAML::Key << "Item" << YAML::Value << *item_name;
 			//body << YAML::Key << "Count" << YAML::Value << 1; // Default is 1
-			body << YAML::Key << "Rate" << YAML::Value << atoi(split[3 * i + (2 * MAX_QUEST_OBJECTIVES + 4)]);
+			body << YAML::Key << "Rate" << YAML::Value << a2i(split[3 * i + (2 * MAX_QUEST_OBJECTIVES + 4)]);
 			body << YAML::EndMap;
 		}
 
@@ -2455,17 +2455,17 @@ static bool quest_read_db( char *split[], size_t columns, size_t current ){
 // Copied and adjusted from instance.cpp
 static bool instance_readdb_sub( char* str[], size_t columns, size_t current ){
 	body << YAML::BeginMap;
-	body << YAML::Key << "Id" << YAML::Value << atoi(str[0]);
+	body << YAML::Key << "Id" << YAML::Value << a2i(str[0]);
 	body << YAML::Key << "Name" << YAML::Value << str[1];
-	if (atoi(str[2]) != 3600)
-		body << YAML::Key << "TimeLimit" << YAML::Value << atoi(str[2]);
-	if (atoi(str[3]) != 300)
-		body << YAML::Key << "IdleTimeOut" << YAML::Value << atoi(str[3]);
+	if (a2i(str[2]) != 3600)
+		body << YAML::Key << "TimeLimit" << YAML::Value << a2i(str[2]);
+	if (a2i(str[3]) != 300)
+		body << YAML::Key << "IdleTimeOut" << YAML::Value << a2i(str[3]);
 	body << YAML::Key << "Enter";
 	body << YAML::BeginMap;
 	body << YAML::Key << "Map" << YAML::Value << str[4];
-	body << YAML::Key << "X" << YAML::Value << atoi(str[5]);
-	body << YAML::Key << "Y" << YAML::Value << atoi(str[6]);
+	body << YAML::Key << "X" << YAML::Value << a2i(str[5]);
+	body << YAML::Key << "Y" << YAML::Value << a2i(str[6]);
 	body << YAML::EndMap;
 
 	if (columns > 7) {
@@ -2508,7 +2508,7 @@ static bool itemdb_read_buyingstore( char* fields[], size_t columns, size_t curr
 //---------------------
 static bool itemdb_read_flag( char* fields[], size_t columns, size_t current ){
 	s_item_flag_csv2yaml item = { 0 };
-	uint16 flag = abs(atoi(fields[1]));
+	uint16 flag = abs(a2i(fields[1]));
 
 	if (flag & 1)
 		item.dead_branch = true;
@@ -2544,7 +2544,7 @@ static bool itemdb_read_flag( char* fields[], size_t columns, size_t current ){
 static bool itemdb_read_itemdelay( char* str[], size_t columns, size_t current ){
 	s_item_delay_csv2yaml item = { 0 };
 
-	item.delay = atoi(str[1]);
+	item.delay = a2i(str[1]);
 
 	if (columns == 3)
 		item.sc = trim(str[2]);
@@ -2558,7 +2558,7 @@ static bool itemdb_read_itemdelay( char* str[], size_t columns, size_t current )
 static bool itemdb_read_stack( char* fields[], size_t columns, size_t current ){
 	s_item_stack_csv2yaml item = { 0 };
 
-	item.amount = atoi(fields[1]);
+	item.amount = a2i(fields[1]);
 
 	int32 type = strtoul(fields[2], nullptr, 10);
 
@@ -2581,7 +2581,7 @@ static bool itemdb_read_nouse( char* fields[], size_t columns, size_t current ){
 	s_item_nouse_csv2yaml item = { 0 };
 
 	item.sitting = "true";
-	item.override = atoi(fields[2]);
+	item.override = a2i(fields[2]);
 
 	item_nouse.insert({ strtoul(fields[0], nullptr, 10), item });
 	return true;
@@ -2591,7 +2591,7 @@ static bool itemdb_read_nouse( char* fields[], size_t columns, size_t current ){
 //---------------------
 static bool itemdb_read_itemtrade( char* str[], size_t columns, size_t current ){
 	s_item_trade_csv2yaml item = { 0 };
-	int32 flag = atoi(str[1]);
+	int32 flag = a2i(str[1]);
 
 	if (flag & 1)
 		item.drop = true;
@@ -2612,7 +2612,7 @@ static bool itemdb_read_itemtrade( char* str[], size_t columns, size_t current )
 	if (flag & 256)
 		item.auction = true;
 
-	item.override = atoi(str[2]);
+	item.override = a2i(str[2]);
 
 	item_trade.insert({ strtoul(str[0], nullptr, 10), item });
 	return true;
@@ -2731,7 +2731,7 @@ static bool itemdb_read_db(const char* file) {
 		body << YAML::Key << "AegisName" << YAML::Value << str[1];
 		body << YAML::Key << "Name" << YAML::Value << str[2];
 
-		int32 type = atoi(str[3]), subtype = atoi(str[18]);
+		int32 type = a2i(str[3]), subtype = a2i(str[18]);
 
 		const char* constant = constant_lookup( type, "IT_" );
 
@@ -2761,14 +2761,14 @@ static bool itemdb_read_db(const char* file) {
 			body << YAML::Key << "SubType" << YAML::Value << name2Upper(constant + 5);
 		}
 
-		if (atoi(str[4]) > 0)
-			body << YAML::Key << "Buy" << YAML::Value << atoi(str[4]);
-		if (atoi(str[5]) > 0) {
-			if (atoi(str[4]) / 2 != atoi(str[5]))
-				body << YAML::Key << "Sell" << YAML::Value << atoi(str[5]);
+		if (a2i(str[4]) > 0)
+			body << YAML::Key << "Buy" << YAML::Value << a2i(str[4]);
+		if (a2i(str[5]) > 0) {
+			if (a2i(str[4]) / 2 != a2i(str[5]))
+				body << YAML::Key << "Sell" << YAML::Value << a2i(str[5]);
 		}
-		if (atoi(str[6]) > 0)
-			body << YAML::Key << "Weight" << YAML::Value << atoi(str[6]);
+		if (a2i(str[6]) > 0)
+			body << YAML::Key << "Weight" << YAML::Value << a2i(str[6]);
 
 #ifdef RENEWAL
 		int32 atk = 0, matk = 0;
@@ -2779,15 +2779,15 @@ static bool itemdb_read_db(const char* file) {
 		if (matk > 0)
 			body << YAML::Key << "MagicAttack" << YAML::Value << matk;
 #else
-		if (atoi(str[7]) > 0)
-			body << YAML::Key << "Attack" << YAML::Value << atoi(str[7]);
+		if (a2i(str[7]) > 0)
+			body << YAML::Key << "Attack" << YAML::Value << a2i(str[7]);
 #endif
-		if (atoi(str[8]) > 0)
-			body << YAML::Key << "Defense" << YAML::Value << atoi(str[8]);
-		if (atoi(str[9]) > 0)
-			body << YAML::Key << "Range" << YAML::Value << atoi(str[9]);
-		if (atoi(str[10]) > 0)
-			body << YAML::Key << "Slots" << YAML::Value << atoi(str[10]);
+		if (a2i(str[8]) > 0)
+			body << YAML::Key << "Defense" << YAML::Value << a2i(str[8]);
+		if (a2i(str[9]) > 0)
+			body << YAML::Key << "Range" << YAML::Value << a2i(str[9]);
+		if (a2i(str[10]) > 0)
+			body << YAML::Key << "Slots" << YAML::Value << a2i(str[10]);
 
 		bool equippable = type == IT_UNKNOWN ? false : type == IT_ETC ? false : type == IT_CARD ? false : type == IT_PETEGG ? false : type == IT_PETARMOR ? false : type == IT_UNKNOWN2 ? false : true;
 
@@ -2819,7 +2819,7 @@ static bool itemdb_read_db(const char* file) {
 				body << YAML::EndMap;
 			}
 
-			int32 temp_class = atoi(str[12]);
+			int32 temp_class = a2i(str[12]);
 
 			if (temp_class == ITEMJ_NONE) {
 				body << YAML::Key << "Classes";
@@ -2853,7 +2853,7 @@ static bool itemdb_read_db(const char* file) {
 				body << YAML::EndMap;
 			}
 
-			switch (atoi(str[13])) {
+			switch (a2i(str[13])) {
 				case SEX_FEMALE:
 					body << YAML::Key << "Gender" << YAML::Value << "Female";
 					break;
@@ -2865,8 +2865,8 @@ static bool itemdb_read_db(const char* file) {
 				//	break;
 			}
 		}
-		if (atoi(str[14]) > 0) {
-			int32 temp_loc = atoi(str[14]);
+		if (a2i(str[14]) > 0) {
+			int32 temp_loc = a2i(str[14]);
 
 			body << YAML::Key << "Locations";
 			body << YAML::BeginMap;
@@ -2884,8 +2884,8 @@ static bool itemdb_read_db(const char* file) {
 			}
 			body << YAML::EndMap;
 		}
-		if (atoi(str[15]) > 0)
-			body << YAML::Key << "WeaponLevel" << YAML::Value << atoi(str[15]);
+		if (a2i(str[15]) > 0)
+			body << YAML::Key << "WeaponLevel" << YAML::Value << a2i(str[15]);
 
 		int32 elv = 0, elvmax = 0;
 
@@ -2894,7 +2894,7 @@ static bool itemdb_read_db(const char* file) {
 			body << YAML::Key << "EquipLevelMin" << YAML::Value << elv;
 		if (elvmax > 0)
 			body << YAML::Key << "EquipLevelMax" << YAML::Value << elvmax;
-		if (atoi(str[17]) > 0)
+		if (a2i(str[17]) > 0)
 			body << YAML::Key << "Refineable" << YAML::Value << "true";
 		if (strtoul(str[18], nullptr, 10) > 0 && type != IT_WEAPON && type != IT_AMMO)
 			body << YAML::Key << "View" << YAML::Value << strtoul(str[18], nullptr, 10);
@@ -3202,7 +3202,7 @@ static bool itemdb_randomopt_group_yaml(void) {
 
 static bool pc_readdb_levelpenalty( char* fields[], size_t columns, size_t current ){
 	// 1=experience, 2=item drop
-	int32 type = atoi( fields[0] );
+	int32 type = a2i( fields[0] );
 
 	if( type != 1 && type != 2 ){
 		ShowWarning( "pc_readdb_levelpenalty: Invalid type %d specified.\n", type );
@@ -3216,14 +3216,14 @@ static bool pc_readdb_levelpenalty( char* fields[], size_t columns, size_t curre
 		return false;
 	}
 
-	int32 class_ = atoi( fields[1] );
+	int32 class_ = a2i( fields[1] );
 
 	if( !CHK_CLASS( class_ ) ){
 		ShowWarning( "pc_readdb_levelpenalty: Invalid class %d specified.\n", class_ );
 		return false;
 	}
 
-	int32 diff = atoi( fields[2] );
+	int32 diff = a2i( fields[2] );
 
 	if( std::abs( diff ) > MAX_LEVEL ){
 		ShowWarning( "pc_readdb_levelpenalty: Level difference %d is too high.\n", diff );
@@ -3232,7 +3232,7 @@ static bool pc_readdb_levelpenalty( char* fields[], size_t columns, size_t curre
 
 	diff += MAX_LEVEL - 1;
 
-	level_penalty[type][class_][diff] = atoi(fields[3]);
+	level_penalty[type][class_][diff] = a2i(fields[3]);
 
 	return true;
 }
@@ -3312,12 +3312,12 @@ static bool mob_readdb_drop( char *str[], size_t columns, size_t current ){
 		return false;
 	}
 
-	int32 rate = atoi(str[2]);
+	int32 rate = a2i(str[2]);
 	s_mob_drop_csv entry = {};
 	uint8 flag = 0;
 
 	if (columns > 4)
-		flag = atoi(str[4]);
+		flag = a2i(str[4]);
 
 	entry.nameid = nameid;
 	entry.rate = rate;
@@ -3368,9 +3368,9 @@ static bool mob_readdb_sub( char *fields[], size_t columns, size_t current ){
 	if (strtol(fields[11], nullptr, 10) > 0)
 		body << YAML::Key << "Attack2" << YAML::Value << fields[11];
 	if (strtol(fields[12], nullptr, 10) > 0)
-		body << YAML::Key << "Defense" << YAML::Value << cap_value(std::stoi(fields[12]), DEFTYPE_MIN, DEFTYPE_MAX);
+		body << YAML::Key << "Defense" << YAML::Value << cap_value(a2i(fields[12]), DEFTYPE_MIN, DEFTYPE_MAX);
 	if (strtol(fields[13], nullptr, 10) > 0)
-		body << YAML::Key << "MagicDefense" << YAML::Value << cap_value(std::stoi(fields[13]), DEFTYPE_MIN, DEFTYPE_MAX);
+		body << YAML::Key << "MagicDefense" << YAML::Value << cap_value(a2i(fields[13]), DEFTYPE_MIN, DEFTYPE_MAX);
 	if (strtol(fields[14], nullptr, 10) != 1)
 		body << YAML::Key << "Str" << YAML::Value << fields[14];
 	if (strtol(fields[15], nullptr, 10) != 1)
@@ -3431,7 +3431,7 @@ static bool mob_readdb_sub( char *fields[], size_t columns, size_t current ){
 		body << YAML::Key << "ElementLevel" << YAML::Value << floor(ele / 20.);
 	}
 	if (strtol(fields[26], nullptr, 10) > 0)
-		body << YAML::Key << "WalkSpeed" << YAML::Value << cap_value(std::stoi(fields[26]), MIN_WALK_SPEED, MAX_WALK_SPEED);
+		body << YAML::Key << "WalkSpeed" << YAML::Value << cap_value(a2i(fields[26]), MIN_WALK_SPEED, MAX_WALK_SPEED);
 	if (strtol(fields[27], nullptr, 10) > 0)
 		body << YAML::Key << "AttackDelay" << YAML::Value << fields[27];
 	if (strtol(fields[28], nullptr, 10) > 0)
@@ -3601,7 +3601,7 @@ static bool mob_readdb_sub( char *fields[], size_t columns, size_t current ){
 
 				body << YAML::BeginMap;
 				body << YAML::Key << "Item" << YAML::Value << *item_name;
-				body << YAML::Key << "Rate" << YAML::Value << cap_value(std::stoi(fields[32 + i * 2]), 1, 10000);
+				body << YAML::Key << "Rate" << YAML::Value << cap_value(a2i(fields[32 + i * 2]), 1, 10000);
 				body << YAML::EndMap;
 			}
 
@@ -3662,7 +3662,7 @@ static bool mob_readdb_sub( char *fields[], size_t columns, size_t current ){
 
 				body << YAML::BeginMap;
 				body << YAML::Key << "Item" << YAML::Value << *item_name;
-				body << YAML::Key << "Rate" << YAML::Value << cap_value(std::stoi(fields[k + 1]), 1, 10000);
+				body << YAML::Key << "Rate" << YAML::Value << cap_value(a2i(fields[k + 1]), 1, 10000);
 				if (i > 6) // Slots 8, 9, and 10 are inherently protected
 					body << YAML::Key << "StealProtected" << YAML::Value << "true";
 				body << YAML::EndMap;
@@ -3707,7 +3707,7 @@ static bool mob_readdb_sub( char *fields[], size_t columns, size_t current ){
 
 // Copied and adjusted from mob.cpp
 static bool mob_parse_row_chatdb( char* fields[], size_t columns, size_t current ){
-	int32 msg_id = atoi(fields[0]);
+	int32 msg_id = a2i(fields[0]);
 
 	if (msg_id <= 0){
 		ShowError("Invalid chat ID '%d' in line %d\n", msg_id, current);
@@ -4010,13 +4010,13 @@ static bool itemdb_read_group( char* str[], size_t columns, size_t current ){
 	}
 
 	// Checking sub group
-	uint32 prob = atoi(str[2]);
+	uint32 prob = a2i(str[2]);
 	uint32 rand_group;
 
 	if (columns < 5)
 		rand_group = 1;	// default
 	else
-		rand_group = atoi(str[4]);
+		rand_group = a2i(str[4]);
 
 	if (rand_group > 0 && prob == 0) {
 		ShowWarning( "itemdb_read_group: Random item must have a probability. Group '%s'\n", str[0] );
@@ -4036,22 +4036,22 @@ static bool itemdb_read_group( char* str[], size_t columns, size_t current ){
 
 	entry.item_name = item_name;
 	if (columns > 3) {
-		int32 amount = cap_value(atoi(str[3]),1,MAX_AMOUNT);
+		int32 amount = cap_value(a2i(str[3]),1,MAX_AMOUNT);
 		if (amount > 1)
 			entry.amount = amount;
 	}
-	if (columns > 5) entry.isAnnounced = atoi(str[5]) > 0;
-	if (columns > 6) entry.duration = cap_value(atoi(str[6]),0,UINT16_MAX);
-	if (columns > 7) entry.GUID = atoi(str[7]) > 0;
+	if (columns > 5) entry.isAnnounced = a2i(str[5]) > 0;
+	if (columns > 6) entry.duration = cap_value(a2i(str[6]),0,UINT16_MAX);
+	if (columns > 7) entry.GUID = a2i(str[7]) > 0;
 	if (columns > 8) {
-		int32 bound = cap_value(atoi(str[8]),BOUND_NONE,BOUND_MAX-1);
+		int32 bound = cap_value(a2i(str[8]),BOUND_NONE,BOUND_MAX-1);
 		if (bound > 0) {
 			std::string constant = constant_lookup(bound, "BOUND_");
 			constant.erase(0, 6);
 			entry.bound = constant;
 		}
 	}
-	if (columns > 9) entry.isNamed = atoi(str[9]) > 0;
+	if (columns > 9) entry.isNamed = a2i(str[9]) > 0;
 
 	// in this case, we add x2 entries to keep the previous system: x1 in subgroup 0 without rate (must) and x1 in subgroup 1 with rate (random)
 	if (rand_group == 0 && prob > 0) {
@@ -4199,7 +4199,7 @@ static bool status_readdb_attrfix(const char* file) {
 
 				constant = constant_lookup(j, "Ele_");
 				constant.erase(0, 4);
-				body << YAML::Key << name2Upper(constant) << YAML::Value << atoi(p);
+				body << YAML::Key << name2Upper(constant) << YAML::Value << a2i(p);
 	
 				p = strchr(p, ',');
 				if (p)
@@ -4257,25 +4257,25 @@ static bool pc_readdb_job2( char* fields[], size_t columns, size_t current ){
 	std::fill(stats.begin(), stats.end(), 0); // Fill with 0 so we don't produce arbitrary stats
 
 	for( size_t i = 1; i < columns; i++ ){
-		stats[i - 1] = atoi(fields[i]);
+		stats[i - 1] = a2i(fields[i]);
 	}
 
-	job_db2.insert({ atoi(fields[0]), stats });
+	job_db2.insert({ a2i(fields[0]), stats });
 	return true;
 }
 
 // job_db.yml function
 //----------------------
 static bool pc_readdb_job_param( char* fields[], size_t columns, size_t current ){
-	int32 job_id = atoi(fields[0]);
+	int32 job_id = a2i(fields[0]);
 	s_job_param entry = {};
 
-	entry.str = atoi(fields[1]);
-	entry.agi = atoi(fields[2]) ? atoi(fields[2]) : entry.str;
-	entry.vit = atoi(fields[3]) ? atoi(fields[3]) : entry.str;
-	entry.int_ = atoi(fields[4]) ? atoi(fields[4]) : entry.str;
-	entry.dex = atoi(fields[5]) ? atoi(fields[5]) : entry.str;
-	entry.luk = atoi(fields[6]) ? atoi(fields[6]) : entry.str;
+	entry.str = a2i(fields[1]);
+	entry.agi = a2i(fields[2]) ? a2i(fields[2]) : entry.str;
+	entry.vit = a2i(fields[3]) ? a2i(fields[3]) : entry.str;
+	entry.int_ = a2i(fields[4]) ? a2i(fields[4]) : entry.str;
+	entry.dex = a2i(fields[5]) ? a2i(fields[5]) : entry.str;
+	entry.luk = a2i(fields[6]) ? a2i(fields[6]) : entry.str;
 
 	job_param.insert({ job_id, entry });
 
@@ -4285,7 +4285,7 @@ static bool pc_readdb_job_param( char* fields[], size_t columns, size_t current 
 // job_basehpsp_db.yml function
 //----------------------
 static bool pc_readdb_job_exp_sub( char* fields[], size_t columns, size_t current ){
-	int32 level = atoi(fields[0]), jobs[CLASS_COUNT], job_count = skill_split_atoi(fields[1], jobs, CLASS_COUNT), type = atoi(fields[2]);
+	int32 level = a2i(fields[0]), jobs[CLASS_COUNT], job_count = skill_split_atoi(fields[1], jobs, CLASS_COUNT), type = a2i(fields[2]);
 
 	for (int32 i = 0; i < job_count; i++) {
 		if (type == 0)
@@ -4299,7 +4299,7 @@ static bool pc_readdb_job_exp_sub( char* fields[], size_t columns, size_t curren
 
 // Copied and adjusted from pc.cpp
 static bool pc_readdb_job_exp( char* fields[], size_t columns, size_t current ){
-	int32 level = atoi(fields[0]), jobs[CLASS_COUNT], job_count = skill_split_atoi(fields[1], jobs, CLASS_COUNT), type = atoi(fields[2]);
+	int32 level = a2i(fields[0]), jobs[CLASS_COUNT], job_count = skill_split_atoi(fields[1], jobs, CLASS_COUNT), type = a2i(fields[2]);
 
 	body << YAML::BeginMap;
 	body << YAML::Key << "Jobs";
@@ -4337,7 +4337,7 @@ static bool pc_readdb_job_exp( char* fields[], size_t columns, size_t current ){
 
 // Copied and adjusted from pc.cpp
 static bool pc_readdb_job_basehpsp( char* fields[], size_t columns, size_t current ){
-	int32 type = atoi(fields[3]), jobs[CLASS_COUNT], job_count = skill_split_atoi(fields[2], jobs, CLASS_COUNT);
+	int32 type = a2i(fields[3]), jobs[CLASS_COUNT], job_count = skill_split_atoi(fields[2], jobs, CLASS_COUNT);
 
 	body << YAML::BeginMap;
 	body << YAML::Key << "Jobs";
@@ -4376,7 +4376,7 @@ static bool pc_readdb_job_basehpsp( char* fields[], size_t columns, size_t curre
 
 	if (type == 0) { // HP
 		for (; j < endlvl; j++) {
-			if (atoi(fields[j + 4])) {
+			if (a2i(fields[j + 4])) {
 				body << YAML::BeginMap;
 				body << YAML::Key << "Level" << YAML::Value << j + 1;
 				body << YAML::Key << "Hp" << YAML::Value << strtoll(fields[j + 4], nullptr, 10);
@@ -4385,7 +4385,7 @@ static bool pc_readdb_job_basehpsp( char* fields[], size_t columns, size_t curre
 		}
 	} else { // SP
 		for (; j < endlvl; j++) {
-			if (atoi(fields[j + 4])) {
+			if (a2i(fields[j + 4])) {
 				body << YAML::BeginMap;
 				body << YAML::Key << "Level" << YAML::Value << j + 1;
 				body << YAML::Key << "Sp" << YAML::Value << strtoll(fields[j + 4], nullptr, 10);
@@ -4401,7 +4401,7 @@ static bool pc_readdb_job_basehpsp( char* fields[], size_t columns, size_t curre
 
 // Copied and adjusted from pc.cpp
 static bool pc_readdb_job1( char* fields[], size_t columns, size_t current ){
-	int32 job_id = atoi(fields[0]);
+	int32 job_id = a2i(fields[0]);
 
 	if (job_id == JOB_WEDDING)
 		return true;
@@ -4411,24 +4411,24 @@ static bool pc_readdb_job1( char* fields[], size_t columns, size_t current ){
 	body << YAML::BeginMap;
 	body << YAML::Key << name2Upper(constant_lookup(job_id, "JOB_") + 4) << YAML::Value << "true";
 	body << YAML::EndMap;
-	if (atoi(fields[1]) != 20000)
-		body << YAML::Key << "MaxWeight" << YAML::Value << atoi(fields[1]);
-	if (atoi(fields[2]) != 0)
-		body << YAML::Key << "HpFactor" << YAML::Value << atoi(fields[2]);
-	if (atoi(fields[3]) != 500)
-		body << YAML::Key << "HpIncrease" << YAML::Value << atoi(fields[3]);
-	if (atoi(fields[4]) != 100)
-		body << YAML::Key << "SpIncrease" << YAML::Value << atoi(fields[4]);
+	if (a2i(fields[1]) != 20000)
+		body << YAML::Key << "MaxWeight" << YAML::Value << a2i(fields[1]);
+	if (a2i(fields[2]) != 0)
+		body << YAML::Key << "HpFactor" << YAML::Value << a2i(fields[2]);
+	if (a2i(fields[3]) != 500)
+		body << YAML::Key << "HpIncrease" << YAML::Value << a2i(fields[3]);
+	if (a2i(fields[4]) != 100)
+		body << YAML::Key << "SpIncrease" << YAML::Value << a2i(fields[4]);
 
 	body << YAML::Key << "BaseASPD";
 	body << YAML::BeginMap;
 
 #ifdef RENEWAL_ASPD
 	for (int32 i = 0; i <= MAX_WEAPON_TYPE; i++) {
-		if (atoi(fields[i + 5]) != 200) {
+		if (a2i(fields[i + 5]) != 200) {
 #else
 	for (int32 i = 0, j = 0; i < MAX_WEAPON_TYPE; i++) {
-		if (atoi(fields[i + 5]) != 2000) {
+		if (a2i(fields[i + 5]) != 2000) {
 #endif
 			const char *weapon = constant_lookup(i, "W_");
 
@@ -4437,7 +4437,7 @@ static bool pc_readdb_job1( char* fields[], size_t columns, size_t current ){
 				continue;
 			}
 
-			body << YAML::Key << name2Upper(weapon + 2) << YAML::Value << atoi(fields[i + 5]);
+			body << YAML::Key << name2Upper(weapon + 2) << YAML::Value << a2i(fields[i + 5]);
 		}
 	}
 
@@ -4499,7 +4499,7 @@ static bool pc_readdb_job1( char* fields[], size_t columns, size_t current ){
 // elemental_db.yml function
 //---------------------------
 static bool read_elemental_skilldb( char* str[], size_t columns, size_t current ){
-	uint16 skill_id = atoi(str[1]);
+	uint16 skill_id = a2i(str[1]);
 	std::string *skill_name = util::umap_find(aegis_skillnames, skill_id);
 
 	if (skill_name == nullptr) {
@@ -4507,7 +4507,7 @@ static bool read_elemental_skilldb( char* str[], size_t columns, size_t current 
 		return false;
 	}
 
-	uint16 skillmode = atoi(str[3]);
+	uint16 skillmode = a2i(str[3]);
 
 	std::string constant = constant_lookup(skillmode, "EL_SKILLMODE_");
 	constant.erase(0, 13);
@@ -4516,10 +4516,10 @@ static bool read_elemental_skilldb( char* str[], size_t columns, size_t current 
 	s_elemental_skill_csv entry = {};
 
 	entry.skill_name = *skill_name;
-	entry.lv = atoi(str[2]);
+	entry.lv = a2i(str[2]);
 	entry.mode_name = mode_name;
 
-	uint16 class_ = atoi(str[0]);
+	uint16 class_ = a2i(str[0]);
 
 	if (util::umap_find(elemental_skill_tree, class_))
 		elemental_skill_tree[class_].push_back(entry);
@@ -4538,54 +4538,54 @@ static bool read_elementaldb( char* str[], size_t columns, size_t current ){
 	body << YAML::Key << "AegisName" << YAML::Value << str[1];
 	body << YAML::Key << "Name" << YAML::Value << str[2];
 	body << YAML::Key << "Level" << YAML::Value << str[3];
-	if (atoi(str[4]) != 0)
+	if (a2i(str[4]) != 0)
 		body << YAML::Key << "Hp" << YAML::Value << str[4];
-	if (atoi(str[5]) != 1)
+	if (a2i(str[5]) != 1)
 		body << YAML::Key << "Sp" << YAML::Value << str[5];
-	if (atoi(str[7]) != 0)
+	if (a2i(str[7]) != 0)
 		body << YAML::Key << "Attack" << YAML::Value << str[7];
-	if (atoi(str[8]) != 0)
+	if (a2i(str[8]) != 0)
 		body << YAML::Key << "Attack2" << YAML::Value << str[8];
-	if (atoi(str[9]) != 0)
+	if (a2i(str[9]) != 0)
 		body << YAML::Key << "Defense" << YAML::Value << str[9];
-	if (atoi(str[10]) != 0)
+	if (a2i(str[10]) != 0)
 		body << YAML::Key << "MagicDefense" << YAML::Value << str[10];
-	if (atoi(str[11]) != 0)
+	if (a2i(str[11]) != 0)
 		body << YAML::Key << "Str" << YAML::Value << str[11];
-	if (atoi(str[12]) != 0)
+	if (a2i(str[12]) != 0)
 		body << YAML::Key << "Agi" << YAML::Value << str[12];
-	if (atoi(str[13]) != 0)
+	if (a2i(str[13]) != 0)
 		body << YAML::Key << "Vit" << YAML::Value << str[13];
-	if (atoi(str[14]) != 0)
+	if (a2i(str[14]) != 0)
 		body << YAML::Key << "Int" << YAML::Value << str[14];
-	if (atoi(str[15]) != 0)
+	if (a2i(str[15]) != 0)
 		body << YAML::Key << "Dex" << YAML::Value << str[15];
-	if (atoi(str[16]) != 0)
+	if (a2i(str[16]) != 0)
 		body << YAML::Key << "Luk" << YAML::Value << str[16];
-	if (atoi(str[6]) != 1)
+	if (a2i(str[6]) != 1)
 		body << YAML::Key << "AttackRange" << YAML::Value << str[6];
-	if (atoi(str[17]) != 5)
+	if (a2i(str[17]) != 5)
 		body << YAML::Key << "SkillRange" << YAML::Value << str[17];
-	if (atoi(str[18]) != 12)
+	if (a2i(str[18]) != 12)
 		body << YAML::Key << "ChaseRange" << YAML::Value << str[18];
 	body << YAML::Key << "Size" << YAML::Value << constant_lookup(strtol(str[19], nullptr, 10), "Size_") + 5;
-	if (atoi(str[20]) != 0)
-		body << YAML::Key << "Race" << YAML::Value << name2Upper(constant_lookup(atoi(str[20]), "RC_") + 3);
+	if (a2i(str[20]) != 0)
+		body << YAML::Key << "Race" << YAML::Value << name2Upper(constant_lookup(a2i(str[20]), "RC_") + 3);
 
 	int32 ele = strtol(str[21], nullptr, 10);
 	body << YAML::Key << "Element" << YAML::Value << name2Upper(constant_lookup(ele % 20, "ELE_") + 4);
 	body << YAML::Key << "ElementLevel" << YAML::Value << floor(ele / 20.);
 
-	if (atoi(str[22]) != 200)
+	if (a2i(str[22]) != 200)
 		body << YAML::Key << "WalkSpeed" << YAML::Value << str[22];
-	if (atoi(str[23]) != 504)
+	if (a2i(str[23]) != 504)
 		body << YAML::Key << "AttackDelay" << YAML::Value << str[23];
-	if (atoi(str[24]) != 1020)
+	if (a2i(str[24]) != 1020)
 		body << YAML::Key << "AttackMotion" << YAML::Value << str[24];
-	if (atoi(str[25]) != 360)
+	if (a2i(str[25]) != 360)
 		body << YAML::Key << "DamageMotion" << YAML::Value << str[25];
 
-	auto list = elemental_skill_tree.find( atoi(str[0]) );
+	auto list = elemental_skill_tree.find( a2i(str[0]) );
 	if (list != elemental_skill_tree.end()) {
 		body << YAML::Key << "Mode";
 			body << YAML::BeginMap;
@@ -4609,7 +4609,7 @@ static bool read_elementaldb( char* str[], size_t columns, size_t current ){
 // mercenary_db.yml function
 //---------------------------
 static bool mercenary_read_skilldb( char* str[], size_t columns, size_t current ){
-	uint16 skill_id = atoi(str[1]);
+	uint16 skill_id = a2i(str[1]);
 	std::string *skill_name = util::umap_find(aegis_skillnames, skill_id);
 
 	if (skill_name == nullptr) {
@@ -4620,9 +4620,9 @@ static bool mercenary_read_skilldb( char* str[], size_t columns, size_t current 
 	s_mercenary_skill_csv entry = {};
 
 	entry.skill_name = *skill_name;
-	entry.max_lv = atoi(str[2]);
+	entry.max_lv = a2i(str[2]);
 
-	uint16 class_ = atoi(str[0]);
+	uint16 class_ = a2i(str[0]);
 
 	if (util::umap_find(mercenary_skill_tree, class_))
 		mercenary_skill_tree[class_].push_back(entry);
@@ -4640,60 +4640,60 @@ static bool mercenary_readdb( char* str[], size_t columns, size_t current ){
 	body << YAML::Key << "Id" << YAML::Value << str[0];
 	body << YAML::Key << "AegisName" << YAML::Value << str[1];
 	body << YAML::Key << "Name" << YAML::Value << str[2];
-	if (atoi(str[3]) != 1)
+	if (a2i(str[3]) != 1)
 		body << YAML::Key << "Level" << YAML::Value << str[3];
-	if (atoi(str[4]) != 1)
+	if (a2i(str[4]) != 1)
 		body << YAML::Key << "Hp" << YAML::Value << str[4];
-	if (atoi(str[5]) != 1)
+	if (a2i(str[5]) != 1)
 		body << YAML::Key << "Sp" << YAML::Value << str[5];
-	if (atoi(str[7]) != 0)
+	if (a2i(str[7]) != 0)
 		body << YAML::Key << "Attack" << YAML::Value << str[7];
-	if (atoi(str[8]) != 0)
+	if (a2i(str[8]) != 0)
 		body << YAML::Key << "Attack2" << YAML::Value << str[8];
-	if (atoi(str[9]) != 0)
+	if (a2i(str[9]) != 0)
 		body << YAML::Key << "Defense" << YAML::Value << str[9];
-	if (atoi(str[10]) != 0)
+	if (a2i(str[10]) != 0)
 		body << YAML::Key << "MagicDefense" << YAML::Value << str[10];
-	if (atoi(str[11]) != 1)
+	if (a2i(str[11]) != 1)
 		body << YAML::Key << "Str" << YAML::Value << str[11];
-	if (atoi(str[12]) != 1)
+	if (a2i(str[12]) != 1)
 		body << YAML::Key << "Agi" << YAML::Value << str[12];
-	if (atoi(str[13]) != 1)
+	if (a2i(str[13]) != 1)
 		body << YAML::Key << "Vit" << YAML::Value << str[13];
-	if (atoi(str[14]) != 1)
+	if (a2i(str[14]) != 1)
 		body << YAML::Key << "Int" << YAML::Value << str[14];
-	if (atoi(str[15]) != 1)
+	if (a2i(str[15]) != 1)
 		body << YAML::Key << "Dex" << YAML::Value << str[15];
-	if (atoi(str[16]) != 1)
+	if (a2i(str[16]) != 1)
 		body << YAML::Key << "Luk" << YAML::Value << str[16];
-	if (atoi(str[6]) != 0)
+	if (a2i(str[6]) != 0)
 		body << YAML::Key << "AttackRange" << YAML::Value << str[6];
-	if (atoi(str[17]) != 0)
+	if (a2i(str[17]) != 0)
 		body << YAML::Key << "SkillRange" << YAML::Value << str[17];
-	if (atoi(str[18]) != 0)
+	if (a2i(str[18]) != 0)
 		body << YAML::Key << "ChaseRange" << YAML::Value << str[18];
-	if (atoi(str[19]) != 0)
+	if (a2i(str[19]) != 0)
 		body << YAML::Key << "Size" << YAML::Value << constant_lookup(strtol(str[19], nullptr, 10), "Size_") + 5;
-	if (atoi(str[20]) != 0)
-		body << YAML::Key << "Race" << YAML::Value << name2Upper(constant_lookup(atoi(str[20]), "RC_") + 3);
+	if (a2i(str[20]) != 0)
+		body << YAML::Key << "Race" << YAML::Value << name2Upper(constant_lookup(a2i(str[20]), "RC_") + 3);
 
 	int32 ele = strtol(str[21], nullptr, 10);
-	if (atoi(str[21]) != 0)
+	if (a2i(str[21]) != 0)
 		body << YAML::Key << "Element" << YAML::Value << name2Upper(constant_lookup(ele % 20, "ELE_") + 4);
-	if (atoi(str[21]) != 1)
+	if (a2i(str[21]) != 1)
 		body << YAML::Key << "ElementLevel" << YAML::Value << floor(ele / 20.);
 
-	if (atoi(str[22]) != 0)
-		body << YAML::Key << "WalkSpeed" << YAML::Value << cap_value(std::stoi(str[22]), MIN_WALK_SPEED, MAX_WALK_SPEED);
-	if (atoi(str[23]) != 0)
+	if (a2i(str[22]) != 0)
+		body << YAML::Key << "WalkSpeed" << YAML::Value << cap_value(a2i(str[22]), MIN_WALK_SPEED, MAX_WALK_SPEED);
+	if (a2i(str[23]) != 0)
 		body << YAML::Key << "AttackDelay" << YAML::Value << str[23];
-	if (atoi(str[24]) != 0)
+	if (a2i(str[24]) != 0)
 		body << YAML::Key << "AttackMotion" << YAML::Value << str[24];
-	if (atoi(str[25]) != 0)
+	if (a2i(str[25]) != 0)
 		body << YAML::Key << "DamageMotion" << YAML::Value << str[25];
 
 	for (const auto &skillit : mercenary_skill_tree) {
-		if (skillit.first != atoi(str[0]))
+		if (skillit.first != a2i(str[0]))
 			continue;
 
 		body << YAML::Key << "Skills";
@@ -4717,12 +4717,12 @@ static bool mercenary_readdb( char* str[], size_t columns, size_t current ){
 // Copied and adjusted from pc.cpp
 static bool pc_readdb_skilltree( char* fields[], size_t columns, size_t current ){
 	uint16 baselv, joblv, offset;
-	uint16 class_  = (uint16)atoi(fields[0]);
-	uint16 skill_id = (uint16)atoi(fields[1]);
+	uint16 class_  = (uint16)a2i(fields[0]);
+	uint16 skill_id = (uint16)a2i(fields[1]);
 
 	if (columns == 5 + MAX_PC_SKILL_REQUIRE * 2) { // Base/Job level requirement extra columns
-		baselv = (uint16)atoi(fields[3]);
-		joblv = (uint16)atoi(fields[4]);
+		baselv = (uint16)a2i(fields[3]);
+		joblv = (uint16)a2i(fields[4]);
 		offset = 5;
 	}
 	else if (columns == 3 + MAX_PC_SKILL_REQUIRE * 2) {
@@ -4748,7 +4748,7 @@ static bool pc_readdb_skilltree( char* fields[], size_t columns, size_t current 
 		return false;
 	}
 
-	uint16 skill_lv = (uint16)atoi(fields[2]);
+	uint16 skill_lv = (uint16)a2i(fields[2]);
 
 	std::vector<s_skill_tree_entry_csv> *job = util::map_find(skill_tree, class_);
 	bool exists = job != nullptr;
@@ -4762,8 +4762,8 @@ static bool pc_readdb_skilltree( char* fields[], size_t columns, size_t current 
 	entry.joblv = joblv;
 
 	for (uint16 i = 0; i < MAX_PC_SKILL_REQUIRE; i++) {
-		uint16 req_skill_id = (uint16)atoi(fields[i * 2 + offset]);
-		skill_lv = (uint16)atoi(fields[i * 2 + offset + 1]);
+		uint16 req_skill_id = (uint16)a2i(fields[i * 2 + offset]);
+		skill_lv = (uint16)a2i(fields[i * 2 + offset + 1]);
 
 		if (req_skill_id == 0)
 			continue;
@@ -4947,9 +4947,9 @@ static bool itemdb_read_combos(const char* file) {
 
 // Copied and adjusted from cashshop.cpp
 static bool cashshop_parse_dbrow( char* fields[], size_t columns, size_t current ){
-	uint16 tab = atoi( fields[0] );
+	uint16 tab = a2i( fields[0] );
 	t_itemid nameid = strtoul( fields[1], nullptr, 10 );
-	uint32 price = atoi( fields[2] );
+	uint32 price = a2i( fields[2] );
 
 	std::string* item_name = util::umap_find( aegis_itemnames, nameid );
 
@@ -4996,21 +4996,21 @@ static bool cashshop_parse_dbrow( char* fields[], size_t columns, size_t current
 static bool read_homunculus_skilldb( char* split[], size_t columns, size_t current ){
 	s_homun_skill_tree_entry entry = {};
 
-	entry.id = atoi(split[1]);
-	entry.max = atoi(split[2]);
-	entry.need_level = atoi(split[3]);
-	entry.intimacy = cap_value(atoi(split[14]), 0, 1000);
+	entry.id = a2i(split[1]);
+	entry.max = a2i(split[2]);
+	entry.need_level = a2i(split[3]);
+	entry.intimacy = cap_value(a2i(split[14]), 0, 1000);
 
 	for (int32 i = 0; i < MAX_HOM_SKILL_REQUIRE; i++) {
-		if (atoi(split[4 + i * 2]) > 0)
-			entry.need.emplace(atoi(split[4 + i * 2]), atoi(split[4 + i * 2 + 1]));
+		if (a2i(split[4 + i * 2]) > 0)
+			entry.need.emplace(a2i(split[4 + i * 2]), a2i(split[4 + i * 2 + 1]));
 	}
 
-	if (util::umap_find(hom_skill_tree, atoi(split[0])))
-		hom_skill_tree[(uint16)atoi(split[0])].push_back(entry);
+	if (util::umap_find(hom_skill_tree, a2i(split[0])))
+		hom_skill_tree[(uint16)a2i(split[0])].push_back(entry);
 	else {
-		hom_skill_tree[(uint16)atoi(split[0])] = std::vector<s_homun_skill_tree_entry>();
-		hom_skill_tree[(uint16)atoi(split[0])].push_back(entry);
+		hom_skill_tree[(uint16)a2i(split[0])] = std::vector<s_homun_skill_tree_entry>();
+		hom_skill_tree[(uint16)a2i(split[0])].push_back(entry);
 	}
 
 	return true;
@@ -5025,116 +5025,116 @@ static bool read_homunculusdb( char* str[], size_t columns, size_t current ){
 	bool has_evo = false;
 
 	body << YAML::BeginMap;
-	body << YAML::Key << "Class" << YAML::Value << name2Upper(constant_lookup(atoi(str[0]), "MER_") + 4);
+	body << YAML::Key << "Class" << YAML::Value << name2Upper(constant_lookup(a2i(str[0]), "MER_") + 4);
 	body << YAML::Key << "Name" << YAML::Value << str[2];
-	if (atoi(str[0]) != atoi(str[1])) {
-		body << YAML::Key << "EvolutionClass" << YAML::Value << name2Upper(constant_lookup(atoi(str[1]), "MER_") + 4);
+	if (a2i(str[0]) != a2i(str[1])) {
+		body << YAML::Key << "EvolutionClass" << YAML::Value << name2Upper(constant_lookup(a2i(str[1]), "MER_") + 4);
 		has_evo = true;
 	}
-	if (atoi(str[3]) != ITEMID_PET_FOOD)
-		body << YAML::Key << "Food" << YAML::Value << name2Upper(*util::umap_find(aegis_itemnames, (t_itemid)atoi(str[3])));
-	if (atoi(str[4]) != 60000)
-		body << YAML::Key << "HungryDelay" << YAML::Value << atoi(str[4]);
+	if (a2i(str[3]) != ITEMID_PET_FOOD)
+		body << YAML::Key << "Food" << YAML::Value << name2Upper(*util::umap_find(aegis_itemnames, (t_itemid)a2i(str[3])));
+	if (a2i(str[4]) != 60000)
+		body << YAML::Key << "HungryDelay" << YAML::Value << a2i(str[4]);
 
-	if (atoi(str[7]) != RC_DEMIHUMAN)
-		body << YAML::Key << "Race" << YAML::Value << name2Upper(constant_lookup(atoi(str[7]), "RC_") + 3);
-	if (atoi(str[8]) != ELE_NEUTRAL)
-	body << YAML::Key << "Element" << YAML::Value << name2Upper(constant_lookup(atoi(str[8]), "ELE_") + 4);
-	if (atoi(str[5]) != SZ_SMALL)
-		body << YAML::Key << "Size" << YAML::Value << name2Upper(constant_lookup(atoi(str[5]), "Size_") + 5);
-	if (atoi(str[6]) != SZ_MEDIUM)
-		body << YAML::Key << "EvolutionSize" << YAML::Value << name2Upper(constant_lookup(atoi(str[6]), "Size_") + 5);
-	if (atoi(str[9]) != 700)
-		body << YAML::Key << "AttackDelay" << YAML::Value << atoi(str[9]);
+	if (a2i(str[7]) != RC_DEMIHUMAN)
+		body << YAML::Key << "Race" << YAML::Value << name2Upper(constant_lookup(a2i(str[7]), "RC_") + 3);
+	if (a2i(str[8]) != ELE_NEUTRAL)
+	body << YAML::Key << "Element" << YAML::Value << name2Upper(constant_lookup(a2i(str[8]), "ELE_") + 4);
+	if (a2i(str[5]) != SZ_SMALL)
+		body << YAML::Key << "Size" << YAML::Value << name2Upper(constant_lookup(a2i(str[5]), "Size_") + 5);
+	if (a2i(str[6]) != SZ_MEDIUM)
+		body << YAML::Key << "EvolutionSize" << YAML::Value << name2Upper(constant_lookup(a2i(str[6]), "Size_") + 5);
+	if (a2i(str[9]) != 700)
+		body << YAML::Key << "AttackDelay" << YAML::Value << a2i(str[9]);
 
 	body << YAML::Key << "Status";
 	body << YAML::BeginSeq;
 
 	body << YAML::BeginMap;
 	body << YAML::Key << "Type" << YAML::Value << "Hp";
-	body << YAML::Key << "Base" << YAML::Value << atoi(str[10]);
-	body << YAML::Key << "GrowthMinimum" << YAML::Value << atoi(str[18]);
-	body << YAML::Key << "GrowthMaximum" << YAML::Value << atoi(str[19]);
+	body << YAML::Key << "Base" << YAML::Value << a2i(str[10]);
+	body << YAML::Key << "GrowthMinimum" << YAML::Value << a2i(str[18]);
+	body << YAML::Key << "GrowthMaximum" << YAML::Value << a2i(str[19]);
 	if (has_evo) {
-		body << YAML::Key << "EvolutionMinimum" << YAML::Value << atoi(str[34]);
-		body << YAML::Key << "EvolutionMaximum" << YAML::Value << atoi(str[35]);
+		body << YAML::Key << "EvolutionMinimum" << YAML::Value << a2i(str[34]);
+		body << YAML::Key << "EvolutionMaximum" << YAML::Value << a2i(str[35]);
 	}
 	body << YAML::EndMap;
 
 	body << YAML::BeginMap;
 	body << YAML::Key << "Type" << YAML::Value << "Sp";
-	body << YAML::Key << "Base" << YAML::Value << atoi(str[11]);
-	body << YAML::Key << "GrowthMinimum" << YAML::Value << atoi(str[20]);
-	body << YAML::Key << "GrowthMaximum" << YAML::Value << atoi(str[21]);
+	body << YAML::Key << "Base" << YAML::Value << a2i(str[11]);
+	body << YAML::Key << "GrowthMinimum" << YAML::Value << a2i(str[20]);
+	body << YAML::Key << "GrowthMaximum" << YAML::Value << a2i(str[21]);
 	if (has_evo) {
-		body << YAML::Key << "EvolutionMinimum" << YAML::Value << atoi(str[36]);
-		body << YAML::Key << "EvolutionMaximum" << YAML::Value << atoi(str[37]);
+		body << YAML::Key << "EvolutionMinimum" << YAML::Value << a2i(str[36]);
+		body << YAML::Key << "EvolutionMaximum" << YAML::Value << a2i(str[37]);
 	}
 	body << YAML::EndMap;
 
 	body << YAML::BeginMap;
 	body << YAML::Key << "Type" << YAML::Value << "Str";
-	body << YAML::Key << "Base" << YAML::Value << atoi(str[12]);
-	body << YAML::Key << "GrowthMinimum" << YAML::Value << atoi(str[22]);
-	body << YAML::Key << "GrowthMaximum" << YAML::Value << atoi(str[23]);
+	body << YAML::Key << "Base" << YAML::Value << a2i(str[12]);
+	body << YAML::Key << "GrowthMinimum" << YAML::Value << a2i(str[22]);
+	body << YAML::Key << "GrowthMaximum" << YAML::Value << a2i(str[23]);
 	if (has_evo) {
-		body << YAML::Key << "EvolutionMinimum" << YAML::Value << atoi(str[38]);
-		body << YAML::Key << "EvolutionMaximum" << YAML::Value << atoi(str[39]);
+		body << YAML::Key << "EvolutionMinimum" << YAML::Value << a2i(str[38]);
+		body << YAML::Key << "EvolutionMaximum" << YAML::Value << a2i(str[39]);
 	}
 	body << YAML::EndMap;
 
 	body << YAML::BeginMap;
 	body << YAML::Key << "Type" << YAML::Value << "Agi";
-	body << YAML::Key << "Base" << YAML::Value << atoi(str[13]);
-	body << YAML::Key << "GrowthMinimum" << YAML::Value << atoi(str[24]);
-	body << YAML::Key << "GrowthMaximum" << YAML::Value << atoi(str[25]);
+	body << YAML::Key << "Base" << YAML::Value << a2i(str[13]);
+	body << YAML::Key << "GrowthMinimum" << YAML::Value << a2i(str[24]);
+	body << YAML::Key << "GrowthMaximum" << YAML::Value << a2i(str[25]);
 	if (has_evo) {
-		body << YAML::Key << "EvolutionMinimum" << YAML::Value << atoi(str[40]);
-		body << YAML::Key << "EvolutionMaximum" << YAML::Value << atoi(str[41]);
+		body << YAML::Key << "EvolutionMinimum" << YAML::Value << a2i(str[40]);
+		body << YAML::Key << "EvolutionMaximum" << YAML::Value << a2i(str[41]);
 	}
 	body << YAML::EndMap;
 
 	body << YAML::BeginMap;
 	body << YAML::Key << "Type" << YAML::Value << "Vit";
-	body << YAML::Key << "Base" << YAML::Value << atoi(str[14]);
-	body << YAML::Key << "GrowthMinimum" << YAML::Value << atoi(str[26]);
-	body << YAML::Key << "GrowthMaximum" << YAML::Value << atoi(str[27]);
+	body << YAML::Key << "Base" << YAML::Value << a2i(str[14]);
+	body << YAML::Key << "GrowthMinimum" << YAML::Value << a2i(str[26]);
+	body << YAML::Key << "GrowthMaximum" << YAML::Value << a2i(str[27]);
 	if (has_evo) {
-		body << YAML::Key << "EvolutionMinimum" << YAML::Value << atoi(str[42]);
-		body << YAML::Key << "EvolutionMaximum" << YAML::Value << atoi(str[43]);
+		body << YAML::Key << "EvolutionMinimum" << YAML::Value << a2i(str[42]);
+		body << YAML::Key << "EvolutionMaximum" << YAML::Value << a2i(str[43]);
 	}
 	body << YAML::EndMap;
 
 	body << YAML::BeginMap;
 	body << YAML::Key << "Type" << YAML::Value << "Int";
-	body << YAML::Key << "Base" << YAML::Value << atoi(str[15]);
-	body << YAML::Key << "GrowthMinimum" << YAML::Value << atoi(str[28]);
-	body << YAML::Key << "GrowthMaximum" << YAML::Value << atoi(str[29]);
+	body << YAML::Key << "Base" << YAML::Value << a2i(str[15]);
+	body << YAML::Key << "GrowthMinimum" << YAML::Value << a2i(str[28]);
+	body << YAML::Key << "GrowthMaximum" << YAML::Value << a2i(str[29]);
 	if (has_evo) {
-		body << YAML::Key << "EvolutionMinimum" << YAML::Value << atoi(str[44]);
-		body << YAML::Key << "EvolutionMaximum" << YAML::Value << atoi(str[45]);
+		body << YAML::Key << "EvolutionMinimum" << YAML::Value << a2i(str[44]);
+		body << YAML::Key << "EvolutionMaximum" << YAML::Value << a2i(str[45]);
 	}
 	body << YAML::EndMap;
 
 	body << YAML::BeginMap;
 	body << YAML::Key << "Type" << YAML::Value << "Dex";
-	body << YAML::Key << "Base" << YAML::Value << atoi(str[16]);
-	body << YAML::Key << "GrowthMinimum" << YAML::Value << atoi(str[30]);
-	body << YAML::Key << "GrowthMaximum" << YAML::Value << atoi(str[31]);
+	body << YAML::Key << "Base" << YAML::Value << a2i(str[16]);
+	body << YAML::Key << "GrowthMinimum" << YAML::Value << a2i(str[30]);
+	body << YAML::Key << "GrowthMaximum" << YAML::Value << a2i(str[31]);
 	if (has_evo) {
-		body << YAML::Key << "EvolutionMinimum" << YAML::Value << atoi(str[46]);
-		body << YAML::Key << "EvolutionMaximum" << YAML::Value << atoi(str[47]);
+		body << YAML::Key << "EvolutionMinimum" << YAML::Value << a2i(str[46]);
+		body << YAML::Key << "EvolutionMaximum" << YAML::Value << a2i(str[47]);
 	}
 	body << YAML::EndMap;
 
 	body << YAML::BeginMap;
 	body << YAML::Key << "Type" << YAML::Value << "Luk";
-	body << YAML::Key << "Base" << YAML::Value << atoi(str[17]);
-	body << YAML::Key << "GrowthMinimum" << YAML::Value << atoi(str[32]);
-	body << YAML::Key << "GrowthMaximum" << YAML::Value << atoi(str[33]);
+	body << YAML::Key << "Base" << YAML::Value << a2i(str[17]);
+	body << YAML::Key << "GrowthMinimum" << YAML::Value << a2i(str[32]);
+	body << YAML::Key << "GrowthMaximum" << YAML::Value << a2i(str[33]);
 	if (has_evo) {
-		body << YAML::Key << "EvolutionMinimum" << YAML::Value << atoi(str[48]);
-		body << YAML::Key << "EvolutionMaximum" << YAML::Value << atoi(str[49]);
+		body << YAML::Key << "EvolutionMinimum" << YAML::Value << a2i(str[48]);
+		body << YAML::Key << "EvolutionMaximum" << YAML::Value << a2i(str[49]);
 	}
 	body << YAML::EndMap;
 
@@ -5143,11 +5143,11 @@ static bool read_homunculusdb( char* str[], size_t columns, size_t current ){
 	// Gather and sort skill tree data
 	std::vector<s_homun_skill_tree_entry> *skill_tree_base = nullptr, *skill_tree_evo = nullptr;
 
-	skill_tree_base = util::umap_find(hom_skill_tree, atoi(str[0]));
+	skill_tree_base = util::umap_find(hom_skill_tree, a2i(str[0]));
 	std::sort(skill_tree_base->begin(), skill_tree_base->end(), compareHomSkillId);
 
 	if (has_evo) {
-		skill_tree_evo = util::umap_find(hom_skill_tree, atoi(str[1]));
+		skill_tree_evo = util::umap_find(hom_skill_tree, a2i(str[1]));
 		std::sort(skill_tree_evo->begin(), skill_tree_evo->end(), compareHomSkillId);
 	}
 

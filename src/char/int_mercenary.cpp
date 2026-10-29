@@ -31,13 +31,13 @@ bool mercenary_owner_fromsql(uint32 char_id, struct mmo_charstatus *status)
 		return false;
 	}
 
-	Sql_GetData(sql_handle,  0, &data, nullptr); status->mer_id = atoi(data);
-	Sql_GetData(sql_handle,  1, &data, nullptr); status->arch_calls = atoi(data);
-	Sql_GetData(sql_handle,  2, &data, nullptr); status->arch_faith = atoi(data);
-	Sql_GetData(sql_handle,  3, &data, nullptr); status->spear_calls = atoi(data);
-	Sql_GetData(sql_handle,  4, &data, nullptr); status->spear_faith = atoi(data);
-	Sql_GetData(sql_handle,  5, &data, nullptr); status->sword_calls = atoi(data);
-	Sql_GetData(sql_handle,  6, &data, nullptr); status->sword_faith = atoi(data);
+	Sql_GetData(sql_handle,  0, &data, nullptr); status->mer_id = a2i(data);
+	Sql_GetData(sql_handle,  1, &data, nullptr); status->arch_calls = a2i(data);
+	Sql_GetData(sql_handle,  2, &data, nullptr); status->arch_faith = a2i(data);
+	Sql_GetData(sql_handle,  3, &data, nullptr); status->spear_calls = a2i(data);
+	Sql_GetData(sql_handle,  4, &data, nullptr); status->spear_faith = a2i(data);
+	Sql_GetData(sql_handle,  5, &data, nullptr); status->sword_calls = a2i(data);
+	Sql_GetData(sql_handle,  6, &data, nullptr); status->sword_faith = a2i(data);
 	Sql_FreeResult(sql_handle);
 
 	return true;
@@ -140,10 +140,10 @@ bool mapif_mercenary_load(int32 merc_id, uint32 char_id, struct s_mercenary *mer
 		return false;
 	}
 
-	Sql_GetData(sql_handle,  0, &data, nullptr); merc->class_ = atoi(data);
-	Sql_GetData(sql_handle,  1, &data, nullptr); merc->hp = atoi(data);
-	Sql_GetData(sql_handle,  2, &data, nullptr); merc->sp = atoi(data);
-	Sql_GetData(sql_handle,  3, &data, nullptr); merc->kill_count = atoi(data);
+	Sql_GetData(sql_handle,  0, &data, nullptr); merc->class_ = a2i(data);
+	Sql_GetData(sql_handle,  1, &data, nullptr); merc->hp = a2i(data);
+	Sql_GetData(sql_handle,  2, &data, nullptr); merc->sp = a2i(data);
+	Sql_GetData(sql_handle,  3, &data, nullptr); merc->kill_count = a2i(data);
 	Sql_GetData(sql_handle,  4, &data, nullptr); merc->life_time = strtoll( data, nullptr, 10 );
 	Sql_FreeResult(sql_handle);
 	if( charserv_config.save_log )

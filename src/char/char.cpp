@@ -1336,40 +1336,57 @@ int32 char_check_char_name(char * name, char * esc_name)
 	int32 i;
 
 	// check length of character name
-	if( name[0] == '\0' )
+	if( name[0] == '\0' ){
+		ShowWarning( "char_check_char_name: rejected empty character name...\n" );
 		return -2; // empty character name
+	}
 	/**
 	 * By default the client does not allow you to create names with less than 4 characters,
 	 * however the use of WPE can bypass this, and this fixes the exploit.
 	 * It can also be changed in the configuration file in conjunction with the
 	 * 'Remove 4/6 letter Character Name Limit' client diff patch.
 	 **/
-	if( strlen( name ) < charserv_config.char_config.char_name_min_length )
+	if( strlen( name ) < charserv_config.char_config.char_name_min_length ){
+		ShowWarning( "char_check_char_name: rejected too-short character name '%s' (%d chars, minimum %d)...\n",
+			name, (int)strlen( name ), charserv_config.char_config.char_name_min_length );
 		return -2;
+	}
 	// check content of character name
-	if( remove_control_chars(name) )
+	if( remove_control_chars(name) ){
+		ShowWarning( "char_check_char_name: rejected character name '%s': control characters present...\n", name );
 		return -2; // control chars in name
+	}
 
 	// check for reserved names
-	if( strcmpi(name, charserv_config.wisp_server_name) == 0 )
+	if( strcmpi(name, charserv_config.wisp_server_name) == 0 ){
+		ShowWarning( "char_check_char_name: rejected reserved character name '%s' (wisp server name)...\n", name );
 		return -1; // nick reserved for internal server messages
+	}
 
 	// check for the channel symbol
-	if( name[0] == '#' )
+	if( name[0] == '#' ){
+		ShowWarning( "char_check_char_name: rejected character name '%s': channel symbol '#' not allowed...\n", name );
 		return -2;
+	}
 
 	// Check Authorised letters/symbols in the name of the character
 	if( charserv_config.char_config.char_name_option == 1 )
 	{ // only letters/symbols in char_name_letters are authorised
 		for( i = 0; i < NAME_LENGTH && name[i]; i++ )
-			if( strchr(charserv_config.char_config.char_name_letters, name[i]) == nullptr )
+			if( strchr(charserv_config.char_config.char_name_letters, name[i]) == nullptr ){
+				ShowWarning( "char_check_char_name: rejected character name '%s': character '%c' at position %d is not in 'char_name_letters'...\n",
+					name, name[i], (int)i );
 				return -2;
+			}
 	}
 	else if( charserv_config.char_config.char_name_option == 2 )
 	{ // letters/symbols in char_name_letters are forbidden
 		for( i = 0; i < NAME_LENGTH && name[i]; i++ )
-			if( strchr(charserv_config.char_config.char_name_letters, name[i]) != nullptr )
+			if( strchr(charserv_config.char_config.char_name_letters, name[i]) != nullptr ){
+				ShowWarning( "char_check_char_name: rejected character name '%s': character '%c' at position %d is forbidden by 'char_name_letters'...\n",
+					name, name[i], (int)i );
 				return -2;
+			}
 	}
 	if( charserv_config.char_config.name_ignoring_case ) {
 		if( SQL_ERROR == Sql_Query(sql_handle, "SELECT 1 FROM `%s` WHERE BINARY `name` = '%s' LIMIT 1", schema_config.char_db, esc_name) ) {
@@ -1382,8 +1399,10 @@ int32 char_check_char_name(char * name, char * esc_name)
 			return -2;
 		}
 	}
-	if( Sql_NumRows(sql_handle) > 0 )
+	if( Sql_NumRows(sql_handle) > 0 ){
+		ShowWarning( "char_check_char_name: rejected character name '%s': already exists...\n", name );
 		return -1; // name already exists
+	}
 
 	return 0;
 }
@@ -1417,6 +1436,8 @@ int32 char_make_new_char( struct char_session_data* sd, char* name_, int32 str, 
 
 	// Check the slot
 	if( slot < 0 || slot >= sd->char_slots ){
+		ShowWarning( "char_make_new_char: rejected invalid slot %d for account %d (%d character slots)...\n",
+			slot, sd->account_id, sd->char_slots );
 		return -4; // invalid slot
 	}
 
@@ -1437,21 +1458,29 @@ int32 char_make_new_char( struct char_session_data* sd, char* name_, int32 str, 
 #if PACKETVER < 20120307
 	// All stats together always have to add up to a total of 30 points
 	if( ( str + agi + vit + int_ + dex + luk ) != 30 ){
+		ShowWarning( "char_make_new_char: rejected stats for account %d: total %d != 30...\n",
+			sd->account_id, str + agi + vit + int_ + dex + luk );
 		return -2; // invalid input
 	}
 
 	// No status can be below 1
 	if( str < 1 || agi < 1 || vit < 1 || int_ < 1 || dex < 1 || luk < 1 ){
+		ShowWarning( "char_make_new_char: rejected stats for account %d: below 1 (str/agi/vit/int/dex/luk = %d/%d/%d/%d/%d/%d)...\n",
+			sd->account_id, str, agi, vit, int_, dex, luk );
 		return -2; // invalid input
 	}
 
 	// No status can be higher than 9
 	if( str > 9 || agi > 9 || vit > 9 || int_ > 9 || dex > 9 || luk > 9 ){
+		ShowWarning( "char_make_new_char: rejected stats for account %d: above 9 (str/agi/vit/int/dex/luk = %d/%d/%d/%d/%d/%d)...\n",
+			sd->account_id, str, agi, vit, int_, dex, luk );
 		return -2; // invalid input
 	}
 
 	// The status pairs always have to add up to a total of 10 points
 	if( ( str + int_ ) != 10 || ( agi + luk ) != 10 || ( vit + dex ) != 10 ){
+		ShowWarning( "char_make_new_char: rejected stats for account %d: pairs must be 10 (str+int=%d, agi+luk=%d, vit+dex=%d)...\n",
+			sd->account_id, str + int_, agi + luk, vit + dex );
 		return -2; // invalid input
 	}
 
@@ -1464,18 +1493,26 @@ int32 char_make_new_char( struct char_session_data* sd, char* name_, int32 str, 
 	if( SQL_ERROR == Sql_Query(sql_handle, "SELECT 1 FROM `%s` WHERE `account_id` = '%d'", schema_config.char_db, sd->account_id) )
 		Sql_ShowDebug(sql_handle);
 #ifdef VIP_ENABLE
-	if( Sql_NumRows(sql_handle) >= MAX_CHARS )
+	if( Sql_NumRows(sql_handle) >= MAX_CHARS ){
+		ShowWarning( "char_make_new_char: rejected account %d: has %d characters (MAX_CHARS=%d)...\n",
+			sd->account_id, (int32)Sql_NumRows(sql_handle), (int32)MAX_CHARS );
 		return -2; // character account limit exceeded
+	}
 #else
-	if( Sql_NumRows(sql_handle) >= sd->char_slots )
+	if( Sql_NumRows(sql_handle) >= sd->char_slots ){
+		ShowWarning( "char_make_new_char: rejected account %d: has %d characters (char_slots=%d)...\n",
+			sd->account_id, (int32)Sql_NumRows(sql_handle), sd->char_slots );
 		return -2; // character account limit exceeded
+	}
 #endif
 
 	// check char slot
 	if( SQL_ERROR == Sql_Query(sql_handle, "SELECT 1 FROM `%s` WHERE `account_id` = '%d' AND `char_num` = '%d' LIMIT 1", schema_config.char_db, sd->account_id, slot) )
 		Sql_ShowDebug(sql_handle);
-	if( Sql_NumRows(sql_handle) > 0 )
+	if( Sql_NumRows(sql_handle) > 0 ){
+		ShowWarning( "char_make_new_char: rejected account %d: slot %d already in use...\n", sd->account_id, slot );
 		return -2; // slot already in use
+	}
 
 	// validation success, log result
 	if (charserv_config.log_char) {
@@ -1487,8 +1524,11 @@ int32 char_make_new_char( struct char_session_data* sd, char* name_, int32 str, 
 
 #if PACKETVER >= 20151001
 	if(!(start_job == JOB_NOVICE && (charserv_config.allowed_job_flag&1)) && 
-		!(start_job == JOB_SUMMONER && (charserv_config.allowed_job_flag&2)))
+		!(start_job == JOB_SUMMONER && (charserv_config.allowed_job_flag&2))){
+		ShowWarning( "char_make_new_char: rejected account %d: start job %d not allowed (allowed_job_flag=0x%x)...\n",
+			sd->account_id, start_job, charserv_config.allowed_job_flag );
 		return -2; // Invalid job
+	}
 
 	// Check for Doram based information.
 	if (start_job == JOB_SUMMONER) { // Check for just this job for now.
@@ -1573,15 +1613,15 @@ enum e_char_del_response char_delete(struct char_session_data* sd, uint32 char_i
 	}
 
 	Sql_GetData(sql_handle, 0, &data, &len); safestrncpy(name, data, NAME_LENGTH);
-	Sql_GetData(sql_handle, 1, &data, nullptr); account_id = atoi(data);
-	Sql_GetData(sql_handle, 2, &data, nullptr); party_id = atoi(data);
-	Sql_GetData(sql_handle, 3, &data, nullptr); guild_id = atoi(data);
-	Sql_GetData(sql_handle, 4, &data, nullptr); base_level = atoi(data);
-	Sql_GetData(sql_handle, 5, &data, nullptr); hom_id = atoi(data);
-	Sql_GetData(sql_handle, 6, &data, nullptr); partner_id = atoi(data);
-	Sql_GetData(sql_handle, 7, &data, nullptr); father_id = atoi(data);
-	Sql_GetData(sql_handle, 8, &data, nullptr); mother_id = atoi(data);
-	Sql_GetData(sql_handle, 9, &data, nullptr); elemental_id = atoi(data);
+	Sql_GetData(sql_handle, 1, &data, nullptr); account_id = a2i(data);
+	Sql_GetData(sql_handle, 2, &data, nullptr); party_id = a2i(data);
+	Sql_GetData(sql_handle, 3, &data, nullptr); guild_id = a2i(data);
+	Sql_GetData(sql_handle, 4, &data, nullptr); base_level = a2i(data);
+	Sql_GetData(sql_handle, 5, &data, nullptr); hom_id = a2i(data);
+	Sql_GetData(sql_handle, 6, &data, nullptr); partner_id = a2i(data);
+	Sql_GetData(sql_handle, 7, &data, nullptr); father_id = a2i(data);
+	Sql_GetData(sql_handle, 8, &data, nullptr); mother_id = a2i(data);
+	Sql_GetData(sql_handle, 9, &data, nullptr); elemental_id = a2i(data);
 	Sql_GetData(sql_handle,10, &data, nullptr); delete_date = strtoul(data, nullptr, 10);
 
 	Sql_EscapeStringLen(sql_handle, esc_name, name, zmin(len, NAME_LENGTH));
@@ -1880,7 +1920,7 @@ int32 char_married(int32 pl1, int32 pl2)
 		char* data;
 
 		Sql_GetData(sql_handle, 0, &data, nullptr);
-		if( pl2 == atoi(data) )
+		if( pl2 == a2i(data) )
 		{
 			Sql_FreeResult(sql_handle);
 			return 1;
@@ -1901,7 +1941,7 @@ int32 char_child(int32 parent_id, int32 child_id)
 		char* data;
 
 		Sql_GetData(sql_handle, 0, &data, nullptr);
-		if( child_id == atoi(data) )
+		if( child_id == a2i(data) )
 		{
 			Sql_FreeResult(sql_handle);
 			return 1;
@@ -1924,9 +1964,9 @@ int32 char_family(int32 cid1, int32 cid2, int32 cid3)
 		int32 childid;
 		char* data;
 
-		Sql_GetData(sql_handle, 0, &data, nullptr); charid = atoi(data);
-		Sql_GetData(sql_handle, 1, &data, nullptr); partnerid = atoi(data);
-		Sql_GetData(sql_handle, 2, &data, nullptr); childid = atoi(data);
+		Sql_GetData(sql_handle, 0, &data, nullptr); charid = a2i(data);
+		Sql_GetData(sql_handle, 1, &data, nullptr); partnerid = a2i(data);
+		Sql_GetData(sql_handle, 2, &data, nullptr); childid = a2i(data);
 
 		if( (cid1 == charid    && ((cid2 == partnerid && cid3 == childid  ) || (cid2 == childid   && cid3 == partnerid))) ||
 			(cid1 == partnerid && ((cid2 == charid    && cid3 == childid  ) || (cid2 == childid   && cid3 == charid   ))) ||
@@ -2022,10 +2062,10 @@ void char_read_fame_list(void)
 	{
 		// char_id
 		Sql_GetData(sql_handle, 0, &data, nullptr);
-		smith_fame_list[i].id = atoi(data);
+		smith_fame_list[i].id = a2i(data);
 		// fame
 		Sql_GetData(sql_handle, 1, &data, &len);
-		smith_fame_list[i].fame = atoi(data);
+		smith_fame_list[i].fame = a2i(data);
 		// name
 		Sql_GetData(sql_handle, 2, &data, &len);
 		memcpy(smith_fame_list[i].name, data, zmin(len, NAME_LENGTH));
@@ -2037,10 +2077,10 @@ void char_read_fame_list(void)
 	{
 		// char_id
 		Sql_GetData(sql_handle, 0, &data, nullptr);
-		chemist_fame_list[i].id = atoi(data);
+		chemist_fame_list[i].id = a2i(data);
 		// fame
 		Sql_GetData(sql_handle, 1, &data, &len);
-		chemist_fame_list[i].fame = atoi(data);
+		chemist_fame_list[i].fame = a2i(data);
 		// name
 		Sql_GetData(sql_handle, 2, &data, &len);
 		memcpy(chemist_fame_list[i].name, data, zmin(len, NAME_LENGTH));
@@ -2052,10 +2092,10 @@ void char_read_fame_list(void)
 	{
 		// char_id
 		Sql_GetData(sql_handle, 0, &data, nullptr);
-		taekwon_fame_list[i].id = atoi(data);
+		taekwon_fame_list[i].id = a2i(data);
 		// fame
 		Sql_GetData(sql_handle, 1, &data, &len);
-		taekwon_fame_list[i].fame = atoi(data);
+		taekwon_fame_list[i].fame = a2i(data);
 		// name
 		Sql_GetData(sql_handle, 2, &data, &len);
 		memcpy(taekwon_fame_list[i].name, data, zmin(len, NAME_LENGTH));
@@ -2672,7 +2712,7 @@ void char_sql_config_read(const char* cfgName) {
 		else if(!strcmpi(w1,"achievement_table"))
 			safestrncpy(schema_config.achievement_table, w2, sizeof(schema_config.achievement_table));
 		else if(!strcmpi(w1, "start_status_points"))
-			charserv_config.start_status_points = atoi(w2);
+			charserv_config.start_status_points = a2i(w2);
 		//support the import command, just like any other config
 		else if(!strcmpi(w1,"import"))
 			char_sql_config_read(w2);
@@ -2862,8 +2902,8 @@ void char_config_split_startpoint( char* w1_value, char* w2_value, struct s_poin
 		}
 
 		safestrncpy( start_point[i].map, fields[1], sizeof( start_point[i].map ) );
-		start_point[i].x = max( 0, atoi( fields[2] ) );
-		start_point[i].y = max( 0, atoi( fields[3] ) );
+		start_point[i].x = max( 0, a2i( fields[2] ) );
+		start_point[i].y = max( 0, a2i( fields[3] ) );
 		(*count)++;
 
 		lineitem = strtok(nullptr, ":"); //next lineitem
@@ -2952,7 +2992,7 @@ bool char_config_read(const char* cfgName, bool normal){
 					ShowStatus("Login server IP address : %s -> %s\n", w2, ip2str(charserv_config.login_ip, ip_str));
 				}
 			} else if (strcmpi(w1, "login_port") == 0) {
-				charserv_config.login_port = atoi(w2);
+				charserv_config.login_port = a2i(w2);
 			} else if (strcmpi(w1, "char_ip") == 0) {
 				charserv_config.char_ip = host2ip(w2);
 				if (charserv_config.char_ip) {
@@ -2968,7 +3008,7 @@ bool char_config_read(const char* cfgName, bool normal){
 					ShowStatus("Character server binding IP address : %s -> %s\n", w2, ip2str(charserv_config.bind_ip, ip_str));
 				}
 			} else if (strcmpi(w1, "char_port") == 0) {
-				charserv_config.char_port = atoi(w2);
+				charserv_config.char_port = a2i(w2);
 			} else if (strcmpi(w1, "console") == 0) {
 				charserv_config.console = config_switch(w2);
 			}
@@ -2977,29 +3017,29 @@ bool char_config_read(const char* cfgName, bool normal){
 		if(strcmpi(w1,"timestamp_format") == 0) {
 			safestrncpy(timestamp_format, w2, sizeof(timestamp_format));
 		} else if(strcmpi(w1,"console_silent")==0){
-			msg_silent = atoi(w2);
+			msg_silent = a2i(w2);
 			if( msg_silent ) /* only bother if its actually enabled */
-				ShowInfo("Console Silent Setting: %d\n", atoi(w2));
+				ShowInfo("Console Silent Setting: %d\n", a2i(w2));
 		} else if (strcmpi(w1, "console_msg_log") == 0) {
-			console_msg_log = atoi(w2);
+			console_msg_log = a2i(w2);
 		} else if  (strcmpi(w1, "console_log_filepath") == 0) {
 			safestrncpy(console_log_filepath, w2, sizeof(console_log_filepath));
 		} else if(strcmpi(w1,"stdout_with_ansisequence")==0){
 			stdout_with_ansisequence = config_switch(w2);
 		} else if (strcmpi(w1, "char_maintenance") == 0) {
-			charserv_config.char_maintenance = atoi(w2);
+			charserv_config.char_maintenance = a2i(w2);
 		} else if (strcmpi(w1, "char_new") == 0) {
 			charserv_config.char_new = (bool)config_switch(w2);
 		} else if (strcmpi(w1, "char_new_display") == 0) {
-			charserv_config.char_new_display = atoi(w2);
+			charserv_config.char_new_display = a2i(w2);
 		} else if (strcmpi(w1, "max_connect_user") == 0) {
-			charserv_config.max_connect_user = atoi(w2);
+			charserv_config.max_connect_user = a2i(w2);
 			if (charserv_config.max_connect_user < -1)
 				charserv_config.max_connect_user = -1;
 		} else if(strcmpi(w1, "gm_allow_group") == 0) {
-			charserv_config.gm_allow_group = atoi(w2);
+			charserv_config.gm_allow_group = a2i(w2);
 		} else if (strcmpi(w1, "autosave_time") == 0) {
-			charserv_config.autosave_interval = atoi(w2)*1000;
+			charserv_config.autosave_interval = a2i(w2)*1000;
 			if (charserv_config.autosave_interval <= 0)
 				charserv_config.autosave_interval = DEFAULT_AUTOSAVE_INTERVAL;
 		} else if (strcmpi(w1, "save_log") == 0) {
@@ -3015,7 +3055,7 @@ bool char_config_read(const char* cfgName, bool normal){
 			char_config_split_startpoint(w1, w2, charserv_config.start_point_doram, &charserv_config.start_point_count_doram);
 #endif
 		} else if (strcmpi(w1, "start_zeny") == 0) {
-			charserv_config.start_zeny = atoi(w2);
+			charserv_config.start_zeny = a2i(w2);
 			if (charserv_config.start_zeny < 0)
 				charserv_config.start_zeny = 0;
 #ifdef RENEWAL
@@ -3036,19 +3076,19 @@ bool char_config_read(const char* cfgName, bool normal){
 		} else if (strcmpi(w1, "name_ignoring_case") == 0) {
 			charserv_config.char_config.name_ignoring_case = (bool)config_switch(w2);
 		} else if (strcmpi(w1, "char_name_option") == 0) {
-			charserv_config.char_config.char_name_option = atoi(w2);
+			charserv_config.char_config.char_name_option = a2i(w2);
 		} else if (strcmpi(w1, "char_name_letters") == 0) {
 			safestrncpy(charserv_config.char_config.char_name_letters, w2, sizeof(charserv_config.char_config.char_name_letters));
 		} else if (strcmpi(w1, "char_name_min_length") == 0) {
-			charserv_config.char_config.char_name_min_length = cap_value(atoi(w2), 0, NAME_LENGTH - 1);
+			charserv_config.char_config.char_name_min_length = cap_value(a2i(w2), 0, NAME_LENGTH - 1);
 		} else if (strcmpi(w1, "char_del_level") == 0) { //disable/enable char deletion by its level condition [Lupus]
-			charserv_config.char_config.char_del_level = atoi(w2);
+			charserv_config.char_config.char_del_level = a2i(w2);
 		} else if (strcmpi(w1, "char_del_delay") == 0) {
-			charserv_config.char_config.char_del_delay = atoi(w2);
+			charserv_config.char_config.char_del_delay = a2i(w2);
 		} else if (strcmpi(w1, "char_del_option") == 0) {
-			charserv_config.char_config.char_del_option = atoi(w2);
+			charserv_config.char_config.char_del_option = a2i(w2);
 		} else if (strcmpi(w1, "char_del_restriction") == 0) {
-			charserv_config.char_config.char_del_restriction = atoi(w2);
+			charserv_config.char_config.char_del_restriction = a2i(w2);
 		} else if (strcmpi(w1, "char_rename_party") == 0) {
 			charserv_config.char_config.char_rename_party = (bool)config_switch(w2);
 		} else if (strcmpi(w1, "char_rename_guild") == 0) {
@@ -3056,32 +3096,32 @@ bool char_config_read(const char* cfgName, bool normal){
 		} else if(strcmpi(w1,"db_path")==0) {
 			safestrncpy(schema_config.db_path, w2, sizeof(schema_config.db_path));
 		} else if (strcmpi(w1, "fame_list_alchemist") == 0) {
-			fame_list_size_chemist = atoi(w2);
+			fame_list_size_chemist = a2i(w2);
 			if (fame_list_size_chemist > MAX_FAME_LIST) {
 				ShowWarning("Max fame list size is %d (fame_list_alchemist)\n", MAX_FAME_LIST);
 				fame_list_size_chemist = MAX_FAME_LIST;
 			}
 		} else if (strcmpi(w1, "fame_list_blacksmith") == 0) {
-			fame_list_size_smith = atoi(w2);
+			fame_list_size_smith = a2i(w2);
 			if (fame_list_size_smith > MAX_FAME_LIST) {
 				ShowWarning("Max fame list size is %d (fame_list_blacksmith)\n", MAX_FAME_LIST);
 				fame_list_size_smith = MAX_FAME_LIST;
 			}
 		} else if (strcmpi(w1, "fame_list_taekwon") == 0) {
-			fame_list_size_taekwon = atoi(w2);
+			fame_list_size_taekwon = a2i(w2);
 			if (fame_list_size_taekwon > MAX_FAME_LIST) {
 				ShowWarning("Max fame list size is %d (fame_list_taekwon)\n", MAX_FAME_LIST);
 				fame_list_size_taekwon = MAX_FAME_LIST;
 			}
 		} else if (strcmpi(w1, "guild_exp_rate") == 0) {
-			charserv_config.guild_exp_rate = atoi(w2);
+			charserv_config.guild_exp_rate = a2i(w2);
 		} else if (strcmpi(w1, "pincode_enabled") == 0) {
 #if PACKETVER_SUPPORTS_PINCODE
 			charserv_config.pincode_config.pincode_enabled = config_switch(w2);
 		} else if (strcmpi(w1, "pincode_changetime") == 0) {
-			charserv_config.pincode_config.pincode_changetime = atoi(w2)*60*60*24;
+			charserv_config.pincode_config.pincode_changetime = a2i(w2)*60*60*24;
 		} else if (strcmpi(w1, "pincode_maxtry") == 0) {
-			charserv_config.pincode_config.pincode_maxtry = atoi(w2);
+			charserv_config.pincode_config.pincode_maxtry = a2i(w2);
 		} else if (strcmpi(w1, "pincode_force") == 0) {
 			charserv_config.pincode_config.pincode_force = config_switch(w2);
 		}  else if (strcmpi(w1, "pincode_allow_repeated") == 0) {
@@ -3102,15 +3142,15 @@ bool char_config_read(const char* cfgName, bool normal){
 		} else if (strcmpi(w1, "char_checkdb") == 0) {
 			charserv_config.char_check_db = config_switch(w2);
 		} else if (strcmpi(w1, "clan_remove_inactive_days") == 0) {
-			charserv_config.clan_remove_inactive_days = atoi(w2);
+			charserv_config.clan_remove_inactive_days = a2i(w2);
 		} else if (strcmpi(w1, "mail_return_days") == 0) {
-			charserv_config.mail_return_days = atoi(w2);
+			charserv_config.mail_return_days = a2i(w2);
 		} else if (strcmpi(w1, "mail_delete_days") == 0) {
-			charserv_config.mail_delete_days = atoi(w2);
+			charserv_config.mail_delete_days = a2i(w2);
 		} else if (strcmpi(w1, "mail_return_empty") == 0) {
 			charserv_config.mail_return_empty = config_switch(w2);
 		} else if (strcmpi(w1, "allowed_job_flag") == 0) {
-			charserv_config.allowed_job_flag = atoi(w2);
+			charserv_config.allowed_job_flag = a2i(w2);
 		} else if (strcmpi(w1, "clear_parties") == 0) {
 			charserv_config.clear_parties = config_switch(w2);
 		} else if (strcmpi(w1, "import") == 0) {

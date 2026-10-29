@@ -452,7 +452,7 @@ static int32 split_exact_quest_time(char* modif_p, int32* week, int32* day, int3
 	nullpo_retr(0, modif_p);
 
 	while (modif_p[0] != '\0') {
-		int32 value = atoi(modif_p);
+		int32 value = a2i(modif_p);
 
 		if (modif_p[0] == '-' || modif_p[0] == '+')
 			modif_p++;

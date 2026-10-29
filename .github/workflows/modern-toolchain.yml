@@ -116,7 +116,17 @@ jobs:
           grep -q "Using MYSQL: .*mariadb.* (MariaDB Connector/C " configure.log
           ! grep -q "older than the supported client floor" configure.log
       - name: Build all servers + tools
-        run: cmake --build build
+        shell: bash
+        # tee + annotations: the raw log lives in build.log; the first
+        # matching error lines are surfaced as ::error annotations so they
+        # are visible from the API/web even when log download is gated.
+        run: |
+          cmake --build build 2>&1 | tee build.log || {
+            grep -E "error:|error [A-Z]+[0-9]+|: fatal error|undefined reference|cannot find -l|CMake Error|FAILED:" build.log | head -n 10 | while IFS= read -r line; do
+              printf '::error title=Build failure::%s\n' "$line"
+            done
+            exit 1
+          }
       - name: Startup smoke under sanitizers
         run: |
           mkdir -p conf/import conf/msg_conf/import db/import && cp conf/import-tmpl/* conf/import/ && cp conf/msg_conf/import-tmpl/* conf/msg_conf/import/ && cp db/import-tmpl/* db/import/
@@ -128,11 +138,14 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
-      - name: Install toolchain
-        run: sudo apt-get update && sudo apt-get install -y gcc g++ cmake ninja-build zlib1g-dev libmariadb-dev libpcre2-dev
-      - name: Configure (native AArch64; requires system PCRE2)
+      # Plain 'gcc' on ubuntu-24.04 is GCC 13 (the noble default), below the
+      # GCC 14 floor in CMakeLists.txt, so configure died before the greps
+      # ever ran. Mirror the x86 jobs: explicit GCC 14, same assertions.
+      - name: Install GCC 14 + CMake + Ninja
+        run: sudo apt-get update && sudo apt-get install -y gcc-14 g++-14 cmake ninja-build zlib1g-dev libmariadb-dev libpcre2-dev
+      - name: Configure (native AArch64, GCC 14 strict C++23; requires system PCRE2)
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release 2>&1 | tee configure.log
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 2>&1 | tee configure.log
           grep -q "Enabled PCRE code" configure.log
           grep -q "Configuring for system MYSQL - done" configure.log
           grep -q "Found MYSQL: .*mariadb" configure.log
@@ -148,4 +161,14 @@ jobs:
       - name: Configure (MSVC, C++23 via vcxproj LanguageStandard)
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build all servers + tools
-        run: cmake --build build --config Release
+        shell: bash
+        # tee + annotations: the raw log lives in build.log; the first
+        # matching error lines are surfaced as ::error annotations so they
+        # are visible from the API/web even when log download is gated.
+        run: |
+          cmake --build build --config Release 2>&1 | tee build.log || {
+            grep -E "error:|error [A-Z]+[0-9]+|: fatal error|undefined reference|cannot find -l|CMake Error|FAILED:" build.log | head -n 10 | while IFS= read -r line; do
+              printf '::error title=Build failure::%s\n' "$line"
+            done
+            exit 1
+          }

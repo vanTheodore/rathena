@@ -42,6 +42,7 @@
 #ifndef DB_HPP
 #define DB_HPP
 
+#include <algorithm>
 #include <cstdarg>
 #include <utility>
 
@@ -978,12 +979,26 @@ void  linkdb_foreach (struct linkdb_node** head, LinkDBFunc func, ...);
 /// @param __end     End index (ex: size of the array)
 /// @param __var     Index variable
 /// @param __cmp     Expression that returns true when the target entry is found
+///
+/// Contract (identical to the historic for-loop macro; pinned by
+/// tools/arr-find-check.cpp): __var starts at __start, __cmp is evaluated
+/// once per visited index with __var at that index, and __var is left at
+/// the first index >= __end (== __end for a normal scan) when nothing
+/// matches. The bounds are evaluated once, up front — the old loop
+/// re-evaluated __end on every iteration (all 254 call sites pass pure
+/// bounds: 0/ARRAYLENGTH/BHEAP_LENGTH/.size(), audit 2026-10-17).
+template <typename I, typename S, typename E, typename Pred>
+constexpr I arr_find(I &var, S start, E end, Pred pred) {
+	for (var = start; var < end; ++var)
+		if (pred())
+			return var;
+	return var;
+}
+
 #define ARR_FIND(__start, __end, __var, __cmp) \
-	do{ \
-		for( (__var) = (__start); (__var) < (__end); ++(__var) ) \
-			if( __cmp ) \
-				break; \
-	}while(0)
+	do { \
+		(__var) = arr_find((__var), (__start), (__end), [&]() -> bool { return !!(__cmp); }); \
+	} while(0)
 
 
 
@@ -993,22 +1008,27 @@ void  linkdb_foreach (struct linkdb_node** head, LinkDBFunc func, ...);
 ///
 ///
 /// @param __from   Initial index of the entry
-/// @param __to     Target index of the entry
+/// @param __to    Target index of the entry
 /// @param __arr    Array
 /// @param __type   Type of entry
+///
+/// Same result as the historic three-memmove sequence (pinned by
+/// tools/arr-move-check.cpp): the element at __from lands at __to and the
+/// in-between range shifts by one. std::rotate gives well-defined
+/// behaviour for non-trivial types where memmove only copied bytes, and
+/// __arr is evaluated once instead of up to five times.
+template <typename T>
+constexpr void arr_move(T *arr, ptrdiff_t from, ptrdiff_t to) {
+	if (from == to)
+		return;
+	if (from < to)
+		std::rotate(arr + from, arr + from + 1, arr + to + 1);
+	else
+		std::rotate(arr + to, arr + from, arr + from + 1);
+}
+
 #define ARR_MOVE(__from, __to, __arr, __type) \
-	do{ \
-		if( (__from) != (__to) ) \
-		{ \
-			__type __backup__; \
-			memmove(&__backup__, (__arr)+(__from), sizeof(__type)); \
-			if( (__from) < (__to) ) \
-				memmove((__arr)+(__from), (__arr)+(__from)+1, ((__to)-(__from))*sizeof(__type)); \
-			else if( (__from) > (__to) ) \
-				memmove((__arr)+(__to)+1, (__arr)+(__to), ((__from)-(__to))*sizeof(__type)); \
-			memmove((__arr)+(__to), &__backup__, sizeof(__type)); \
-		} \
-	}while(0)
+	arr_move<__type>((__arr), (__from), (__to))
 
 
 

@@ -5,6 +5,9 @@
 #define STRLIB_HPP
 
 #include <cstdarg>
+#include <cmath>    // std::isfinite for a2f()
+#include <cstdlib>  // std::strtol for a2i()
+#include <string>   // std::string overload of a2i()
 #if !defined(__USE_GNU)
 #define __USE_GNU  // required to enable strnlen on some platforms
 #define __USED_GNU
@@ -39,6 +42,63 @@ uint64 strtoull(const char* str, char** endptr, int32 base);
 
 int32 e_mail_check(char* email);
 int32 config_switch(const char* str);
+
+/// atoi() with defined behaviour on overflow and null input.
+///
+/// Identical to the C library atoi() for every in-range conversion
+/// (leading whitespace, optional sign, stop at first non-digit, 0 when no
+/// digits) — it is implemented as (int)strtol with a saturation step —
+/// but out-of-range input clamps to [INT_MIN, INT_MAX] instead of the
+/// undefined "(int)strtol" narrowing: glibc's atoi yields the
+/// platform-divergent -1/0 for huge magnitudes while 32-bit long
+/// platforms (Windows) already saturate, so this wrapper is exactly the
+/// Windows result everywhere and removes a Windows/Linux parse
+/// difference. nullptr returns 0 instead of crashing. Pinned by
+/// tools/a2i-check.cpp against the real libc atoi.
+inline int32 a2i(const char* str) {
+	if (str == nullptr)
+		return 0;
+	const long value = std::strtol(str, nullptr, 10);
+	if (value > INT_MAX)
+		return INT_MAX;
+	if (value < INT_MIN)
+		return INT_MIN;
+	return static_cast<int32>(value);
+}
+
+/// std::string overload (drop-in for std::stoi call sites, which threw
+/// uncaught std::invalid_argument/std::out_of_range on malformed input —
+/// no catch block exists anywhere in those translation units).
+inline int32 a2i(const std::string& str) {
+	return a2i(str.c_str());
+}
+
+/// atol() that returns 0 instead of dereferencing nullptr. Every legacy
+/// atol call site feeds it Sql_GetData() output, which returns nullptr
+/// for missing columns/rows — a NULL result set used to crash the
+/// server inside atol. Values are strtol's, so the in-range and
+/// saturation behaviour is unchanged (pinned against real libc atol in
+/// tools/a2i-check.cpp); long stays platform-width exactly as before.
+inline long a2l(const char* str) {
+	if (str == nullptr)
+		return 0;
+	return std::strtol(str, nullptr, 10);
+}
+
+/// atof() with defined behaviour for unparseable input. NULL, "nan",
+/// "inf" and out-of-range magnitudes (glibc returns ±HUGE_VAL) become
+/// 0.0 instead of propagating NaN/inf into downstream float→int casts,
+/// which are undefined behaviour the moment they fall outside the
+/// target type. In-range values are byte-identical to libc atof
+/// (pinned against the real atof in tools/a2i-check.cpp).
+inline double a2f(const char* str) {
+	if (str == nullptr)
+		return 0.0;
+	const double value = std::strtod(str, nullptr);
+	if (!std::isfinite(value))
+		return 0.0;
+	return value;
+}
 
 /// strncpy that always nul-terminates the string
 char* safestrncpy(char* dst, const char* src, size_t n);

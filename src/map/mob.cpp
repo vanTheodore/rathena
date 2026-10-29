@@ -5615,11 +5615,11 @@ static bool mob_read_sqldb_sub(std::vector<std::string> str) {
 		node["Name"] << str[index];
 	if (!str[++index].empty())
 		node["JapaneseName"] << str[index];
-	if (!str[++index].empty() && std::stoi(str[index]) > 1)
+	if (!str[++index].empty() && a2i(str[index]) > 1)
 		node["Level"] << str[index];
-	if (!str[++index].empty() && std::stoul(str[index]) > 1)
+	if (!str[++index].empty() && a2i(str[index]) > 1)
 		node["Hp"] << str[index];
-	if (!str[++index].empty() && std::stoul(str[index]) > 1)
+	if (!str[++index].empty() && a2i(str[index]) > 1)
 		node["Sp"] << str[index];
 	if (!str[++index].empty())
 		node["BaseExp"] << str[index];
@@ -5635,17 +5635,17 @@ static bool mob_read_sqldb_sub(std::vector<std::string> str) {
 		node["Defense"] << str[index];
 	if (!str[++index].empty())
 		node["MagicDefense"] << str[index];
-	if (!str[++index].empty() && std::stoi(str[index]) > 1)
+	if (!str[++index].empty() && a2i(str[index]) > 1)
 		node["Str"] << str[index];
-	if (!str[++index].empty() && std::stoi(str[index]) > 1)
+	if (!str[++index].empty() && a2i(str[index]) > 1)
 		node["Agi"] << str[index];
-	if (!str[++index].empty() && std::stoi(str[index]) > 1)
+	if (!str[++index].empty() && a2i(str[index]) > 1)
 		node["Vit"] << str[index];
-	if (!str[++index].empty() && std::stoi(str[index]) > 1)
+	if (!str[++index].empty() && a2i(str[index]) > 1)
 		node["Int"] << str[index];
-	if (!str[++index].empty() && std::stoi(str[index]) > 1)
+	if (!str[++index].empty() && a2i(str[index]) > 1)
 		node["Dex"] << str[index];
-	if (!str[++index].empty() && std::stoi(str[index]) > 1)
+	if (!str[++index].empty() && a2i(str[index]) > 1)
 		node["Luk"] << str[index];
 	if (!str[++index].empty())
 		node["AttackRange"] << str[index];
@@ -5663,7 +5663,7 @@ static bool mob_read_sqldb_sub(std::vector<std::string> str) {
 
 	for (uint16 i = 1; i < RC2_MAX; i++) {
 		if (!str[i + index].empty()) {
-			raceGroupsNode[c4::to_csubstr(script_get_constant_str("RC2_", i) + 4)] << (std::stoi(str[i + index]) ? "true" : "false");
+			raceGroupsNode[c4::to_csubstr(script_get_constant_str("RC2_", i) + 4)] << (a2i(str[i + index]) ? "true" : "false");
 		}
 	}
 
@@ -5671,7 +5671,7 @@ static bool mob_read_sqldb_sub(std::vector<std::string> str) {
 
 	if (!str[++index].empty() && strcmp(str[index].c_str(), "Neutral") != 0)
 		node["Element"] << str[index];
-	if (!str[++index].empty() && std::stoi(str[index]) > 1)
+	if (!str[++index].empty() && a2i(str[index]) > 1)
 		node["ElementLevel"] << str[index];
 	if (!str[++index].empty())
 		node["WalkSpeed"] << str[index];
@@ -5696,57 +5696,57 @@ static bool mob_read_sqldb_sub(std::vector<std::string> str) {
 	modes |= ryml::MAP;
 
 	if (!str[++index].empty())
-		modes["CanMove"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["CanMove"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["Looter"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["Looter"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["Aggressive"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["Aggressive"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["Assist"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["Assist"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["CastSensorIdle"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["CastSensorIdle"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["NoRandomWalk"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["NoRandomWalk"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["NoCast"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["NoCast"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["CanAttack"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["CanAttack"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["CastSensorChase"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["CastSensorChase"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["ChangeChase"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["ChangeChase"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["Angry"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["Angry"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["ChangeTargetMelee"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["ChangeTargetMelee"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["ChangeTargetChase"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["ChangeTargetChase"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["TargetWeak"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["TargetWeak"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["RandomTarget"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["RandomTarget"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["IgnoreMelee"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["IgnoreMelee"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["IgnoreMagic"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["IgnoreMagic"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["IgnoreRanged"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["IgnoreRanged"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["Mvp"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["Mvp"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["IgnoreMisc"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["IgnoreMisc"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["KnockBackImmune"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["KnockBackImmune"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["TeleportBlock"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["TeleportBlock"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["FixedItemDrop"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["FixedItemDrop"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["Detector"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["Detector"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["StatusImmune"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["StatusImmune"] << (a2i(str[index]) ? "true" : "false");
 	if (!str[++index].empty())
-		modes["SkillImmune"] << (std::stoi(str[index]) ? "true" : "false");
+		modes["SkillImmune"] << (a2i(str[index]) ? "true" : "false");
 
 	ryml::NodeRef mvpDropsNode = node["MvpDrops"];
 	mvpDropsNode |= ryml::SEQ;
@@ -5761,7 +5761,7 @@ static bool mob_read_sqldb_sub(std::vector<std::string> str) {
 				entry["Rate"] << str[index];
 			if (!str[++index].empty() && strcmp(str[index].c_str(), "None") != 0)
 				entry["RandomOptionGroup"] << str[index];
-			if (!str[++index].empty() && std::stoi(str[index]) >= 0)
+			if (!str[++index].empty() && a2i(str[index]) >= 0)
 				entry["Index"] << str[index];
 		} else
 			index += 3;
@@ -5779,10 +5779,10 @@ static bool mob_read_sqldb_sub(std::vector<std::string> str) {
 			if (!str[++index].empty())
 				entry["Rate"] << str[index];
 			if (!str[++index].empty())
-				entry["StealProtected"] << (std::stoi(str[index]) ? "true" : "false");
+				entry["StealProtected"] << (a2i(str[index]) ? "true" : "false");
 			if (!str[++index].empty() && strcmp(str[index].c_str(), "None") != 0)
 				entry["RandomOptionGroup"] << str[index];
-			if (!str[++index].empty() && std::stoi(str[index]) >= 0)
+			if (!str[++index].empty() && a2i(str[index]) >= 0)
 				entry["Index"] << str[index];
 		} else
 			index += 4;
@@ -5790,9 +5790,9 @@ static bool mob_read_sqldb_sub(std::vector<std::string> str) {
 
 #ifdef RENEWAL
 	if (!str[++index].empty())
-		node["Resistance"] << std::stoi(str[index]);
+		node["Resistance"] << a2i(str[index]);
 	if (!str[++index].empty())
-		node["MagicResistance"] << std::stoi(str[index]);
+		node["MagicResistance"] << a2i(str[index]);
 #endif
 
 	if( !modes.has_children() ){
@@ -6451,7 +6451,7 @@ static bool mob_parse_row_mobskilldb( char** str, size_t columns, size_t current
 	int32 mob_id;
 	int32 j, tmp;
 
-	mob_id = atoi(str[0]);
+	mob_id = a2i(str[0]);
 
 	std::shared_ptr<s_mob_db> mob = mob_db.find(mob_id);
 
@@ -6498,7 +6498,7 @@ static bool mob_parse_row_mobskilldb( char** str, size_t columns, size_t current
 	}
 
 	//Skill ID
-	j = atoi(str[3]);
+	j = a2i(str[3]);
 	if ( !skill_db.exists( j ) ){
 		if (mob_id < 0)
 			ShowError("mob_parse_row_mobskilldb: Invalid Skill ID (%d) for all mobs\n", j);
@@ -6509,11 +6509,11 @@ static bool mob_parse_row_mobskilldb( char** str, size_t columns, size_t current
 	ms->skill_id = j;
 
 	//Skill lvl
-	j = atoi(str[4]) <= 0 ? 1 : atoi(str[4]);
+	j = a2i(str[4]) <= 0 ? 1 : a2i(str[4]);
 	ms->skill_lv = j > battle_config.mob_max_skilllvl ? battle_config.mob_max_skilllvl : j; //we strip max skill level
 
 	//Apply battle_config modifiers to rate (permillage) and delay [Skotlex]
-	tmp = atoi(str[5]);
+	tmp = a2i(str[5]);
 	if (battle_config.mob_skill_rate != 100)
 		tmp = tmp*battle_config.mob_skill_rate/100;
 	if (tmp > 10000)
@@ -6522,13 +6522,13 @@ static bool mob_parse_row_mobskilldb( char** str, size_t columns, size_t current
 		ms->permillage = 1;
 	else
 		ms->permillage = tmp;
-	ms->casttime = atoi(str[6]);
-	ms->delay = atoi(str[7]);
+	ms->casttime = a2i(str[6]);
+	ms->delay = a2i(str[7]);
 	if (battle_config.mob_skill_delay != 100)
 		ms->delay = ms->delay*battle_config.mob_skill_delay/100;
 	if (ms->delay < 0 || ms->delay > MOB_MAX_DELAY) //time overflow?
 		ms->delay = MOB_MAX_DELAY;
-	ms->cancel = atoi(str[8]);
+	ms->cancel = a2i(str[8]);
 	if( strcmp(str[8],"yes")==0 )
 		ms->cancel=1;
 
@@ -6569,7 +6569,7 @@ static bool mob_parse_row_mobskilldb( char** str, size_t columns, size_t current
 
 	//Cond2
 	// numeric value
-	ms->cond2 = atoi(str[11]);
+	ms->cond2 = a2i(str[11]);
 	// or special constant
 	ARR_FIND( 0, ARRAYLENGTH(cond2), j, strcmp(str[11],cond2[j].str) == 0 );
 	if( j < ARRAYLENGTH(cond2) )
@@ -6597,7 +6597,7 @@ static bool mob_parse_row_mobskilldb( char** str, size_t columns, size_t current
 	}
 
 	if(*str[17])
-		ms->emotion = atoi(str[17]);
+		ms->emotion = a2i(str[17]);
 	else
 		ms->emotion = -1;
 

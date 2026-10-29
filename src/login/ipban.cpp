@@ -57,7 +57,7 @@ bool ipban_check(uint32 ip) {
 		return true;// Shouldn't happen, but just in case...
 
 	Sql_GetData(sql_handle, 0, &data, nullptr);
-	matches = atoi(data);
+	matches = a2i(data);
 	Sql_FreeResult(sql_handle);
 
 	return( matches > 0 );
@@ -158,13 +158,13 @@ bool ipban_config_read(const char* key, const char* value) {
 			login_config.dynamic_pass_failure_ban = (config_switch(value) != 0);
 		else
 		if( strcmpi(key, "dynamic_pass_failure_ban_interval") == 0 )
-			login_config.dynamic_pass_failure_ban_interval = atoi(value);
+			login_config.dynamic_pass_failure_ban_interval = a2i(value);
 		else
 		if( strcmpi(key, "dynamic_pass_failure_ban_limit") == 0 )
-			login_config.dynamic_pass_failure_ban_limit = atoi(value);
+			login_config.dynamic_pass_failure_ban_limit = a2i(value);
 		else
 		if( strcmpi(key, "dynamic_pass_failure_ban_duration") == 0 )
-			login_config.dynamic_pass_failure_ban_duration = atoi(value);
+			login_config.dynamic_pass_failure_ban_duration = a2i(value);
 		else
 			return false;// not found
 		return true;

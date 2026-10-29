@@ -140,7 +140,7 @@ CashShopDatabase cash_shop_db;
 #if PACKETVER_SUPPORTS_SALES
 static bool sale_parse_dbrow( char* fields[], int32 columns, int32 current ){
 	t_itemid nameid = strtoul(fields[0], nullptr, 10);
-	int32 start = atoi(fields[1]), end = atoi(fields[2]), amount = atoi(fields[3]);
+	int32 start = a2i(fields[1]), end = a2i(fields[2]), amount = a2i(fields[3]);
 	time_t now = time(nullptr);
 	struct sale_item_data* sale_item = nullptr;
 

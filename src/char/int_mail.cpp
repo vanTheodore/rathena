@@ -42,7 +42,7 @@ int32 mail_fromsql(uint32 char_id, struct mail_data* md)
 	md->full = (Sql_NumRows(sql_handle) > MAIL_MAX_INBOX);
 
 	for( i = 0; i < MAIL_MAX_INBOX && SQL_SUCCESS == Sql_NextRow(sql_handle); i++ ){
-		Sql_GetData(sql_handle, 0, &data, nullptr); md->msg[i].id = atoi(data);
+		Sql_GetData(sql_handle, 0, &data, nullptr); md->msg[i].id = a2i(data);
 	}
 
 	md->amount = i;
@@ -172,17 +172,17 @@ bool mail_loadmessage(int32 mail_id, struct mail_message* msg)
 		Sql_FreeResult(sql_handle);
 		return false;
 	}else{
-		Sql_GetData(sql_handle, 0, &data, nullptr); msg->id = atoi(data);
+		Sql_GetData(sql_handle, 0, &data, nullptr); msg->id = a2i(data);
 		Sql_GetData(sql_handle, 1, &data, nullptr); safestrncpy(msg->send_name, data, NAME_LENGTH);
-		Sql_GetData(sql_handle, 2, &data, nullptr); msg->send_id = atoi(data);
+		Sql_GetData(sql_handle, 2, &data, nullptr); msg->send_id = a2i(data);
 		Sql_GetData(sql_handle, 3, &data, nullptr); safestrncpy(msg->dest_name, data, NAME_LENGTH);
-		Sql_GetData(sql_handle, 4, &data, nullptr); msg->dest_id = atoi(data);
+		Sql_GetData(sql_handle, 4, &data, nullptr); msg->dest_id = a2i(data);
 		Sql_GetData(sql_handle, 5, &data, nullptr); safestrncpy(msg->title, data, MAIL_TITLE_LENGTH);
 		Sql_GetData(sql_handle, 6, &data, nullptr); safestrncpy(msg->body, data, MAIL_BODY_LENGTH);
-		Sql_GetData(sql_handle, 7, &data, nullptr); msg->timestamp = atoi(data);
-		Sql_GetData(sql_handle, 8, &data, nullptr); msg->status = (mail_status)atoi(data);
-		Sql_GetData(sql_handle, 9, &data, nullptr); msg->zeny = atoi(data);
-		Sql_GetData(sql_handle,10, &data, nullptr); msg->type = (mail_inbox_type)atoi(data);
+		Sql_GetData(sql_handle, 7, &data, nullptr); msg->timestamp = a2i(data);
+		Sql_GetData(sql_handle, 8, &data, nullptr); msg->status = (mail_status)a2i(data);
+		Sql_GetData(sql_handle, 9, &data, nullptr); msg->zeny = a2i(data);
+		Sql_GetData(sql_handle,10, &data, nullptr); msg->type = (mail_inbox_type)a2i(data);
 
 		if( msg->type == MAIL_INBOX_NORMAL && charserv_config.mail_return_days > 0 ){
 			msg->scheduled_deletion = msg->timestamp + charserv_config.mail_return_days * 24 * 60 * 60;
@@ -218,14 +218,14 @@ bool mail_loadmessage(int32 mail_id, struct mail_message* msg)
 	memset(msg->item, 0, sizeof(struct item) * MAIL_MAX_ITEM);
 
 	for( i = 0; i < MAIL_MAX_ITEM && SQL_SUCCESS == Sql_NextRow(sql_handle); i++ ){
-		Sql_GetData(sql_handle,0, &data, nullptr); msg->item[i].amount = (int16)atoi(data);
+		Sql_GetData(sql_handle,0, &data, nullptr); msg->item[i].amount = (int16)a2i(data);
 		Sql_GetData(sql_handle,1, &data, nullptr); msg->item[i].nameid = strtoul(data, nullptr, 10);
-		Sql_GetData(sql_handle,2, &data, nullptr); msg->item[i].refine = atoi(data);
-		Sql_GetData(sql_handle,3, &data, nullptr); msg->item[i].attribute = atoi(data);
-		Sql_GetData(sql_handle,4, &data, nullptr); msg->item[i].identify = atoi(data);
+		Sql_GetData(sql_handle,2, &data, nullptr); msg->item[i].refine = a2i(data);
+		Sql_GetData(sql_handle,3, &data, nullptr); msg->item[i].attribute = a2i(data);
+		Sql_GetData(sql_handle,4, &data, nullptr); msg->item[i].identify = a2i(data);
 		Sql_GetData(sql_handle,5, &data, nullptr); msg->item[i].unique_id = strtoull(data, nullptr, 10);
-		Sql_GetData(sql_handle,6, &data, nullptr); msg->item[i].bound = atoi(data);
-		Sql_GetData(sql_handle,7, &data, nullptr); msg->item[i].enchantgrade = atoi(data);
+		Sql_GetData(sql_handle,6, &data, nullptr); msg->item[i].bound = a2i(data);
+		Sql_GetData(sql_handle,7, &data, nullptr); msg->item[i].enchantgrade = a2i(data);
 		msg->item[i].expire_time = 0;
 
 		for( j = 0; j < MAX_SLOTS; j++ ){
@@ -233,9 +233,9 @@ bool mail_loadmessage(int32 mail_id, struct mail_message* msg)
 		}
 
 		for( j = 0; j < MAX_ITEM_RDM_OPT; j++ ){
-			Sql_GetData(sql_handle, 8 + MAX_SLOTS + j * 3, &data, nullptr); msg->item[i].option[j].id = atoi(data);
-			Sql_GetData(sql_handle, 9 + MAX_SLOTS + j * 3, &data, nullptr); msg->item[i].option[j].value = atoi(data);
-			Sql_GetData(sql_handle,10 + MAX_SLOTS + j * 3, &data, nullptr); msg->item[i].option[j].param = atoi(data);
+			Sql_GetData(sql_handle, 8 + MAX_SLOTS + j * 3, &data, nullptr); msg->item[i].option[j].id = a2i(data);
+			Sql_GetData(sql_handle, 9 + MAX_SLOTS + j * 3, &data, nullptr); msg->item[i].option[j].value = a2i(data);
+			Sql_GetData(sql_handle,10 + MAX_SLOTS + j * 3, &data, nullptr); msg->item[i].option[j].param = a2i(data);
 		}
 	}
 
@@ -288,10 +288,10 @@ int32 mail_timer_sub( int32 limit, enum mail_inbox_type type ){
 	for( int32 i = 0; i < MAIL_ITERATION_SIZE && SQL_SUCCESS == Sql_NextRow( sql_handle ); i++ ){
 		char* data;
 
-		Sql_GetData(sql_handle, 0, &data, nullptr); mails[i].mail_id = atoi(data);
-		Sql_GetData(sql_handle, 1, &data, nullptr); mails[i].char_id = atoi(data);
-		Sql_GetData(sql_handle, 2, &data, nullptr); mails[i].account_id = atoi(data);
-		Sql_GetData( sql_handle, 3, &data, nullptr ); mails[i].account_id_sender = atoi( data );
+		Sql_GetData(sql_handle, 0, &data, nullptr); mails[i].mail_id = a2i(data);
+		Sql_GetData(sql_handle, 1, &data, nullptr); mails[i].char_id = a2i(data);
+		Sql_GetData(sql_handle, 2, &data, nullptr); mails[i].account_id = a2i(data);
+		Sql_GetData( sql_handle, 3, &data, nullptr ); mails[i].account_id_sender = a2i( data );
 	}
 
 	Sql_FreeResult(sql_handle);
@@ -681,7 +681,7 @@ void mapif_parse_Mail_send(int32 fd)
 
 		if( SQL_SUCCESS == Sql_NextRow(sql_handle) ){
 			Sql_GetData(sql_handle, 0, &data, nullptr);
-			msg.dest_id = atoi(data);
+			msg.dest_id = a2i(data);
 			Sql_GetData(sql_handle, 1, &data, &len);
 			safestrncpy(msg.dest_name, data, NAME_LENGTH);
 		}
@@ -699,15 +699,15 @@ void mapif_parse_Mail_send(int32 fd)
 		memcpy(&account_id, RFIFOP(fd,4), sizeof(account_id));
 
 		Sql_GetData(sql_handle, 0, &data, nullptr);
-		if (atoi(data) != account_id)
+		if (a2i(data) != account_id)
 		{ // Cannot send mail to char in the same account
 			Sql_GetData(sql_handle, 1, &data, nullptr);
-			msg.dest_id = atoi(data);
+			msg.dest_id = a2i(data);
 		}
 #else
 		// In RODEX you can even send mails to yourself
 		Sql_GetData(sql_handle, 1, &data, nullptr);
-		msg.dest_id = atoi(data);
+		msg.dest_id = a2i(data);
 #endif
 	}
 	Sql_FreeResult(sql_handle);
@@ -786,9 +786,9 @@ void mapif_parse_Mail_receiver_check( int32 fd ){
 	}else if( SQL_SUCCESS == Sql_NextRow(sql_handle) ){
 		char *data;
 
-		Sql_GetData(sql_handle, 0, &data, nullptr); char_id = atoi(data);
-		Sql_GetData(sql_handle, 1, &data, nullptr); class_ = atoi(data);
-		Sql_GetData(sql_handle, 2, &data, nullptr); base_level = atoi(data);
+		Sql_GetData(sql_handle, 0, &data, nullptr); char_id = a2i(data);
+		Sql_GetData(sql_handle, 1, &data, nullptr); class_ = a2i(data);
+		Sql_GetData(sql_handle, 2, &data, nullptr); base_level = a2i(data);
 	}
 
 	Sql_FreeResult(sql_handle);

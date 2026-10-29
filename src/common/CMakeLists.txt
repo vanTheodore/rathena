@@ -72,7 +72,12 @@ target_include_directories(minicore PUBLIC
 )
 
 set_target_properties( minicore PROPERTIES COMPILE_FLAGS "${GLOBAL_DEFINITIONS}" )
-target_compile_definitions(minicore PRIVATE "-DMINICORE" ${LIBCONFIG_DEFINITIONS})
+# LIBCONFIG_DEFINITIONS is a space-joined flag string ("-DLIBCONFIG_STATIC
+# -DYY_NO_UNISTD_H"); target_compile_definitions wants a ;-list or the VS
+# generator delivers it as one broken /D (observed on windows-msvc: libconfig's
+# scanner.h still pulled <unistd.h> because the second flag never arrived).
+string(REPLACE " " ";" LIBCONFIG_DEFINITIONS_LIST "${LIBCONFIG_DEFINITIONS}")
+target_compile_definitions(minicore PRIVATE "-DMINICORE" ${LIBCONFIG_DEFINITIONS_LIST})
 target_link_libraries( minicore PRIVATE rathena_cxx23 )
 
 #
@@ -146,6 +151,9 @@ add_library( common_base ${SOURCE_FILES} )
 #message( STATUS "common_base LIBRARIES=${LIBRARIES}, DEFINITIONS=${DEFINITIONS}")
 target_link_libraries( common_base ${LIBRARIES} rathena_cxx23 )
 set_target_properties( common_base PROPERTIES COMPILE_FLAGS "${DEFINITIONS}" )
+if( ENABLE_PCH )
+	target_precompile_headers( common_base PRIVATE "${CMAKE_SOURCE_DIR}/src/common/pch-database.hpp" )
+endif()
 include_directories( ${INCLUDE_DIRS} )
 
 set( HAVE_common_base ON  CACHE INTERNAL "" )

@@ -616,7 +616,7 @@ bool login_config_read(const char* cfgName, bool normal) {
 				}
 			}
 			else if( !strcmpi(w1, "login_port") )
-				login_config.login_port = (uint16)atoi(w2);
+				login_config.login_port = (uint16)a2i(w2);
 			else if(!strcmpi(w1, "console"))
 				login_config.console = (bool)config_switch(w2);
 		}
@@ -628,12 +628,12 @@ bool login_config_read(const char* cfgName, bool normal) {
 		else if(!strcmpi(w1,"stdout_with_ansisequence"))
 			stdout_with_ansisequence = config_switch(w2);
 		else if(!strcmpi(w1,"console_silent")) {
-			msg_silent = atoi(w2);
+			msg_silent = a2i(w2);
 			if( msg_silent ) /* only bother if we actually have this enabled */
-				ShowInfo("Console Silent Setting: %d\n", atoi(w2));
+				ShowInfo("Console Silent Setting: %d\n", a2i(w2));
 		}
 		else if (strcmpi(w1, "console_msg_log") == 0)
-			console_msg_log = atoi(w2);
+			console_msg_log = a2i(w2);
 		else if  (strcmpi(w1, "console_log_filepath") == 0)
 			safestrncpy(console_log_filepath, w2, sizeof(console_log_filepath));
 		else if(!strcmpi(w1, "log_login"))
@@ -641,37 +641,37 @@ bool login_config_read(const char* cfgName, bool normal) {
 		else if(!strcmpi(w1, "new_account"))
 			login_config.new_account_flag = (bool)config_switch(w2);
 		else if(!strcmpi(w1, "acc_name_min_length"))
-			login_config.acc_name_min_length = cap_value(atoi(w2), 0, NAME_LENGTH - 1);
+			login_config.acc_name_min_length = cap_value(a2i(w2), 0, NAME_LENGTH - 1);
 		else if(!strcmpi(w1, "password_min_length"))
-			login_config.password_min_length = cap_value(atoi(w2), 0, PASSWD_LENGTH - 1);
+			login_config.password_min_length = cap_value(a2i(w2), 0, PASSWD_LENGTH - 1);
 		else if(!strcmpi(w1, "start_limited_time"))
-			login_config.start_limited_time = atoi(w2);
+			login_config.start_limited_time = a2i(w2);
 		else if(!strcmpi(w1, "use_MD5_passwords"))
 			login_config.use_md5_passwds = (bool)config_switch(w2);
 		else if(!strcmpi(w1, "group_id_to_connect"))
-			login_config.group_id_to_connect = atoi(w2);
+			login_config.group_id_to_connect = a2i(w2);
 		else if(!strcmpi(w1, "min_group_id_to_connect"))
-			login_config.min_group_id_to_connect = atoi(w2);
+			login_config.min_group_id_to_connect = a2i(w2);
 		else if(!strcmpi(w1, "date_format"))
 			safestrncpy(login_config.date_format, w2, sizeof(login_config.date_format));
 		else if(!strcmpi(w1, "allowed_regs")) //account flood protection system
-			login_config.allowed_regs = atoi(w2);
+			login_config.allowed_regs = a2i(w2);
 		else if(!strcmpi(w1, "time_allowed"))
-			login_config.time_allowed = atoi(w2);
+			login_config.time_allowed = a2i(w2);
 		else if(!strcmpi(w1, "use_dnsbl"))
 			login_config.use_dnsbl = (bool)config_switch(w2);
 		else if(!strcmpi(w1, "dnsbl_servers"))
 			safestrncpy(login_config.dnsbl_servs, w2, sizeof(login_config.dnsbl_servs));
 		else if(!strcmpi(w1, "ipban_cleanup_interval"))
-			login_config.ipban_cleanup_interval = (uint32)atoi(w2);
+			login_config.ipban_cleanup_interval = (uint32)a2i(w2);
 		else if(!strcmpi(w1, "ip_sync_interval"))
-			login_config.ip_sync_interval = (uint32)1000*60*atoi(w2); //w2 comes in minutes.
+			login_config.ip_sync_interval = (uint32)1000*60*a2i(w2); //w2 comes in minutes.
 		else if(!strcmpi(w1, "client_hash_check"))
 			login_config.client_hash_check = config_switch(w2);
 		else if(!strcmpi(w1, "use_web_auth_token"))
 			login_config.use_web_auth_token = config_switch(w2);
 		else if (!strcmpi(w1, "disable_webtoken_delay"))
-			login_config.disable_webtoken_delay = cap_value(atoi(w2), 0, INT_MAX);
+			login_config.disable_webtoken_delay = cap_value(a2i(w2), 0, INT_MAX);
 		else if(!strcmpi(w1, "client_hash")) {
 			int32 group = 0;
 			char md5[33];
@@ -701,13 +701,13 @@ bool login_config_read(const char* cfgName, bool normal) {
 		} else if (!strcmpi(w1, "usercount_disable"))
 			login_config.usercount_disable = config_switch(w2);
 		else if (!strcmpi(w1, "usercount_low"))
-			login_config.usercount_low = atoi(w2);
+			login_config.usercount_low = a2i(w2);
 		else if (!strcmpi(w1, "usercount_medium"))
-			login_config.usercount_medium = atoi(w2);
+			login_config.usercount_medium = a2i(w2);
 		else if (!strcmpi(w1, "usercount_high"))
-			login_config.usercount_high = atoi(w2);
+			login_config.usercount_high = a2i(w2);
 		else if(strcmpi(w1, "chars_per_account") == 0) { //maxchars per account [Sirius]
-			login_config.char_per_account = atoi(w2);
+			login_config.char_per_account = a2i(w2);
 			if( login_config.char_per_account > MAX_CHARS ) {
 				ShowWarning("Exceeded limit of max chars per account '%d'. Capping to '%d'.\n", login_config.char_per_account, MAX_CHARS);
 				login_config.char_per_account = MAX_CHARS;
@@ -718,12 +718,12 @@ bool login_config_read(const char* cfgName, bool normal) {
 		}
 #ifdef VIP_ENABLE
 		else if(strcmpi(w1,"vip_group")==0)
-			login_config.vip_sys.group = cap_value(atoi(w2),0,99);
+			login_config.vip_sys.group = cap_value(a2i(w2),0,99);
 		else if(strcmpi(w1,"vip_char_increase")==0) {
-			if (atoi(w2) == -1)
+			if (a2i(w2) == -1)
 				login_config.vip_sys.char_increase = MAX_CHAR_VIP;
 			else
-				login_config.vip_sys.char_increase = atoi(w2);
+				login_config.vip_sys.char_increase = a2i(w2);
 			if (login_config.vip_sys.char_increase > (uint32)MAX_CHARS-login_config.char_per_account) {
 				ShowWarning("vip_char_increase too high, can only go up to %d, according to your char_per_account config %d\n",
 					MAX_CHARS-login_config.char_per_account,login_config.char_per_account);

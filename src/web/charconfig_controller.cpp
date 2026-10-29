@@ -22,8 +22,8 @@ HANDLER_FUNC(charconfig_save) {
 		return;
 	}
 	
-	auto account_id = std::stoi(web_get_form_value(req, "AID"));
-	auto char_id = std::stoi(web_get_form_value(req, "GID"));
+	auto account_id = a2i(web_get_form_value(req, "AID"));
+	auto char_id = a2i(web_get_form_value(req, "GID"));
 	auto world_name = web_get_form_value(req, "WorldName");
 	auto data = nlohmann::json::object();
 
@@ -103,8 +103,8 @@ HANDLER_FUNC(charconfig_load) {
 		// return;
 	// }
 
-	auto account_id = std::stoi(web_get_form_value(req, "AID"));
-	auto char_id = std::stoi(web_get_form_value(req, "GID"));
+	auto account_id = a2i(web_get_form_value(req, "AID"));
+	auto char_id = a2i(web_get_form_value(req, "GID"));
 	auto world_name_str = web_get_form_value(req, "WorldName");
 	auto world_name = world_name_str.c_str();
 

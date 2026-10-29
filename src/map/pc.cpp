@@ -13379,7 +13379,7 @@ int32 pc_split_atoui(char* str, uint32* val, char sep, int32 max)
 	for (i=0; i<max; i++) {
 		double f;
 		if (!str) break;
-		f = atof(str);
+		f = a2f(str); // NaN-proof: the f<0 / f>UINT_MAX chain below assumed finite
 		if (f < 0)
 			val[i] = 0;
 		else if (f > UINT_MAX) {
@@ -14423,7 +14423,7 @@ static bool pc_readdb_job_noenter_map( char *str[], size_t columns, size_t curre
 	int64 class_tmp;
 
 	if (ISDIGIT(str[0][0])) {
-		class_ = atoi(str[0]);
+		class_ = a2i(str[0]);
 	} else {
 		if (!script_get_constant(str[0], &class_tmp)) {
 			ShowError("pc_readdb_job_noenter_map: Invalid job %s specified.\n", str[0]);
@@ -14444,8 +14444,8 @@ static bool pc_readdb_job_noenter_map( char *str[], size_t columns, size_t curre
 		return false;
 	}
 
-	job->noenter_map.zone = atoi(str[1]);
-	job->noenter_map.group_lv = atoi(str[2]);
+	job->noenter_map.zone = a2i(str[1]);
+	job->noenter_map.group_lv = a2i(str[2]);
 	return true;
 }
 

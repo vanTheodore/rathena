@@ -10,10 +10,44 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 
 ## Entorno local
 
-- MinGW-w64 ucrt64: GCC 16.2.0, Clang 22.1.8; CMake 4.4.4 + Ninja
-- 4 núcleos; máximo `-j2` (regla permanente); sin Docker
-- No disponible en este host: MSVC (la carpeta de VS 2022 está vacía), `pkg-config`,
-  servidor MySQL/MariaDB local, host Linux, ARM64
+- **Host de sesión 2026-10-17 (sandbox Linux, Debian 12, 2 núcleos, `-j2`):**
+  GCC 12.2 (NO sirve para el gate ≥14 — solo para tests standalone);
+  **zig 0.17.0 vía pypi `ziglang` = Clang 22.1.8** (compilador de referencia
+  del proyecto) con wrappers `/tmp/tools/zig{cc,cxx}`; **CMake 3.28.3 vía
+  pypi** (= el cmake de ubuntu-24.04 que usa CI; CMake 4.4.4 también
+  configura bien) + Ninja 1.13.2. Deps construidas en `/tmp/deps/prefix`
+  (**fuera del repo: no persisten entre sesiones**; receta:
+  codeload de `madler/zlib v1.3.2`, `PCRE2Project/pcre2 pcre2-10.49`,
+  `openssl-openssl-3.0.17` (`linux-x86_64 no-shared`, libs a `lib64` →
+  symlinks en `lib/`), `mariadb-corporation/mariadb-connector-c v3.4.11`
+  con `-DWITH_SSL=OPENSSL -DWITH_EXTERNAL_ZLIB=ON -DBUILD_SHARED_LIBS=OFF`
+  — `WITH_SSL=OFF` **no compila** en 3.4.11 (la rama de auth sin TLS
+  rompe `MA_HASH_CTX`) — luego symlinks `libmariadb.so{,.3}` en `lib/`).
+  Configure: `cmake -S . -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+  -DCMAKE_C_COMPILER=/tmp/tools/zigcc -DCMAKE_CXX_COMPILER=/tmp/tools/zigcxx
+  -DCMAKE_PREFIX_PATH=/tmp/deps/prefix -DZLIB_USE_STATIC_LIBS=ON`.
+  **Generador Unix Makefiles, no Ninja (local-only):** el Ninja generator de
+  CMake ≥3.28 exige `clang-scan-deps` para Clang (reglas `.ddi`/p1689
+  generadas aunque no haya módulos); lo trae el paquete de distro de CI
+  (clang-18) y zig no lo incluye — probado con un probe mínimo, afecta a
+  cualquier Clang sin su `clang-scan-deps`, no al código. sin Docker,
+  sin MSVC, sin pkg-config, sin servidor MySQL/MariaDB local, sin ARM64;
+  `raw.githubusercontent.com` bloqueado (usar api.github.com/codeload)
+- **Host previo (MinGW-w64 ucrt64):** GCC 16.2.0, Clang 22.1.8; CMake 4.4.4
+  + Ninja; 4 núcleos; máximo `-j2` (regla permanente); sin Docker; sin MSVC,
+  sin `pkg-config`, sin BD local, sin host Linux, sin ARM64
+- **Recetas del rebuild 2026-10-17 (iteración 8):** zlib con
+  `-DZLIB_BUILD_TESTING=OFF` (el `infcover` usa `-coverage` y no linka con
+  zig); mariadb-connector-c con los plugins por defecto DYNAMIC→STATIC
+  (`-DCLIENT_PLUGIN_{DIALOG,CLIENT_ED25519,CACHING_SHA2_PASSWORD,SHA256_PASSWORD,PARSEC,MYSQL_CLEAR_PASSWORD,ZSTD,REMOTE_IO,PVIO_SHMEM}=STATIC`
+  — zig rechaza `-Wl,--dynamic-list`) e instalado en `lib/mariadb/` →
+  symlinks `lib/libmariadb.so{,.3}` + `libmariadb.a`; `-ftime-trace` de zig
+  solo escribe con ruta explícita (`-ftime-trace=<ruta>`) — el wrapper local
+  `/tmp/tools/zig{cc,cxx}` la genera por objeto (herramienta de diagnóstico,
+  no se committea). Esta receta se re-ejecutó **íntegra y funcionando** en la
+  tercera re-provisión del contenedor (2026-10-17, ≈5 min: pip + zlib + pcre2
+  + openssl + mariadb; `/tmp` no persiste — los pasos de arriba son el
+  guion).
 
 ## Estado por fases
 
@@ -60,6 +94,91 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 - ⏳ Smoke de arranque con sanitizers: pendiente (Linux-CI)
 - ✅ CI: `.github/workflows/modern-toolchain.yml` (linux-gcc, linux-clang,
   linux-pcre-regress, linux-sanitizers, linux-arm64, windows-msvc)
+- ✅ **CI roja desde el primer push — diagnosticada y corregida (2026-10-17).**
+  Los 10 runs de `modern-toolchain` (2026-10-11 → 2026-10-13) fallaron; solo
+  `linux-pcre-regress` fue verde. Causas raíz (los logs completos no se
+  pueden descargar en este host — dominio de resultados bloqueado; evidencia:
+  anotaciones de la API de jobs + reproducción local exacta):
+  (1) **todos los jobs de build** (linux-gcc/clang/sanitizers, windows-msvc):
+      el root commit se creó con el patrón `/src/custom` del .gitignore
+      activo, así que `git add` omitió los 8 archivos que upstream trackea
+      en `src/custom/` (defines_pre/defines_post + 6 `.inc`) — un clone
+      fresco no compila (`src/config/core.hpp:12: fatal error: custom/
+      defines_pre.hpp`) y `Makefile.in` pierde sus prerequisitos
+      `../custom/*.inc`; reproducido localmente con el primer TU;
+      (2) **linux-arm64** moría en el paso Configure: `gcc` genérico en
+      ubuntu-24.04(-arm) es **GCC 13** (tabla oficial de GCC de Ubuntu;
+      gcc-defaults de noble = 13) < piso GCC 14 de CMakeLists.txt; los jobs
+      x86 instalan `gcc-14` explícito, el de arm64 no.
+  Fixes en esta rama: `be0bab1` (restauración byte-idéntica a upstream
+  vía contents API de GitHub; `.gitignore` intacto — upstream también
+  ignora `/src/custom` y trackea estos archivos) y `fbcee01` (arm64 espejo
+  de x86: `gcc-14 g++-14` + `-DCMAKE_C_COMPILER/-DCMAKE_CXX_COMPILER`).
+- ✅ **Primer run verde en gran parte (2026-10-17, run 38997249679,
+  tras `be0bab1`+`fbcee01`):** **5/6 jobs SUCCESS** — linux-gcc Release,
+  linux-gcc Debug, linux-clang, **linux-arm64 (rojo en los 10 runs
+  previos)** y linux-pcre-regress. Rojos restantes: `linux-sanitizers` y
+  `windows-msvc`, ambos en «Build all servers + tools» sin log legible
+  (descarga de logs bloqueada desde este host; anotaciones = solo exit 1).
+  Fix de diagnóstico `f7b7530`: los dos pasos bachean el log y emiten
+  las primeras 10 líneas de error como anotaciones `::error` (mismo
+  dominio API) — **las anotaciones funcionaron y revelaron las 3 causas
+  raíz reales (2026-10-17)**:
+  1. **`windows-msvc` a)** `3rdparty/httplib/httplib.cc` incluía
+     `<windows.h>` antes que `httplib.h` sin `winsock2`/`NOMINMAX`
+     delante → `winsock.h` v1 + `winsock2.h` = C2011 (hostent/timeval/
+     fd_set/sockaddr) en MSVC; MinGW lo toleraba (por eso pasó validación
+     local). Fix `8f63ed0`: orden canónico `winsock2`→`NOMINMAX`→
+     `windows.h` (conservando `winnls.h` para `MultiByteToWideChar`).
+  2. **`windows-msvc` b)** `libconfig/scanner.h` (flex) protege su
+     `#include <unistd.h>` con `YY_NO_UNISTD_H`, macro que solo define
+     `scanner.c` — `libconfig.c` (compilado por minicore/common_base)
+     la incluye sin el guard → C1083 en MSVC. Fix `8f63ed0`: la define
+     el build de Windows (CMake + los 4 configs del `libconfig.vcxproj`).
+  3. **`linux-sanitizers`** `undefined reference to 'typeinfo for
+     SkillImpl'` al linkar `csv2yaml`: las 9 virtuals base de
+     `SkillImpl` estaban en `skill_impl.cpp` → key function → typeinfo
+     solo en un TU que ninguna tool linkea; `map/skill.hpp:322` exige
+     el tipo completo (`unique_ptr<const SkillImpl>`) y solo el build
+     ASan+UBSan emitía la referencia RTTI. Fix `82e200a`: virtuals base
+     inline `// no-op` (sin key function → typeinfo weak en quien lo
+     necesite); el include en `yaml.hpp` es obligatorio y queda
+     documentado. Validación local: rebuild total + smoke + tools con
+     clang+UBSan verdes; el combo exacto GCC14+ASan+UBSan = juez CI
+     (repro local imposible: zig sin libasan y gcc12 <14).
+  Ciclo de CI con los 3 fixes en curso → **primer resultado (`6b4edea`):
+  `linux-sanitizers` ✅ VERDE — el fix `82e200a` pasó el juez exacto
+  (GCC14 + ASan + UBSan); los 5 jobs Linux ya eran ✅. `windows-msvc`
+  avanzó: los errores de httplib desaparecieron y apareció la siguiente
+  capa — (a) `minicore` seguía sin recibir `-DYY_NO_UNISTD_H`
+  (target_compile_definitions con string con espacio → `/D` roto en el
+  generador VS, mientras `common_base` por COMPILE_FLAGS ya pasaba) y
+  (b) `LNK2019 __imp_PathIsRelativeA` (falta `shlwapi.lib`). Fix ronda
+  2 = `5e8ef39` (lista `;` en minicore + `#pragma comment(lib)` en
+  wincompat.h, precedente de patches locales en ese archivo) — ciclo de
+  CI en curso.
+- ✅ **CERRADO (2026-10-17): la alternativa (1) aprobada + su segunda
+  capa, commit `e3db3f5`.** Dos UBs latentes de upstream en el memory
+  manager, expuestos por el `-fsanitize=alignment` por defecto de zig
+  0.17: (a) `struct block::data` en offset 36 → cada `unit_head`
+  in-block a 4 mod 8 (`block2unit` usa `&data[k*unit_size]` y los
+  strides son múltiplos de 16) → fix `alignas(8)` (offset 40;
+  `sizeof(struct block)` **igual antes y después: 41000** — 40996 ya
+  redondeaba a la alineación del struct) + `static_assert` que pinnea
+  el contrato; (b) el canary `FREED_POINTER` en `head+24+size` cae
+  desalineado para `size%8≠0` (2.ª capa: panic en `_mstrdup` de un
+  nombre de timer de 20 bytes) → los 4 accesos (`*(long*)` ×2 writes,
+  ×2 reads en `_mfree`) migran a `canary_put`/`canary_ok` con `memcpy`
+  byte-wise (mismos bytes, formato heap intacto).
+  **A/B:** repro mínimo zig ±`alignas` = abort 134 vs exit 0
+  (`data_off=40`); servidores antes = abort 134 en dos sitios, después
+  = los 3 salen exit 1 (convención sin BD) con 0 panics; full rebuild
+  limpio = 0 errores, **22.713 warnings vs baseline 22.716 (−3)**;
+  tests `ALL CAPPED` + `ALL SORTED` verdes; higiene de warnings de
+  `skill_impl` en `5bd45b3` (329 → 0). Juez cruzado = job
+  `linux-sanitizers` de CI (GCC no activa `-fsanitize=alignment` por
+  defecto). Equivalencia del canary: `memcpy` escribe exactamente los
+  mismos 8 bytes que el store anterior.
 
 ### 2. Modernización C++20/23 — parcial
 
@@ -143,16 +262,98 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
   template 1×) + `static_assert`s; verde en GCC 16.2 y Clang 22.1.8.
   Revisión semántica por sitio (tipos de retorno, promociones, negativos,
   overflow): sin diferencias reales — veredicto GO. 24 call sites intactos
+- ✅ **`cap_value` (2026-10-17, `3019b9a`, iteración elegida)**: los 498
+  call sites migrados SIN editarlos (cuerpo del template = ternario
+  literal de la macro → mismas conversiones y mismo tipo de resultado).
+  Auditoría: 0 usos lvalue/`&`/`sizeof` del resultado, 0 argumentos con
+  efectos laterales, 0 llamadas multi-línea, 0 sitios en headers, 0 `.c`;
+  inventario de funciones en argumentos (atoi ×13, pc_maxparameter ×12,
+  apply_rate ×6, stoi ×6, script_getnum64, getSCE, consultas puras) —
+  todo lectura/query ⇒ evaluación única preserva todo resultado observable
+  (y elimina la trampa de triple evaluación). Test
+  `tools/cap-value-check.cpp` con el header REAL: rejilla legacy-vs-template
+  de las formas de call site + igualdad de tipo + `static_assert` constexpr
+  + control negativo legacy=3 evals / template=1. Verde GCC 12.2 y
+  Clang 22.1.8 con la suite de warnings; rebuild completo exit 0 (líneas
+  de warning atribuidas a cap_value 687→249, clase preexistente) + boot
+  smoke verde
 - ✅ `rand %100` ×4 en battle → `rnd_chance()` (`modernize/rnd-chance-battle`):
   elimina RNG libc sin seed (secuencia idéntica por boot), salida débil y
   sesgo de módulo; probabilidades preservadas (bordes 0/≥100 exactos,
   int32 firmado como la comparación original); test permanente
   `tools/rnd-chance-check.cpp` verde en GCC/Clang; build sin warnings nuevos
 - ⏳ Backlog priorizado (una por iteración, con test de equivalencia):
-  `qsort` ×2 → `std::sort`; `cap_value` (499 sitios, transversal —
-  requiere plan); `ARR_FIND`, `atoi`, `expected`, `string_view`/`span`
-  aparcados por alcance; `NULL→nullptr` y `to_underlying` rechazados
-  (estética)
+  ~~`qsort` ×2 → `std::sort`~~ ✅ **cerrado (2026-10-17)**: script.cpp ya
+  estaba (`tools/script-sort-check.cpp`); el último —`storage.cpp`—
+  migrado en `9619735` con test permanente
+  `tools/storage-sort-check.cpp` (acuerdos legacy/moderno en el dominio
+  consistente + contrato de orden con slots vacíos + 2 controles
+  negativos: inconsistencia legacy both-way y overflow de resta en ids
+  2^31 aparte; verde GCC 12.2 y Clang 22.1.8). ~~`cap_value`~~ ✅ ver la
+  entrada de arriba. ~~`ARR_FIND`~~ ✅ **cerrado (`efdc506`)**: template
+  `arr_find` + shim que liga `__var` por referencia (los 254 sitios
+  reales compilan sin editar; auditoría previa: todos 4 args, `__cmp`
+  siempre referencia la variable, bounds puros, sin colisiones); contrato
+  idéntico salvo bounds evaluados 1× en vez de N+1 (control del test
+  `legacy=5 modern=1`, seguro porque todo bound es puro); test
+  `tools/arr-find-check.cpp` verde GCC 12.2/Clang 22.1.8; rebuild 0
+  errores. (Corrección de medición: los deltas por iteración que
+  comparaban logs parciales de 101–116 TUs recompilados contra full
+  no eran como-contra-como; el único full limpio comparable es
+  22.713 → ver cierre del lote abajo.) ~~`ARR_MOVE`~~ ✅ **cerrado (`9f54a03`)**:
+  shim sobre `std::rotate` para los 2 sitios reales (char_mapif,
+  `fame_list` POD); resultado byte-idéntico al legacy de 3 `memmove`
+  (grid A/B + layouts esperados), ahora constexpr y bien definido para
+  tipos no triviales (pin con `std::string`); `ARR_MOVERIGHT/LEFT` sin
+  call sites se mantienen como API upstream; test
+  `tools/arr-move-check.cpp` verde GCC/Clang. ~~`atoi`~~ ✅ **cerrado
+  (`e29a68f`)**: `a2i()` en strlib.hpp = `(int)strtol` + saturación a
+  `[INT_MIN, INT_MAX]` — paridad exacta con libc `atoi` en rango
+  (34/34) y, fuera de rango, el resultado Windows sobre todas las
+  plataformas (glibc hoy devuelve −1/0/cast-wrap: divergencia
+  Windows/Linux real sobre el mismo input); `nullptr → 0`. Migración
+  mecanizada con guardas (comentarios/strings/`BUILDIN_*`/`src/custom`
+  verbatim): **707 sitios → 0 restantes**, 41 archivos, diff
+  línea-equilibrado; `timer.cpp` único TU sin el header (lo resolvió el
+  compilador, `-k` lo probó); test `tools/a2i-check.cpp` verde
+  GCC/Clang sin warnings. ~~`std::stoi`/`std::stoul`~~ ✅ **cerrado
+  (`6f3d5be`)**: 167 + 2 sitios migrados a `a2i` (overload
+  `std::string`; `<string>` en strlib). Diagnóstico: `std::stoi` lanza
+  sin ningún `catch` en los 9 TUs afectados (controllers web parsean
+  parámetros HTTP con esto) → garbage/corrupt = `std::terminate`;
+  paridad exacta en rango (34/34) y 7 inputs de clase
+  throw-and-terminate anclados en el test. Verificación de args
+  multi-`pos`: 0 reales (los 35 del heuristic eran comas anidadas).
+  Tras la migración, 0 llamadas `std::sto*` en posición de código en
+  `src/`. ~~`atol`~~ ✅ **cerrado (`e4c6a10`)**: 10 sitios → `a2l()`
+  (guard de nullptr; todos los sites se alimentan de `Sql_GetData`,
+  que devuelve `nullptr` sin fila → `atol(NULL)` = segfault real hoy en
+  rutas de login/char); valores idénticos a `atol` en todo lo que
+  sobrevivía antes (paridad 15/15 anclada, `long` de ancho de plataforma
+  intacto para los casts `(uint32)` circundantes); el 11º token es el
+  comentario doc. ~~`atof`~~ ✅ **cerrado (`823a3fb`, elección
+  del usuario)**: `a2f()` = NULL/NaN/±inf/desborde → 0.0, en-rango
+  byte-idéntico a `atof` (paridad 14/14 + 7 controles no-finitos).
+  Sitios (decisión de tipo destino resuelta con evidencia):
+  `party_share_level` era config **entera** (su hermano `log_inter` ya
+  usaba `a2i`) → `a2i`; `@rates` castaba `(int32)(atof*100)` **antes**
+  de los clamps compartidos → clamp en dominio double con A/B de 13
+  mensajes idénticos donde el cast legacy era definido;
+  `pc_split_atoui` ya tenía cadena de guardas pero **NaN** las
+  esquivaba hacia un cast UB → `a2f` elimina el NaN de la entrada.
+  **Censo final de la familia en posiciones de código: `atoi` 0,
+  `atol` 0, `atof` 0, `std::sto*` 0** — toda la conversión
+  cadena→número de `src/` pasa por wrappers con test (los
+  `strtol`/`strtoul` deliberados quedan: ya eran el uso correcto). **Medición honesta del lote (full limpio 194 TUs): 22.752
+  warnings vs 22.713 del full limpio de alineación = +39 netos, 0
+  atribuidos a `a2i`/strlib, delta por archivo migrado ≈ 0 (mob +2 de
+  atribución).** Lección: los deltas −359/−727 de iteraciones previas
+  (commits `efdc506`/`e29a68f`, texto histórico no reescribible)
+  comparaban logs parciales — desde ahora solo full-limpio-contra-full-
+  limpio. **Siguiente del backlog:**
+  `expected`, `string_view`/`span` (aparcados por alcance — retomarlos
+  requiere decisión del usuario);
+  `NULL→nullptr` y `to_underlying` rechazados (estética)
 - ✅ `StringBuf` (diseño evaluado, **se mantiene**): ~494 usos
   (common/char/map). Ya es RAII (ctor/dtor) y su valor frente a `std::string`
   es la integración con el memory manager (aMalloc2/aRealloc2 con ALC_MARK →
@@ -208,7 +409,115 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 - ⏳ Repetir la medición del baseline para verificar reproducibilidad:
   pendiente
 
+- ✅ **Benchmark runtime + A/B de flags (2026-10-17, iteración del lote;
+  elección del usuario: medir antes que optimizar)**: harness
+  `tools/bench-runtime.cpp` (`998e2c0`) — kernels sobre infra REAL
+  (`idb` 50k puts+5 lookups, churn `aMalloc/aFree`, familia
+  `atoi/a2i/stoi/atol/a2l/atof/a2f` con matriz de 8 inputs fijos
+  (2 inválidos), `StringBuf` vs `snprintf` vs `std::format`), mediana
+  de réplicas, workload idéntico entre patas, sink anti-DCE.
+  **4 patas** (zig/clang 22.1.8, x86_64, sandbox 3.8GB): B1 Release
+  `-O2` (baseline del CMakeLists) · B2 `-O3` (RelWithDebInfo con flags
+  forzados) · B3 `-O2`+thin-LTO · B4 `-O3`+thin-LTO; IPO forzado con
+  `-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE` (el `check_ipo_supported`
+  de CMake falla con el shim zig; `CMAKE_CXX_COMPILER_AR/RANLIB` →
+  wrappers `zig ar`/`zig ranlib`), 5 rondas **intercaladas**,
+  min-of-5 ns/op:
+
+  | kernel | O2 | O3 | O2+LTO | O3+LTO | veredicto |
+  |---|---|---|---|---|---|
+  | db-idb put+5×lookup | 28.95 | 28.70 | 28.33 | 28.51 | ruido (spread 4.0%) |
+  | memmgr aMalloc/aFree | 11.42 | 11.22 | 11.05 | 11.15 | ruido (3.3%) |
+  | parse atoi | 1.71 | 1.69 | 1.75 | 1.74 | ruido |
+  | parse a2i | 1.80 | 1.78 | 1.80 | 1.80 | ruido (spread 10.2%) |
+  | parse std::stoi(string) | 970.00 | 968.60 | 959.85 | 954.40 | ruido |
+  | parse atol / a2l | 1.76/1.70 | 1.71/1.74 | 1.73/1.77 | 1.82/1.83 | ruido (spread ~8.5%) |
+  | parse atof / a2f | 31.4/31.3 | 31.8/31.3 | 31.3/31.2 | 31.2/31.2 | ruido |
+  | strbuf StringBuf_Printf | 96.35 | 95.79 | 93.37 | 96.28 | LTO −3.1% ≈ borde |
+  | snprintf stack | 94.88 | 93.86 | 89.67 | 92.88 | LTO −5.5% > spread (3.9%), señal débil |
+  | std::format | 126.76 | 129.38 | 126.96 | 129.35 | ruido (spread 24.7%) |
+
+  **Conclusiones (gate respondido):** (1) **`-O3` NO está justificado**
+  — todas las diferencias ≤ ±3% dentro del ruido de la máquina, así
+  que el criterio escrito en `CMakeLists.txt` ("unless measurements
+  justify -O3") queda sin cumplir y **se mantiene `-O2`**. (2) **LTO:
+  velocidad = ruido, tamaño = −19.8% real** (binario del bench
+  9.985.584 → 8.007.488 bytes); **el link LTO de map-server completo
+  aborta por OOM en este sandbox de 3.8 GB** (3 kills en dmesg, aun
+  con `-flto-jobs=1`; zig rechaza `-Wl,--thinlto-jobs`) → **no se
+  activa `ENABLE_LTO` por defecto**; follow-up: host ≥6-8 GB o
+  toolchain GCC. (3) Cross-kernel: `stoi` ≈ 970 ns vs `a2i` ≈ 1.8 ns
+  (~540×, dominado por la ruta de excepción de los 2/8 inputs
+  inválidos — en producción sin catch eso era `terminate`, no
+  lentitud); `atof/a2f` ≈ 31 ns (strtod domina); `StringBuf` ≈
+  `snprintf` (diseño barato confirmado); `std::format` más lento aquí.
+  (4) `[[assume]]`/`std::unreachable` **siguen rechazados** sin
+  perfil end-to-end: el harness es ahora el gate, y medir rutas de
+  battle/script requiere BD+clientes (fuera de alcance).
+  **Receta:** por pata — configure con los flags arriba, `rm -f lib/*.a`
+  (¡`lib/` es salida compartida entre configs!), build de
+  `common_base common ryml yaml-cpp`, y link manual del bench contra
+  los archives de ESA config (Release → `*r.a`, RelWithDebInfo →
+  planos) + `-L<prefix> -lpthread -lz -lpcre2-8 -lmariadb -lssl -lcrypto`;
+  luego rondas intercaladas `bench 2` ×5. **Limitaciones:** sandbox
+  compartido (spread hasta 24.7% en kernels sub-ns), micro-kernels de
+  `common/` ≠ throughput del server, tiempos de build no instrumentados.
+
+- ✅ **Perfilado de frontend con `-ftime-trace` (2026-10-17, iteración 8;
+  zig/Clang 22.1.8, Release `-j2`, flag en ambos lados del A/B):** 195 TUs
+  trazadas, `ExecuteCompiler` total 781 s (wall 399 s) y **código propio <
+  0,9 s por TU** → el coste casi total es re-parseo de headers. Ranking por
+  tiempo inclusivo (× nº de TUs): `common/database.hpp` 48,1 s ×85 ·
+  `common/utilities.hpp` 36,0 s ×90 · cadena ryml (`ryml_std.hpp`/`vector`/
+  `node`/`tree`/`error`/`tag`/`stack`… ≈21–34 s ×85–96) · `map/pc.hpp`
+  31,2 s ×57 · libc++ `vector` 25,2 s ×138 · `string` 24,0 s ×174 ·
+  `algorithm` 22,4 s ×130 · `map/itemdb.hpp` 19,7 s ×57 (hoja más cara:
+  15,6 s directos). Demanda medida por target (`.d` del propio build):
+  database/ryml = map 59/61 + char 17/18 + common_base 2/20 + tools 7/24;
+  login/web/minicore 0 → PCH particionado (§6). Método: pares `Source`
+  b/e de los JSON (inclusivo = re-parseo ahorrable); los deltas de
+  3rdparty sin PCH (±7–19 %) miden la banda de ruido de esta métrica.
+
 ### 6. Optimización de compilación — parcial
+
+- ✅ **PCH opt-in medido y adoptado (2026-10-17, iteración 8; `ENABLE_PCH`
+  OFF por defecto).** Mecanismo: `target_precompile_headers` — base
+  `src/common/pch.hpp` (`config/core`→`cbasetypes`→`mmo`→`core`→
+  `utilities`→`strlib`→`showmsg`→`malloc`) propagada por `rathena_cxx23` a
+  todos los targets de primera parte + extra `src/common/pch-database.hpp`
+  (cadena `database.hpp`→ryml) adjuntada por target (map/char/common_base/
+  herramientas yaml); 3rdparty fuera a propósito; `#ifdef __cplusplus`
+  porque los targets mixtos (los `.c` de libconfig dentro de `minicore`)
+  generan también su par en C. **A/B (Release `-j2`, `-ftime-trace` en
+  ambos): limpio A 399 s → B 334 s = −65 s (−16,3 %); incremental (touch
+  `common/cbasetypes.hpp`, 143 objs) A 357,1 s → B 300,7 / 306,7 s
+  (−14 a −15 %; la 1ª muestra de A se perdió sin `bc`, bruta ≈350–360 s;
+  spread intra-lado ≤6 s frente a un hueco ≥50 s → gate superado sin
+  rondas extra).** Frontend medio por área (`ExecuteCompiler` A→B):
+  login 950→288 ms (−69,7 %) · char 1896→642 (−66,1 %) · common_base
+  ≈658→274 (−58,4 %) · common 566→189 (−66,5 %) · map 6062→4871
+  (−19,6 %; domina el código propio de un TU de ~8 s) · tools
+  8095→7892 (−2,5 %) y web 9076→8564 (−5,6 %) — estos dos arrastran
+  cabeceras yaml-cpp/httplib de 3rdparty (fuera del PCH por decisión);
+  3rdparty sin PCH = ±7–19 % (ruido). Overhead: 11 compiles de PCH =
+  16,6 s. **Validación:** 0 `-invalid-pch`; smoke ×4 exit 1 sin UBSan
+  **byte-idéntico A↔B**; suite 10/10 verde documentada (extras clang:
+  `mapindex-name-check` linka con los archives reales del toolchain;
+  `script-sort` con clang tropieza en el `memcpy(NULL,0)` del propio test
+  bajo el runtime de zig — su compilador documentado, gcc, en verde);
+  warnings 22.714 → 22.398 = **−316 artifacto** (los headers se emiten 1×
+  en el PCH, no por TU): **con PCH ON los warnings no son comparables** y
+  el burn-down sigue midiéndose con PCH OFF. Tamaños A→B: map
+  70.784.168→70.097.648, char 8.696.064→8.522.632, login/web +16/+63 kB =
+  contexto de instanciación de templates distinto (permitido por el
+  estándar), sin cambio observable — no hay identicidad de bytes esperable.
+  **Decisiones:** (1) default OFF (precedente `ENABLE_LTO`; CI en billing
+  no puede validar y no hay host MSVC — vcxproj intactos); (2) el beneficio
+  es por-TU (limpio ≈ incremental), no de caché; (3) follow-ups opcionales:
+  yaml-cpp/httplib en PCH por target, `Modules` sigue pendiente (unity ya
+  rechazado). **Receta:** `-DENABLE_PCH=ON` al configure (el resto de la
+  receta, «Entorno local»); perfilado: `-ftime-trace=<ruta>` por objeto +
+  agregación de pares `Source`.
 
 - ✅ LTO opt-in (`-DENABLE_LTO`, off por defecto, `check_ipo_supported`)
 - ✅ **Experimento LTO A/B (medido 2026-10-09, GCC 16.2, -j2)**: LTO soportado
@@ -253,23 +562,132 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 
 ## Tarea actual
 
+**Iteración 9 (2026-10-17): logging de los rechazos silenciosos de creación
+de personaje (deuda viva de 2026-10-11).** Diagnóstico: `chclif_createnewchar`
+solo enviaba el paquete de rechazo al cliente (cero log server-side) y ni
+`char_check_char_name` (8 rechazos: vacío, largo, caracteres de control,
+reservado wisp, `'#'`, `char_name_letters` ×2, nombre existente −1) ni
+`char_make_new_char` (9: slot −4, las 4 reglas de stats, límite de cuenta ×2,
+slot en uso, job) registraban nada → validación indistinguible de un fallo de
+BD. Cambio: 17 `ShowWarning` con contexto (AID/slot/valores/nombre), **log-only**:
+auditoría del diff = las 12 líneas «borradas» son solo cabeceras `if` que ganan
+`{`; los 17 `return` y sus condiciones idénticos; +52/−12 en un único archivo
+(`src/char/char.cpp`); efecto colateral deseado: los dos flujos de rename
+(`chclif_parse_reqrename` y el switch de rename de `char.cpp`) quedan
+diagnosticables con las mismas líneas. **Validación:** full build con la receta
+del baseline rc=0; warnings 22.722 vs 22.714 = **+8 de ruido del conteo** (53
+líneas interleaved por `-j2` visibles en los logs; solo `char.cpp` modificado;
+**0 warnings sobre las 17 líneas nuevas**; los 73 warnings de `char.cpp` están
+todos en líneas preexistentes — los4 del rango de la función son `status_points`
+/ `Sql_LastInsertId` / `return char_id` / `ARR_FIND` desplazados); smoke ×4
+exit 1 sin UBSan y **0 apariciones de los prefijos nuevos en el boot**; suite
+10/10 documentada en verde (gcc) + 8 extras de clang. **Limitaciones:** sin BD →
+ninguna ruta de rechazo se ejercita en vivo (la lógica es idéntica por
+construcción: mismas condiciones y retornos); el validador no recibe AID (firma
+sin sesión — el nombre único es el identificador natural); `ShowWarning` no
+tiene atributo printf (argumentos auditados a mano, el compilador no verifica
+el format); el contenedor se re-provisionó por tercera vez → los tiempos de
+build NO son comparables con la iteración 8, los warnings SÍ (mismo toolchain y
+receta; el ±8 es interleaving, no fuentes). Commits: `d22b1ab` (código) + este
+commit (docs).
+
+**Iteración 8 (2026-10-17): perfilado `-ftime-trace` + PCH con gate A/B**
+(elección propia del agente tras «Sorpréndeme»; el candidato de deuda
+`web_auth_token` se refutó como ya resuelto — ver la entrada rectificada
+más abajo). Perfil del build completo → la práctica totalidad del coste de
+compilación es re-parseo de headers (§5). Implementación, A/B, validación
+y decisiones: §6 (`ENABLE_PCH` adoptado OFF por defecto; limpio −16,3 %,
+incremental −15 %, smoke byte-idéntico, suite verde). Commits: `4bfb795`
+(código) + este commit (docs). Pendiente natural: retomar la deuda viva
+de `char_make_new_char` (logging mínimo de los rechazos silenciosos) o
+el siguiente elemento del backlog a elección del usuario.
+
+**Lote backlog 2026-10-17 (Gogogo — tres iteraciones de familia):**
+`efdc506` (ARR_FIND template+shim, 254 sitios sin editar), `9f54a03`
+(ARR_MOVE via `std::rotate`, 2 sitios), `e29a68f` (`a2i` + migración de
+707 `atoi`), `6f3d5be` (`stoi`/`stoul` → `a2i`, 169 sitios). Validación del lote: full rebuild 0 errores, **21 625
+warnings** (−727 vs 22 352; burn-down acumulado 22 716 → 21 625);
+suite de regresión completa verde (cap-value, storage-sort,
+script-sort, apply-rate, rnd-chance, arr-find ×2, arr-move ×2, a2i ×2)
+y boot smoke ×3 servidores = exit 1 sin panics. **Totales corregidos
+(medición):** solo el full limpio es comparable — 22.713 (alineación)
+→ **22.754 (cierre del lote de 5 iteraciones, 194 TUs)** = +41 netos
+con 0 warnings atribuidos a `a2i`/`a2l`/strlib (per-archivo migrado ≈ 0);
+los "−359/−727" previos eran parciales (101–116 TUs) y quedan
+rectificados en la entrada de backlog. Iteraciones 4ª y 5ª: `6f3d5be`
+(`stoi`/`stoul` → `a2i`, 169 sitios, controllers web sin-terminate) y
+`e4c6a10` (`atol` → `a2l`, 10 sitios, crash `Sql_GetData` NULL),
+`823a3fb` (`a2f` + los 3 `atof` — cierre de familia, censo ALL ZERO,
+full limpio 194 TUs = 22.754 warnings, Δ0 vs iteración anterior).
+**CI del lote — todos los ciclos 7/7 SUCCESS en ambos runs:**
+`9f54a03` (ARR_FIND+ARR_MOVE), `018ebdc` (a2i+docs; jobs verificados
+14/14), `13854a3` (stoi+corrección docs), `e4c6a10` (a2l; jobs
+verificados 14/14 — windows-msvc, gcc Debug+Release, clang, arm64,
+pcre-regress, sanitizers).
+
+**Cierre de sesión 2026-10-17 (host Linux sandbox — ver «Entorno local»):**
+3 commits en la rama (`be0bab1`, `fbcee01`, `192cc2f`):
+
+1. **`fix(build)`: restauración de `src/custom/` (8 archivos).**
+   Diagnóstico: los 10 runs de CI rojos + clone fresco no-compilable;
+   evidencia: `GET /repos/vanTheodore/rathena/contents/src/custom` → 404,
+   reproduce local del fatal error en el primer TU, tamaños verificados
+   contra el contents API de upstream. Cambios: 8 archivos byte-idénticos
+   a `rathena/rathena` master. Pruebas: ver (3). Limitaciones: `windows-msvc`
+   asume la misma causa — confirmar en el próximo run.
+2. **`ci(arm64)`: GCC 14 explícito.** Mecanismo: gcc-defaults de noble = 13
+   (tabla oficial Ubuntu) vs gate ≥14; evidencia: paso fallido = Configure
+   en arm64 vs Build en x86 en el run 38482270991. Limitación: sin host
+   ARM64 ni run de CI aún — el fix es espejo exacto del job x86 verde en
+   configure.
+3. **`modernize(storage)`: último `qsort` → `std::sort`.** Racional de
+   corrección: el comparador legacy **no era orden débil estricto** (dos
+   slots vacíos → >0 en ambos sentidos; reutilizarlo en `std::sort` es UB)
+   y su resta con signo invertía ids a 2^31. Tests: `tools/storage-sort-check`
+   verde en GCC 12.2 y Clang 22.1.8 (equivalencia legacy/moderno donde
+   legacy era consistente, contrato de orden, 2 controles negativos que
+   se disparan como se espera).
+
+**Validación local de CI completa (2026-10-17, réplica del job
+`linux-gcc` Release con Clang 22.1.8/CMake 3.28.3):** configure con TODAS
+las aserciones de CI en verde (`Enabled PCRE code`, `Configuring for system
+MYSQL - done`, `Found MYSQL: .*mariadb` → 3.4.11, `Using MYSQL: ...
+(MariaDB Connector/C `, sin `client floor`); **build completo 100% exit 0**
+(0 errores; 22 716 warnings Clang — baseline de la suite de warnings, el
+burn-down sigue siendo follow-up); todos los binarios generados; **boot
+smoke** de map-server = exit 1 esperado (sin BD) + línea
+`MySQL client library: 3.4.11` (grep de CI ✓); regresión PCRE2 local =
+48 casos byte-for-byte vs baseline PCRE 8.33 con PCRE2 10.49 ✓ (sin ASan;
+la variante ASan es de CI). Limitaciones: no es GCC ni MSVC ni arm64
+(hosts/compilers ausentes), sin BD real (smoke = el mismo nivel que CI),
+`cmake -G Ninja` local requiere `clang-scan-deps` (ver Entorno local).
+**Pendiente de autorización:** push de la rama (dispara el CI en todos los
+jobs) y decisión de PR.
+
 **Deuda registrada (2026-10-11, slices SQL UAF+retry integrados):**
 - `tools/proto-smoke.ps1`, prueba `2b-char-list`: RESUELTO en
   `modernize/smoke-positive` — verifica contenido vía `ParseCharList`
   (nombre esperado en `0x6b`), no solo el ID.
-- Creación de personaje (`char_make_new_char`, `src/char/char.cpp`): los
+- ~~Creación de personaje (`char_make_new_char`, `src/char/char.cpp`): los
   rechazos previos al INSERT (`slot inválido`, `límite de cuenta`, `-1`/`-2`/`-4`)
   son silenciosos (sin `ShowWarning`/`ShowDebug`); un fallo de validación es
   indistinguible en logs de un fallo de BD. Logging mínimo pendiente (sin
-  cambiar la lógica).
+  cambiar la lógica).~~ → **CERRADO (iteración 9, `d22b1ab`, 2026-10-17):**
+  17 `ShowWarning` (8 en `char_check_char_name` + 9 en `char_make_new_char`),
+  log-only +52/−12, misma condición y mismos retornos; cierre completo con
+  evidencia en «Tarea actual».
 
 **Deuda registrada (2026-10-11, migración login a InnoDB):**
-- Candidato a bug independiente (NO corregido en la migración): el retry de
+- ~~Candidato a bug independiente (NO corregido en la migración): el retry de
   `web_auth_token` (`src/login/account.cpp`, `mmo_auth_tosql`) condiciona el
-  ciclo a error 1062 pero nunca incrementa `i`, por lo que ante 1062
-  persistente no termina en `MAX_RETRIES` (y el aviso de `i == MAX_RETRIES`
-  es inalcanzable). Colisión real casi imposible (token aleatorio), pero el
-  contador muerto debe revisarse en un slice propio.
+  ciclo a error 1062 pero nunca incrementa `i`~~ → **RECTIFICADO
+  (2026-10-17): la deuda estaba caducada — ya estaba cerrada antes de la base
+  de esta rama** por `e3ab393` (`fix(login): bound web_auth_token retries with
+  exact attempt count`) + `ed2d1f4` (test de contrato), ambos 2026-10-11:
+  hoy el helper `mmo_auth_token_retry` (`src/login/token_retry.hpp`) acota
+  `attempts` en `max_retries`, rompe en errores distintos de 1062 y el
+  `ShowError` con el recuento es alcanzable; verificado en el código y con
+  `tools/token-retry-check` (10/10 de la suite, gcc+clang).
 
 **Fase 6 — experimento LTO A/B (cerrado): no se adopta** (crash reproducible
 0xC0000374 al salir en map/char; tamaños -11%/-56% pero con regresión —
@@ -354,8 +772,8 @@ MariaDB solamente).
 (buffer safety ✅, ownership ✅ refutado, macros ✅), `login` cerrado (bug DNSBL
 de strtok corregido), `char` cerrado (premisa refutada), `map` cerrado (buffer
 safety: 11 overflows corregidos; ownership: refutado) y `tools` cerrado
-(premisa refutada). Restante en la fase: la
-evaluación PCH/unity/Modules. Siguiente fase del roadmap: **3 (arquitectura)**.
+(premisa refutada). Restante en la fase: **Modules**
+(PCH evaluado y adoptado opt-in el 2026-10-17 — §6; unity ya rechazado — §2). Siguiente fase del roadmap: **3 (arquitectura)**.
 
 ## Reglas permanentes
 

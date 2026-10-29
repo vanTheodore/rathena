@@ -22,7 +22,7 @@ bool isAuthorized(const Request &request, bool checkGuildLeader) {
 	
 	auto token_str = web_get_form_value(request, "AuthToken");
 	auto token = token_str.c_str();
-	auto account_id = std::stoi(web_get_form_value(request, "AID"));
+	auto account_id = a2i(web_get_form_value(request, "AID"));
 
 	SQLLock loginlock(LOGIN_SQL_LOCK);
 
@@ -56,7 +56,7 @@ bool isAuthorized(const Request &request, bool checkGuildLeader) {
 		return true;
 	}
 
-	auto guild_id = std::stoi(web_get_form_value(request, "GDID"));
+	auto guild_id = a2i(web_get_form_value(request, "GDID"));
 
 	SQLLock charlock(CHAR_SQL_LOCK);
 	charlock.lock();

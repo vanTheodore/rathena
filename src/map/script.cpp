@@ -17918,7 +17918,7 @@ BUILDIN_FUNC(atoi)
 {
 	const char *value;
 	value = script_getstr(st,2);
-	script_pushint(st,atoi(value));
+	script_pushint(st,a2i(value));
 	return SCRIPT_CMD_SUCCESS;
 }
 
@@ -22975,7 +22975,7 @@ BUILDIN_FUNC(get_revision) {
 	const char *svn = get_svn_revision();
 
 	if ( svn[0] != UNKNOWN_VERSION )
-		script_pushint(st,atoi(svn));
+		script_pushint(st,a2i(svn));
 	else
 		script_pushint(st,-1); //unknown
 	return SCRIPT_CMD_SUCCESS;

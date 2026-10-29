@@ -618,14 +618,14 @@ void do_init_vending_autotrade(void)
 
 				at = nullptr;
 				CREATE(at, struct s_autotrader, 1);
-				Sql_GetData(mmysql_handle, 0, &data, nullptr); at->id = atoi(data);
-				Sql_GetData(mmysql_handle, 1, &data, nullptr); at->account_id = atoi(data);
-				Sql_GetData(mmysql_handle, 2, &data, nullptr); at->char_id = atoi(data);
+				Sql_GetData(mmysql_handle, 0, &data, nullptr); at->id = a2i(data);
+				Sql_GetData(mmysql_handle, 1, &data, nullptr); at->account_id = a2i(data);
+				Sql_GetData(mmysql_handle, 2, &data, nullptr); at->char_id = a2i(data);
 				Sql_GetData(mmysql_handle, 3, &data, nullptr); at->sex = (data[0] == 'F') ? SEX_FEMALE : SEX_MALE;
 				Sql_GetData(mmysql_handle, 4, &data, &len); safestrncpy(at->title, data, zmin(len + 1, MESSAGE_SIZE));
-				Sql_GetData(mmysql_handle, 5, &data, nullptr); at->dir = atoi(data);
-				Sql_GetData(mmysql_handle, 6, &data, nullptr); at->head_dir = atoi(data);
-				Sql_GetData(mmysql_handle, 7, &data, nullptr); at->sit = atoi(data);
+				Sql_GetData(mmysql_handle, 5, &data, nullptr); at->dir = a2i(data);
+				Sql_GetData(mmysql_handle, 6, &data, nullptr); at->head_dir = a2i(data);
+				Sql_GetData(mmysql_handle, 7, &data, nullptr); at->sit = a2i(data);
 				at->count = 0;
 
 				if (battle_config.feature_autotrade_direction >= 0)
@@ -679,9 +679,9 @@ void do_init_vending_autotrade(void)
 				while (SQL_SUCCESS == Sql_NextRow(mmysql_handle) && j < at->count) {
 					char *data;
 					CREATE(at->entries[j], struct s_autotrade_entry, 1);
-					Sql_GetData(mmysql_handle, 0, &data, nullptr); at->entries[j]->cartinventory_id = atoi(data);
-					Sql_GetData(mmysql_handle, 1, &data, nullptr); at->entries[j]->amount = atoi(data);
-					Sql_GetData(mmysql_handle, 2, &data, nullptr); at->entries[j]->price = atoi(data);
+					Sql_GetData(mmysql_handle, 0, &data, nullptr); at->entries[j]->cartinventory_id = a2i(data);
+					Sql_GetData(mmysql_handle, 1, &data, nullptr); at->entries[j]->amount = a2i(data);
+					Sql_GetData(mmysql_handle, 2, &data, nullptr); at->entries[j]->price = a2i(data);
 					j++;
 				}
 				items += j;

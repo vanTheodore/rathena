@@ -210,7 +210,7 @@ const char* get_svn_revision(void) {
 			if( memcmp(buffer + j - prefix_len, prefix, prefix_len) != 0 )
 				continue; // prefix missmatch
 			// done
-			snprintf(svn_version_buffer, sizeof(svn_version_buffer), "%d", atoi(buffer + j));
+			snprintf(svn_version_buffer, sizeof(svn_version_buffer), "%d", a2i(buffer + j));
 			break;
 		}
 		aFree(buffer);
@@ -243,7 +243,7 @@ const char* get_svn_revision(void) {
 				if ( fgets(line, sizeof(line), fp) == nullptr ) { printf("Can't get entries kind\n"); } // Get the entries kind
 				if(fgets(line, sizeof(line), fp)) // Get the rev numver
 				{
-					snprintf(svn_version_buffer, sizeof(svn_version_buffer), "%d", atoi(line));
+					snprintf(svn_version_buffer, sizeof(svn_version_buffer), "%d", a2i(line));
 				}
 			}
 		}

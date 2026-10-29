@@ -4941,9 +4941,9 @@ static void npc_market_fromsql(void) {
 		}
 
 		Sql_GetData(mmysql_handle, 1, &data, nullptr); list.nameid = strtoul(data, nullptr, 10);
-		Sql_GetData(mmysql_handle, 2, &data, nullptr); list.value = atoi(data);
-		Sql_GetData(mmysql_handle, 3, &data, nullptr); list.qty = atoi(data);
-		Sql_GetData(mmysql_handle, 4, &data, nullptr); list.flag = atoi(data);
+		Sql_GetData(mmysql_handle, 2, &data, nullptr); list.value = a2i(data);
+		Sql_GetData(mmysql_handle, 3, &data, nullptr); list.qty = a2i(data);
+		Sql_GetData(mmysql_handle, 4, &data, nullptr); list.flag = a2i(data);
 
 		std::shared_ptr<item_data> id = item_db.find(list.nameid);
 
@@ -5560,7 +5560,7 @@ static const char* npc_parse_mapflag(char* w1, char* w2, char* w3, char* w4, con
 			else {
 				if (sscanf(w4, "%30[^,],%23[^,],%11d,%11d,%11d,%11d[^\n]", skill_name, caster_constant, &args.skill_damage.rate[SKILLDMG_PC], &args.skill_damage.rate[SKILLDMG_MOB], &args.skill_damage.rate[SKILLDMG_BOSS], &args.skill_damage.rate[SKILLDMG_OTHER]) >= 3) {
 					if (ISDIGIT(caster_constant[0]))
-						args.skill_damage.caster = atoi(caster_constant);
+						args.skill_damage.caster = a2i(caster_constant);
 					else {
 						int64 val_tmp;
 

@@ -53,7 +53,7 @@ int32 _msg_config_read(const char* cfgName,int32 size, char ** msg_table)
 		if (strcmpi(w1, "import") == 0)
 			_msg_config_read(w2,size,msg_table);
 		else {
-			msg_number = atoi(w1);
+			msg_number = a2i(w1);
 			if (msg_number >= 0 && msg_number < size) {
 				if (msg_table[msg_number] != nullptr)
 					aFree(msg_table[msg_number]);

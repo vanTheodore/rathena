@@ -43,7 +43,7 @@ HANDLER_FUNC(emblem_download) {
 
 	auto world_name_str = web_get_form_value(req, "WorldName");
 	auto world_name = world_name_str.c_str();
-	auto guild_id = std::stoi(web_get_form_value(req, "GDID"));
+	auto guild_id = a2i(web_get_form_value(req, "GDID"));
 
 	SQLLock sl(WEB_SQL_LOCK);
 	sl.lock();
@@ -146,7 +146,7 @@ HANDLER_FUNC(emblem_upload) {
 
 	auto world_name_str = web_get_form_value(req, "WorldName");
 	auto world_name = world_name_str.c_str();
-	auto guild_id = std::stoi(web_get_form_value(req, "GDID"));
+	auto guild_id = a2i(web_get_form_value(req, "GDID"));
 	auto imgtype_str = web_get_form_value(req, "ImgType");
 	auto imgtype = imgtype_str.c_str();
 	auto img = web_get_form_value(req, "Img");

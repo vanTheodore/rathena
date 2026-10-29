@@ -190,3 +190,25 @@ configure, so a silently PCRE-less build fails fast (it would otherwise skip
 - Full login+char+map boot *with* MariaDB stays in
   `tools/docker/docker-compose.yml` (unchanged flow; `./configure` there now
   defaults to `-std=c++23`).
+
+### CI status (2026-10-17)
+
+The workflow has run 10 times (2026-10-11 → 2026-10-13) and only
+`linux-pcre-regress` was green. Two root causes, fixed on the
+`arena/065f5fb7-rathena` branch:
+
+- **Every build job** (linux-gcc/clang/sanitizers, windows-msvc): the
+  repository's root commit was created with the `.gitignore` pattern
+  `/src/custom` active, so the eight files upstream tracks in `src/custom/`
+  (`defines_pre.hpp`, `defines_post.hpp`, six `.inc` stubs) were never
+  added. A fresh checkout died at the first translation unit
+  (`src/config/core.hpp:12: fatal error: custom/defines_pre.hpp`), and the
+  autotools prerequisites `../custom/*.inc` were missing the same way.
+  Restored byte-identical to upstream (commit `be0bab1`).
+- **linux-arm64** died at configure: plain `gcc` on ubuntu-24.04(-arm) is
+  GCC 13 (noble's gcc-defaults), below the GCC 14 floor enforced in
+  `CMakeLists.txt`; the x86 jobs install `gcc-14` explicitly. The arm64 job
+  now mirrors them (commit `fbcee01`).
+
+Both fixes need a CI run (push) to confirm; `windows-msvc` is presumed to
+share the first cause.

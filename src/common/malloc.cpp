@@ -3,6 +3,7 @@
 
 #include "malloc.hpp"
 
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
@@ -173,7 +174,17 @@ struct block {
 	uint16 unit_used;				/* The number of used units */
 	uint16 unit_unfill;				/* The number of unused units */
 	uint16 unit_maxused;			/* The maximum value of units used */
-	char   data[ BLOCK_DATA_SIZE ];
+	/* block2unit() places every unit_head at &data[k * unit_size], and unit
+	 * strides are multiples of BLOCK_ALIGNMENT1/2 (16/64), so data's own
+	 * offset decides the alignment of all in-block unit heads. The natural
+	 * offset is 36 (3 pointers + 6 uint16) which leaves each unit_head --
+	 * alignof(long) = 8 on LP64 -- at 4 mod 8: undefined behaviour, silently
+	 * tolerated on x86-64 but trapped by UBSan (zig's default -fsanitize=
+	 * alignment panics in db_init() on every boot). Pad to 40 so the contract
+	 * holds; sizeof(struct block) is unchanged (40996 already rounded up to
+	 * the struct's own 8-byte alignment = 41000). Pinned by the static_assert
+	 * after struct unit_head. */
+	alignas(8) char   data[ BLOCK_DATA_SIZE ];
 };
 
 struct unit_head {
@@ -183,6 +194,11 @@ struct unit_head {
 	uint16 size;
 	long           checksum;
 };
+
+/* Every in-block unit head must satisfy its own alignment: block2unit()
+ * derives addresses from struct block::data (see the alignas(8) pad above). */
+static_assert( offsetof( struct block, data ) % alignof( struct unit_head ) == 0,
+	"struct block::data must keep struct unit_head aligned (undefined behaviour otherwise)" );
 
 static struct block* hash_unfill[BLOCK_DATA_COUNT1 + BLOCK_DATA_COUNT2 + 1];
 static struct block* block_first, *block_last, block_head;
@@ -203,6 +219,26 @@ static size_t        memmgr_usage_bytes;
 
 #define block2unit(p, n) ((struct unit_head*)(&(p)->data[ p->unit_size * (n) ]))
 #define memmgr_assert(v) do { if(!(v)) { ShowError("Memory manager: assertion '" #v "' failed!\n"); } } while(0)
+
+/* The trailing FREED_POINTER canary sits at
+ *   dest + sizeof( struct unit_head[_large] ) - sizeof( long ) + size
+ * — an offset that depends on the caller's byte length, so whenever size
+ * is not a multiple of alignof(long) a direct *(long*) store/load there is
+ * misaligned undefined behaviour (UBSan traps it — zig's default
+ * -fsanitize=alignment panics on aStrdup'd timer names; x86-64 tolerates
+ * it silently). memcpy is byte-wise and always well-defined and stores the
+ * exact same bytes, so the on-heap canary format is unchanged. */
+static void canary_put( void *dest, long value )
+{
+	memcpy( dest, &value, sizeof( value ) );
+}
+
+static bool canary_ok( const void *src, long value )
+{
+	long stored;
+	memcpy( &stored, src, sizeof( stored ) );
+	return stored == value;
+}
 
 static uint16 size2hash( size_t size )
 {
@@ -256,7 +292,7 @@ void* _mmalloc(size_t size, const char *file, int32 line, const char *func )
 				p->next = unit_head_large_first;
 			}
 			unit_head_large_first = p;
-			*(long*)((char*)p + sizeof(struct unit_head_large) - sizeof(long) + size) = FREED_POINTER;
+			canary_put( (char*)p + sizeof(struct unit_head_large) - sizeof(long) + size, FREED_POINTER );
 			return (char *)p + sizeof(struct unit_head_large) - sizeof(long);
 		} else {
 			ShowFatalError("Memory manager::memmgr_alloc failed (allocating %" PRIuPTR  "+%" PRIuPTR " bytes at %s:%d).\n", sizeof(struct unit_head_large), size, file, line);
@@ -323,7 +359,7 @@ void* _mmalloc(size_t size, const char *file, int32 line, const char *func )
 	head->file  = file;
 	head->line  = line;
 	head->size  = (uint16)size;
-	*(long*)((char*)head + sizeof(struct unit_head) - sizeof(long) + size) = FREED_POINTER;
+	canary_put( (char*)head + sizeof(struct unit_head) - sizeof(long) + size, FREED_POINTER );
 	return (char *)head + sizeof(struct unit_head) - sizeof(long);
 }
 
@@ -382,9 +418,8 @@ void _mfree(void *ptr, const char *file, int32 line, const char *func )
 	if(head->size == 0) {
 		/* area that is directly secured by malloc () */
 		struct unit_head_large *head_large = (struct unit_head_large *)((char *)ptr - sizeof(struct unit_head_large) + sizeof(long));
-		if(
-			*(long*)((char*)head_large + sizeof(struct unit_head_large) - sizeof(long) + head_large->size)
-			!= FREED_POINTER)
+		if( !canary_ok( (char*)head_large + sizeof(struct unit_head_large) - sizeof(long) + head_large->size,
+			FREED_POINTER ) )
 		{
 			ShowError("Memory manager: args of aFree 0x%p is overflowed pointer %s line %d\n", ptr, file, line);
 		} else {
@@ -411,7 +446,7 @@ void _mfree(void *ptr, const char *file, int32 line, const char *func )
 			ShowError("Memory manager: args of aFree 0x%p is invalid pointer %s line %d\n", ptr, file, line);
 		} else if(head->block == nullptr) {
 			ShowError("Memory manager: args of aFree 0x%p is freed pointer %s:%d@%s\n", ptr, file, line, func);
-		} else if(*(long*)((char*)head + sizeof(struct unit_head) - sizeof(long) + head->size) != FREED_POINTER) {
+		} else if( !canary_ok( (char*)head + sizeof(struct unit_head) - sizeof(long) + head->size, FREED_POINTER ) ) {
 			ShowError("Memory manager: args of aFree 0x%p is overflowed pointer %s line %d\n", ptr, file, line);
 		} else {
 			memmgr_usage_bytes -= head->size;

@@ -515,7 +515,7 @@ void mapif_parse_accinfo(int32 fd) {
 	safestrncpy(query, RFIFOCP(fd,14), NAME_LENGTH);
 	Sql_EscapeString(sql_handle, query_esq, query);
 
-	account_id = atoi(query);
+	account_id = a2i(query);
 
 	if (account_id < START_ACCOUNT_NUM) {	// is string
 		if ( SQL_ERROR == Sql_Query(sql_handle, "SELECT `account_id`,`name`,`class`,`base_level`,`job_level`,`online` FROM `%s` WHERE `name` LIKE '%s' LIMIT 10", schema_config.char_db, query_esq)
@@ -531,7 +531,7 @@ void mapif_parse_accinfo(int32 fd) {
 		} else {
 			if( Sql_NumRows(sql_handle) == 1 ) {//we found a perfect match
 				Sql_NextRow(sql_handle);
-				Sql_GetData(sql_handle, 0, &data, nullptr); account_id = atoi(data);
+				Sql_GetData(sql_handle, 0, &data, nullptr); account_id = a2i(data);
 				Sql_FreeResult(sql_handle);
 			} else {// more than one, listing... [Dekamaster/Nightroad]
 				inter_to_fd(fd, u_fd, u_aid, (char *)msg_txt(214),(int32)Sql_NumRows(sql_handle)); // Your query returned the following %d results, please be more specific...
@@ -540,12 +540,12 @@ void mapif_parse_accinfo(int32 fd) {
 					int16 base_level, job_level, online;
 					char name[NAME_LENGTH];
 
-					Sql_GetData(sql_handle, 0, &data, nullptr); account_id = atoi(data);
+					Sql_GetData(sql_handle, 0, &data, nullptr); account_id = a2i(data);
 					Sql_GetData(sql_handle, 1, &data, nullptr); safestrncpy(name, data, sizeof(name));
-					Sql_GetData(sql_handle, 2, &data, nullptr); class_ = atoi(data);
-					Sql_GetData(sql_handle, 3, &data, nullptr); base_level = atoi(data);
-					Sql_GetData(sql_handle, 4, &data, nullptr); job_level = atoi(data);
-					Sql_GetData(sql_handle, 5, &data, nullptr); online = atoi(data);
+					Sql_GetData(sql_handle, 2, &data, nullptr); class_ = a2i(data);
+					Sql_GetData(sql_handle, 3, &data, nullptr); base_level = a2i(data);
+					Sql_GetData(sql_handle, 4, &data, nullptr); job_level = a2i(data);
+					Sql_GetData(sql_handle, 5, &data, nullptr); online = a2i(data);
 
 					inter_to_fd(fd, u_fd, u_aid, (char *)msg_txt(215), account_id, name, job_name(class_), base_level, job_level, online?"Online":"Offline"); // [AID: %d] %s | %s | Level: %d/%d | %s
 				}
@@ -598,13 +598,13 @@ void mapif_accinfo_ack( bool success, int32 map_fd, int32 u_fd, int32 u_aid, int
 			char name[NAME_LENGTH];
 			char *data;
 
-			Sql_GetData(sql_handle, 0, &data, nullptr); char_id = atoi(data);
+			Sql_GetData(sql_handle, 0, &data, nullptr); char_id = a2i(data);
 			Sql_GetData(sql_handle, 1, &data, nullptr); safestrncpy(name, data, sizeof(name));
-			Sql_GetData(sql_handle, 2, &data, nullptr); char_num = atoi(data);
-			Sql_GetData(sql_handle, 3, &data, nullptr); class_ = atoi(data);
-			Sql_GetData(sql_handle, 4, &data, nullptr); base_level = atoi(data);
-			Sql_GetData(sql_handle, 5, &data, nullptr); job_level = atoi(data);
-			Sql_GetData(sql_handle, 6, &data, nullptr); online = atoi(data);
+			Sql_GetData(sql_handle, 2, &data, nullptr); char_num = a2i(data);
+			Sql_GetData(sql_handle, 3, &data, nullptr); class_ = a2i(data);
+			Sql_GetData(sql_handle, 4, &data, nullptr); base_level = a2i(data);
+			Sql_GetData(sql_handle, 5, &data, nullptr); job_level = a2i(data);
+			Sql_GetData(sql_handle, 6, &data, nullptr); online = a2i(data);
 
 			inter_to_fd(map_fd, u_fd, u_aid, (char *)msg_txt(225), char_num, char_id, name, job_name(class_), base_level, job_level, online?"Online":"Offline"); // [Slot/CID: %d/%d] %s | %s | Level: %d/%d | %s
 		}
@@ -731,7 +731,7 @@ int32 inter_accreg_fromsql(uint32 account_id, uint32 char_id, int32 fd, int32 ty
 		Sql_GetData(sql_handle, 1, &data, nullptr);
 
 		{
-			uint32 v = (uint32)atol(data);
+			uint32 v = (uint32)a2l(data);
 			memcpy(WFIFOP(fd,plen), &v, sizeof(v));
 		}
 		plen += 4;
@@ -834,7 +834,7 @@ int32 inter_accreg_fromsql(uint32 account_id, uint32 char_id, int32 fd, int32 ty
 		Sql_GetData(sql_handle, 1, &data, nullptr);
 
 		{
-			uint32 v = (uint32)atol(data);
+			uint32 v = (uint32)a2l(data);
 			memcpy(WFIFOP(fd,plen), &v, sizeof(v));
 		}
 		plen += 4;
@@ -912,7 +912,7 @@ int32 inter_config_read(const char* cfgName)
 		if(!strcmpi(w1,"char_server_ip"))
 			char_server_ip = w2;
 		else if(!strcmpi(w1,"char_server_port"))
-			char_server_port = atoi(w2);
+			char_server_port = a2i(w2);
 		else if(!strcmpi(w1,"char_server_id"))
 			char_server_id = w2;
 		else if(!strcmpi(w1,"char_server_pw"))
@@ -922,9 +922,9 @@ int32 inter_config_read(const char* cfgName)
 		else if(!strcmpi(w1,"default_codepage"))
 			default_codepage = w2;
 		else if(!strcmpi(w1,"party_share_level"))
-			party_share_level = (uint32)atof(w2);
+			party_share_level = static_cast<uint32>(a2i(w2)); // integer level, like log_inter below
 		else if(!strcmpi(w1,"log_inter"))
-			charserv_config.log_inter = atoi(w2);
+			charserv_config.log_inter = a2i(w2);
 		else if(!strcmpi(w1,"inter_server_conf"))
 			cfgFile = w2;
 		else if(!strcmpi(w1,"import"))

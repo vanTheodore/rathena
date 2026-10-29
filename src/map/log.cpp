@@ -613,13 +613,13 @@ int32 log_config_read( const char* cfgName )
 				log_config.sql_logs = config_switch(w2) > 0;
 //start of common filter settings
 			else if( strcmpi(w1, "rare_items_log") == 0 )
-				log_config.rare_items_log = atoi(w2);
+				log_config.rare_items_log = a2i(w2);
 			else if( strcmpi(w1, "refine_items_log") == 0 )
-				log_config.refine_items_log = atoi(w2);
+				log_config.refine_items_log = a2i(w2);
 			else if( strcmpi(w1, "price_items_log") == 0 )
-				log_config.price_items_log = atoi(w2);
+				log_config.price_items_log = a2i(w2);
 			else if( strcmpi(w1, "amount_items_log") == 0 )
-				log_config.amount_items_log = atoi(w2);
+				log_config.amount_items_log = a2i(w2);
 //end of common filter settings
 			else if( strcmpi(w1, "log_branch") == 0 )
 				log_config.branch = config_switch(w2);

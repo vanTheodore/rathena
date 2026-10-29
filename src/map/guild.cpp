@@ -546,7 +546,7 @@ std::shared_ptr<MapGuild> guild_searchnameid(const char *str) {
 	if (g)
 		return g;
 
-	return guild_search(atoi(str));
+	return guild_search(a2i(str));
 }
 
 /// lookup: map index -> castle*
