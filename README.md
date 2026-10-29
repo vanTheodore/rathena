@@ -1,10 +1,9 @@
 <img src="doc/logo.png" align="right" height="90" />
 
 # rAthena
-![clang](https://img.shields.io/github/actions/workflow/status/rathena/rathena/build_servers_clang.yml?label=clang%20build&logo=llvm) 
-![cmake](https://img.shields.io/github/actions/workflow/status/rathena/rathena/build_servers_cmake.yml?label=cmake%20build&logo=cmake)
-![gcc](https://img.shields.io/github/actions/workflow/status/rathena/rathena/build_servers_gcc.yml?label=gcc%20build&logo=gnu) 
-![ms](https://img.shields.io/github/actions/workflow/status/rathena/rathena/build_servers_msbuild.yml?label=ms%20build&logo=visualstudio) 
+![C++23 toolchain](https://github.com/vanTheodore/rathena/actions/workflows/modern-toolchain.yml/badge.svg?branch=master)
+![C++23 contract tests](https://github.com/vanTheodore/rathena/actions/workflows/modernization-contracts.yml/badge.svg?branch=master)
+
 ![GitHub](https://img.shields.io/github/license/rathena/rathena.svg) 
 ![commit activity](https://img.shields.io/github/commit-activity/w/rathena/rathena) 
 ![GitHub repo size](https://img.shields.io/github/repo-size/rathena/rathena.svg)
@@ -15,6 +14,15 @@
 
 [Forum](https://rathena.org/board)|[Discord](https://rathena.org/discord)|[Wiki](https://github.com/rathena/rathena/wiki)|[FluxCP](https://github.com/rathena/FluxCP)|[Crowdfunding](https://rathena.org/board/crowdfunding/)|[Fork and Pull Request Q&A](https://rathena.org/board/topic/86913-pull-request-qa/)
 --------|--------|--------|--------|--------|--------
+
+## This C++23 modernization fork
+
+This repository is an independent modernization of [upstream rAthena](https://github.com/rathena/rathena), with **ISO C++23** as its build baseline. It is not an official upstream release. Source and community links below refer to upstream rAthena.
+
+- **Required build tools:** CMake 3.28+, GCC 14+ / Clang 18+ / Visual Studio 2022 17.8+; C++ extensions disabled by default. See [MODERNIZATION.md](doc/MODERNIZATION.md).
+- **Continuous integration:** [multi-platform compilation and sanitizers](https://github.com/vanTheodore/rathena/actions/workflows/modern-toolchain.yml) plus [standalone behavioral contract tests](https://github.com/vanTheodore/rathena/actions/workflows/modernization-contracts.yml).
+- **Dependencies:** bundled libraries have their own compatibility patches. Do not bulk-replace vendor trees without a fresh compiler matrix and functional tests. See [dependency audit](doc/DEPENDENCY-AUDIT-2026-10-29.md).
+- **Runtime integration:** successful compilation and startup without a database are not proof of gameplay or persistence parity; MariaDB-backed integration coverage is a separate workstream.
 
 ### Table of Contents
 1. [Prerequisites](#1-prerequisites)
@@ -38,8 +46,8 @@ Disk Space | 300 MB | 500 MB
 ### Operating System & Preferred Compiler
 Operating System | Compiler
 ------|------
-Linux  | [gcc-6 or newer](https://www.gnu.org/software/gcc/gcc-6/) / [Make](https://www.gnu.org/software/make/)
-Windows | [MS Visual Studio 2017 or newer](https://www.visualstudio.com/downloads/)
+Linux  | GCC 14+ or Clang 18+ / [Make](https://www.gnu.org/software/make/)
+Windows | Visual Studio 2022 17.8+ (MSVC 19.38+)
 
 ### Required Applications
 Application | Name

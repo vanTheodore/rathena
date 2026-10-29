@@ -9,7 +9,11 @@ name: modern-toolchain
 
 on:
   push:
+    branches: [master]
   pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   linux-gcc:
