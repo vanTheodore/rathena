@@ -39,6 +39,12 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# rAthena has no C++ module interface units. CMake 3.28+ otherwise
+# invokes clang-scan-deps under Clang 19 in C++23 mode, imposing an
+# unnecessary tool dependency and one dependency scan per source file.
+# Turn on explicitly when/if the project adopts C++ modules.
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+
 # Architecture handling: do not assume 64-bit pointer == x86_64.
 # Detect x86_64/AMD64 and AArch64/ARM64 explicitly (see also
 # doc/MODERNIZATION.md). Game logic must remain architecture-neutral.
@@ -81,8 +87,8 @@ endif()
 # subset rAthena uses (not merely -std=c++23 recognition).
 if( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14 )
 	message( FATAL_ERROR "GCC ${CMAKE_CXX_COMPILER_VERSION} is too old: rAthena requires GCC 14+ (primary reference: GCC 16.2) for the C++23 baseline." )
-elseif( CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 18 )
-	message( FATAL_ERROR "Clang ${CMAKE_CXX_COMPILER_VERSION} is too old: rAthena requires Clang 18+ (reference: Clang 22.1) for the C++23 baseline." )
+elseif( CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19 )
+	message( FATAL_ERROR "Clang ${CMAKE_CXX_COMPILER_VERSION} is too old: rAthena requires Clang 19+ (reference: Clang 22.1) for the C++23 baseline." )
 elseif( MSVC AND MSVC_VERSION LESS 1938 )
 	message( FATAL_ERROR "MSVC ${MSVC_VERSION} is too old: rAthena requires VS 2022 17.8+ (/std:clatest with C++23) for the C++23 baseline." )
 endif()

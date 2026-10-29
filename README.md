@@ -19,7 +19,7 @@
 
 This repository is an independent modernization of [upstream rAthena](https://github.com/rathena/rathena), with **ISO C++23** as its build baseline. It is not an official upstream release. Source and community links below refer to upstream rAthena.
 
-- **Required build tools:** CMake 3.28+, GCC 14+ / Clang 18+ / Visual Studio 2022 17.8+; C++ extensions disabled by default. See [MODERNIZATION.md](doc/MODERNIZATION.md).
+- **Required build tools:** CMake 3.28+, GCC 14+ / Clang 19+ / Visual Studio 2022 17.8+; C++ extensions disabled by default. See [MODERNIZATION.md](doc/MODERNIZATION.md).
 - **Continuous integration:** [multi-platform compilation and sanitizers](https://github.com/vanTheodore/rathena/actions/workflows/modern-toolchain.yml) plus [standalone behavioral contract tests](https://github.com/vanTheodore/rathena/actions/workflows/modernization-contracts.yml).
 - **Dependencies:** bundled libraries have their own compatibility patches. Do not bulk-replace vendor trees without a fresh compiler matrix and functional tests. See [dependency audit](doc/DEPENDENCY-AUDIT-2026-10-29.md).
 - **Runtime integration:** successful compilation and startup without a database are not proof of gameplay or persistence parity; MariaDB-backed integration coverage is a separate workstream.
@@ -46,7 +46,7 @@ Disk Space | 300 MB | 500 MB
 ### Operating System & Preferred Compiler
 Operating System | Compiler
 ------|------
-Linux  | GCC 14+ or Clang 18+ / [Make](https://www.gnu.org/software/make/)
+Linux  | GCC 14+ or Clang 19+ / [Make](https://www.gnu.org/software/make/)
 Windows | Visual Studio 2022 17.8+ (MSVC 19.38+)
 
 ### Required Applications

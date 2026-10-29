@@ -5,6 +5,7 @@
 
 #include <cstring>
 
+#include <common/parse.hpp>
 #include <common/showmsg.hpp>
 #include <common/sql.hpp>
 
@@ -22,7 +23,13 @@ bool isAuthorized(const Request &request, bool checkGuildLeader) {
 	
 	auto token_str = web_get_form_value(request, "AuthToken");
 	auto token = token_str.c_str();
-	auto account_id = a2i(web_get_form_value(request, "AID"));
+	// C++23 expected: reject malformed/overflowing identifiers before SQL.
+	// a2i() is intentionally permissive for legacy data imports; an HTTP
+	// authorization identifier must not silently turn into zero or clamp.
+	const auto parsed_account_id = rathena::parse::positive_id(web_get_form_value(request, "AID"));
+	if (!parsed_account_id)
+		return false;
+	auto account_id = *parsed_account_id;
 
 	SQLLock loginlock(LOGIN_SQL_LOCK);
 
@@ -56,7 +63,10 @@ bool isAuthorized(const Request &request, bool checkGuildLeader) {
 		return true;
 	}
 
-	auto guild_id = a2i(web_get_form_value(request, "GDID"));
+	const auto parsed_guild_id = rathena::parse::positive_id(web_get_form_value(request, "GDID"));
+	if (!parsed_guild_id)
+		return false;
+	auto guild_id = *parsed_guild_id;
 
 	SQLLock charlock(CHAR_SQL_LOCK);
 	charlock.lock();

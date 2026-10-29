@@ -19,7 +19,7 @@ database, combat, timer, networking, or user-facing behavior changes.
 | Arch handling | 64-bit pointer == x64 | explicit x86_64/AMD64 vs AArch64/ARM64 detection (`architecture` = `x86`/`x64`/`arm64`) |
 
 C++23 is the latest finalized, published ISO standard (C++26 still draft).
-Compiler minimums (GCC 14+, Clang 18+, MSVC 19.38+) reflect complete enough
+Compiler minimums (GCC 14+, Clang 19+, MSVC 19.38+) reflect complete enough
 C++23 support for the subset used, not mere `-std=c++23` recognition.
 
 ## Source compatibility fixes for C++23 (behavior-preserving)
@@ -169,7 +169,7 @@ Linux: GCC-latest+C++23 (Release, Debug, ASan+UBSan), Clang-latest+C++23
   so the MariaDB Connector/C detection and the client-version report cannot
   silently regress; the boot smoke additionally greps the runtime
   `MySQL client library: 3.` line.
-- `linux-clang` (Release, Clang 18): configure + full build.
+- `linux-clang` (Release, Clang 19): configure + full build.
 - `linux-pcre-regress`: compiles `tools/pcre-regress` under ASan/LSan twice
   — against system `libpcre2-8` and against the vendored 10.49 sources — and
   diffs each run against the committed PCRE 8.33 baseline (48 cases), then
@@ -212,3 +212,12 @@ The workflow has run 10 times (2026-10-11 → 2026-10-13) and only
 
 Both fixes need a CI run (push) to confirm; `windows-msvc` is presumed to
 share the first cause.
+
+### Clang 19 and C++23 `std::expected`
+
+Clang 19, not Clang 18, reports the `__cpp_concepts` level required
+by libstdc++'s `std::expected`. The minimum Clang version and CI matrix
+were raised accordingly. Because rAthena does not define C++ module
+interface units, `CMAKE_CXX_SCAN_FOR_MODULES=OFF` prevents CMake's
+otherwise automatic `clang-scan-deps` invocation in C++23 mode. This
+switch is independent of the ordinary include/header dependency tracking.

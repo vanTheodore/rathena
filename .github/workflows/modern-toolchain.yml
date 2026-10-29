@@ -1,5 +1,5 @@
 # Modern toolchain CI matrix (see doc/MODERNIZATION.md).
-# Baseline: strict ISO C++23, GCC 14+ / Clang 18+ / MSVC 19.38+ (VS 2022 17.8+).
+# Baseline: strict ISO C++23, GCC 14+ / Clang 19+ / MSVC 19.38+ (VS 2022 17.8+).
 # Reference toolchains (GCC 16.2, Clang 22) are not apt-available, so Linux
 # jobs use the newest stable compilers meeting the floors. Sanitizer and
 # full-boot (MariaDB) coverage: sanitizer runtimes do not exist for
@@ -45,11 +45,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Install Clang 18 + CMake + Ninja
-        run: sudo apt-get update && sudo apt-get install -y clang-18 cmake ninja-build zlib1g-dev libmariadb-dev libpcre2-dev
-      - name: Configure (Clang 18, strict C++23; requires system PCRE2)
+      - name: Install Clang 19 + CMake + Ninja
+        run: sudo apt-get update && sudo apt-get install -y clang-19 g++-14 cmake ninja-build zlib1g-dev libmariadb-dev libpcre2-dev
+      - name: Configure (Clang 19, strict C++23; requires system PCRE2)
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 2>&1 | tee configure.log
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang-19 -DCMAKE_CXX_COMPILER=clang++-19 -DCMAKE_CXX_SCAN_FOR_MODULES=OFF 2>&1 | tee configure.log
           grep -q "Enabled PCRE code" configure.log
           grep -q "Configuring for system MYSQL - done" configure.log
           grep -q "Found MYSQL: .*mariadb" configure.log
