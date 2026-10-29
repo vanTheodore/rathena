@@ -1,0 +1,65 @@
+# Standalone contract checks for the C++23 modernization.
+# Fast verification of existing behavior-focused tests on actual compilers.
+# Separate from the full builds and PCRE parity to keep feedback actionable.
+name: modernization-contracts
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: modernization-contracts-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  standalone-contracts:
+    name: ${{ matrix.compiler }} standalone contracts
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - compiler: gcc-14
+            cxx: g++-14
+            package: g++-14
+          - compiler: clang-18
+            cxx: clang++-18
+            package: clang-18
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install compiler and MariaDB headers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.package }} libmariadb-dev
+      - name: Compile and execute every standalone contract
+        shell: bash
+        env:
+          CXX: ${{ matrix.cxx }}
+        run: |
+          set -euo pipefail
+          out="${RUNNER_TEMP}/rathena-contracts"
+          mkdir -p "${out}"
+          checks=(
+            a2i-check
+            arr-find-check
+            arr-move-check
+            apply-rate-check
+            cap-value-check
+            rnd-chance-check
+            script-sort-check
+            storage-sort-check
+            token-retry-check
+          )
+          for check in "${checks[@]}"; do
+            echo "::group::${check} (${CXX})"
+            "${CXX}" -std=c++23 -O0 -g -Wall -Wextra -Wpedantic \
+              -Isrc -I/usr/include/mariadb \
+              "tools/${check}.cpp" -o "${out}/${check}"
+            "${out}/${check}"
+            echo "::endgroup::"
+          done
