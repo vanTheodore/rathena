@@ -49,7 +49,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y clang-19 g++-14 cmake ninja-build zlib1g-dev libmariadb-dev libpcre2-dev
       - name: Configure (Clang 19, strict C++23; requires system PCRE2)
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang-19 -DCMAKE_CXX_COMPILER=clang++-19 2>&1 | tee configure.log
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang-19 -DCMAKE_CXX_COMPILER=clang++-19 -DCMAKE_CXX_SCAN_FOR_MODULES=OFF 2>&1 | tee configure.log
           grep -q "Enabled PCRE code" configure.log
           grep -q "Configuring for system MYSQL - done" configure.log
           grep -q "Found MYSQL: .*mariadb" configure.log
