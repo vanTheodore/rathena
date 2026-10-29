@@ -1,0 +1,74 @@
+# Two independent corpus gates: file/schema integrity and disposable SQL import.
+# Complements C++23 compilation and standalone contracts, not a gameplay E2E.
+name: corpus-regression
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: corpus-regression-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  yaml-and-npc-manifests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install YAML syntax parser
+        run: sudo apt-get update && sudo apt-get install -y python3-yaml
+      - name: Check all tracked YAML and active NPC manifest references
+        run: python3 tools/ci/corpus-check.py
+
+  sql-schema:
+    runs-on: ubuntu-24.04
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: local-ci-root
+          MARIADB_DATABASE: ragnarok
+          MARIADB_USER: ragnarok
+          MARIADB_PASSWORD: local-ci-user
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install MariaDB CLI
+        run: sudo apt-get update && sudo apt-get install -y mariadb-client
+      - name: Import every root SQL schema/data file into disposable MariaDB
+        shell: bash
+        env:
+          MYSQL_PWD: local-ci-root
+        run: |
+          set -euo pipefail
+          # main establishes tables referenced by follow-on SQL inserts.
+          for name in main logs web; do
+            echo "::group::Import ${name}.sql"
+            mariadb --protocol=tcp -h127.0.0.1 -uroot ragnarok < "sql-files/${name}.sql"
+            echo "::endgroup::"
+          done
+          imported=3
+          for file in sql-files/*.sql; do
+            case "${file}" in
+              sql-files/main.sql|sql-files/logs.sql|sql-files/web.sql|sql-files/roulette_default_data.sql) continue ;;
+            esac
+            echo "::group::Import ${file}"
+            mariadb --protocol=tcp -h127.0.0.1 -uroot ragnarok < "${file}"
+            echo "::endgroup::"
+            imported=$(( imported + 1 ))
+          done
+          mariadb --protocol=tcp -h127.0.0.1 -uroot ragnarok < sql-files/roulette_default_data.sql
+          imported=$(( imported + 1 ))
+          tables=$(mariadb --protocol=tcp -h127.0.0.1 -uroot -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='ragnarok'")
+          echo "Imported ${imported} SQL files; tables=${tables}"
+          test "${imported}" -ge 18
+          test "${tables}" -ge 60
+          echo "SQL CORPUS IMPORT PASSED (schema, not server runtime)"
