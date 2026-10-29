@@ -46,6 +46,7 @@ jobs:
           mkdir -p "${out}"
           checks=(
             a2i-check
+            byteorder-check
             arr-find-check
             arr-move-check
             apply-rate-check
