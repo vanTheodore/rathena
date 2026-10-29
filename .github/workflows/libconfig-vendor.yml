@@ -2,9 +2,18 @@
 name: libconfig-vendor
 
 on:
+  workflow_dispatch:
   pull_request:
+    paths:
+      - "3rdparty/libconfig/**"
+      - "tools/ci/libconfig-smoke.c"
+      - ".github/workflows/libconfig-vendor.yml"
   push:
     branches: [master]
+    paths:
+      - "3rdparty/libconfig/**"
+      - "tools/ci/libconfig-smoke.c"
+      - ".github/workflows/libconfig-vendor.yml"
 
 permissions:
   contents: read

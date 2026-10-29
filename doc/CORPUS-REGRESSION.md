@@ -2,7 +2,15 @@
 
 The prior rAthena implementation used C++17. Now the repository builds with strict
 ISO C++23. A successful compilation alone does not show that the existing game
-content remains compatible; this CI gate consumes the **tracked source corpus**.
+content remains compatible; an **opt-in** CI workflow consumes the **tracked source corpus** when requested.
+
+## When to run
+
+The workflow is **manual only**, not a PR/push gate. In GitHub Actions,
+select **corpus-regression → Run workflow** (choose the branch to inspect).
+Use it for a deliberate content/database import or YAML parser migration, not
+for every C++ source change. The check is principally syntax and references;
+it is not a reliable gameplay regression suite.
 
 ## Checks
 
