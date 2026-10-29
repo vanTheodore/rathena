@@ -26,18 +26,17 @@ jobs:
           - compiler: gcc-14
             cxx: g++-14
             package: g++-14
-          - compiler: clang-18
-            cxx: clang++-18
-            package: clang-18
+          - compiler: clang-19
+            cxx: clang++-19
+            package: clang-19
 
     steps:
       - uses: actions/checkout@v4
       - name: Install compiler and MariaDB headers
         run: |
           sudo apt-get update
-          # Clang 18 on ubuntu-24.04 otherwise uses libstdc++ 13, whose
-          # std::expected support is incomplete. Install the GCC 14 C++23
-          # standard library; Clang will pick the newest GCC installation.
+          # Clang 19 implements concepts feature macro 202002L required
+          # by libstdc++'s C++23 <expected>; g++-14 supplies the library.
           sudo apt-get install -y ${{ matrix.package }} g++-14 libmariadb-dev
       - name: Compile and execute every standalone contract
         shell: bash
