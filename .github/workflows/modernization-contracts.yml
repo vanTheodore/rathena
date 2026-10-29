@@ -47,6 +47,7 @@ jobs:
           checks=(
             a2i-check
             byteorder-check
+            expected-parse-check
             arr-find-check
             arr-move-check
             apply-rate-check
