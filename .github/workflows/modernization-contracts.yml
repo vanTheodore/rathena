@@ -35,7 +35,10 @@ jobs:
       - name: Install compiler and MariaDB headers
         run: |
           sudo apt-get update
-          sudo apt-get install -y ${{ matrix.package }} libmariadb-dev
+          # Clang 18 on ubuntu-24.04 otherwise uses libstdc++ 13, whose
+          # std::expected support is incomplete. Install the GCC 14 C++23
+          # standard library; Clang will pick the newest GCC installation.
+          sudo apt-get install -y ${{ matrix.package }} g++-14 libmariadb-dev
       - name: Compile and execute every standalone contract
         shell: bash
         env:
