@@ -10,12 +10,12 @@ Source: published stable release tags from the official upstream GitHub reposito
 | rapidyaml | 0.16.0 | [0.16.0](https://github.com/biojppm/rapidyaml/releases/tag/v0.16.0) | Current |
 | nlohmann/json | 3.12.0 | [3.12.0](https://github.com/nlohmann/json/releases/tag/v3.12.0) | Current |
 | zlib | 1.3.2 | [1.3.2](https://github.com/madler/zlib/releases/tag/v1.3.2) | Current |
-| libconfig | 1.8.2 | [1.8.3](https://github.com/hyperrealm/libconfig/releases/tag/v1.8.3) (2026-10-22) | **Update candidate**: review parser/numeric compatibility and fuzz fixes; rebuild Linux/Windows and run config-file regressions |
+| libconfig | 1.8.3 (vendored in this update) | [1.8.3](https://github.com/hyperrealm/libconfig/releases/tag/v1.8.3) (2026-10-22) | Updated upstream core C sources + generated scanner; preserve the local Windows wincompat.h patch. Verify libconfig smoke and full cross-platform CI before merge |
 | MariaDB Connector/C (system package / reference build) | 3.4.11 | [3.4.11](https://github.com/mariadb-corporation/mariadb-connector-c/releases/tag/v3.4.11) | Current reference client; CI uses distro package rather than pinning 3.4.11 |
 
 All version comparisons here are based on the versions recorded in `doc/MODERNIZATION-ROADMAP.md` and release metadata. Before an actual vendor update, compare the vendored file hashes/patches with their upstream tag and preserve required build glue.
 
-## Additional upgrade gate for libconfig
+## libconfig 1.8.3 verification gate
 
 The 1.8.3 release fixes checked size arithmetic for internal collection growth, scanner stream-read errors, and several nondecimal numeric conversion behaviors. Review the [official changelog](https://github.com/hyperrealm/libconfig/releases/tag/v1.8.3), retain rAthena's Windows vcxproj/CMake glue, and add at least valid/invalid config and numeric boundary cases before merging. A compiler-only pass does not establish parser parity.
 

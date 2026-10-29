@@ -1,6 +1,6 @@
 /* ----------------------------------------------------------------------------
    libconfig - A library for processing structured configuration files
-   Copyright (C) 2005-2025  Mark A Lindner
+   Copyright (C) 2005-2026  Mark A Lindner
 
    This file is part of libconfig.
 
@@ -181,7 +181,7 @@ static void __config_write_value(const config_t *config,
         case CONFIG_FORMAT_BIN:
         {
           /* Once %b/%B become more widely supported, could feature test for them */
-          char *str = libconfig_format_bin(value->ival, value_buf);
+          char *str = libconfig_format_bin((uint32_t)value->ival, value_buf);
           fprintf(stream, "0b%s", str);
           break;
         }
@@ -390,9 +390,10 @@ static void __config_list_add(config_list_t *list, config_setting_t *setting)
 {
   if((list->length % CHUNK_SIZE) == 0)
   {
-    list->elements = (config_setting_t **)libconfig_realloc(
+    list->elements = (config_setting_t **)libconfig_reallocarray(
       list->elements,
-      (list->length + CHUNK_SIZE) * sizeof(config_setting_t *));
+      libconfig_size_add(list->length, CHUNK_SIZE),
+      sizeof(config_setting_t *));
   }
 
   list->elements[list->length] = setting;
@@ -435,15 +436,19 @@ static config_setting_t *__config_list_search(config_list_t *list,
 
 /* ------------------------------------------------------------------------- */
 
-static config_setting_t *__config_list_remove(config_list_t *list, int idx)
+static config_setting_t *__config_list_remove(config_list_t *list,
+                                              unsigned int idx)
 {
-  config_setting_t *removed = *(list->elements + idx);
-  int offset = (idx * sizeof(config_setting_t *));
-  int len = list->length - 1 - idx;
-  char *base = (char *)list->elements + offset;
+  config_setting_t *removed;
+  size_t count;
 
-  memmove(base, base + sizeof(config_setting_t *),
-          len * sizeof(config_setting_t *));
+  config_assert(idx < list->length);
+
+  removed = list->elements[idx];
+  count = list->length - 1 - idx; /* elements after idx */
+
+  memmove(list->elements + idx, list->elements + idx + 1,
+          count * sizeof(config_setting_t *));
 
   list->length--;
 
@@ -907,7 +912,7 @@ static config_setting_t *__config_setting_create(config_setting_t *parent,
 
   setting = __new(config_setting_t);
   setting->parent = parent;
-  setting->name = (name == NULL) ? NULL : strdup(name);
+  setting->name = (name == NULL) ? NULL : libconfig_strdup(name);
   setting->type = type;
   setting->config = parent->config;
   setting->hook = NULL;
@@ -1202,7 +1207,7 @@ int config_setting_set_int(config_setting_t *setting, int value)
     case CONFIG_TYPE_FLOAT:
       if(config_get_auto_convert(setting->config))
       {
-        setting->value.fval = (float)value;
+        setting->value.fval = (double)value;
         return(CONFIG_TRUE);
       }
       else
@@ -1241,7 +1246,7 @@ int config_setting_set_int64(config_setting_t *setting, long long value)
     case CONFIG_TYPE_FLOAT:
       if(config_get_auto_convert(setting->config))
       {
-        setting->value.fval = (float)value;
+        setting->value.fval = (double)value;
         return(CONFIG_TRUE);
       }
       else
@@ -1373,7 +1378,7 @@ int config_setting_set_string(config_setting_t *setting, const char *value)
   if(setting->value.sval)
     __delete(setting->value.sval);
 
-  setting->value.sval = (value == NULL) ? NULL : strdup(value);
+  setting->value.sval = (value == NULL) ? NULL : libconfig_strdup(value);
 
   return(CONFIG_TRUE);
 }
@@ -1878,7 +1883,7 @@ void config_set_include_dir(config_t *config, const char *include_dir)
   config_assert(config != NULL);
 
   __delete(config->include_dir);
-  config->include_dir = include_dir ? strdup(include_dir) : NULL;
+  config->include_dir = include_dir ? libconfig_strdup(include_dir) : NULL;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -2056,17 +2061,23 @@ const char **config_default_include_func(config_t *config,
 
   if(include_dir && IS_RELATIVE_PATH(path))
   {
-    file = (char *)libconfig_malloc(strlen(include_dir) + strlen(path) + 2);
-    strcpy(file, include_dir);
-    strcat(file, FILE_SEPARATOR);
-    strcat(file, path);
+    size_t dirlen = strlen(include_dir);
+    size_t seplen = strlen(FILE_SEPARATOR);
+    size_t pathlen = strlen(path);
+
+    file = (char *)libconfig_malloc(
+      libconfig_size_add(libconfig_size_add(dirlen, seplen),
+                         libconfig_size_add(pathlen, 1))); /* add 1 for NUL */
+    memcpy(file, include_dir, dirlen);
+    memcpy(file + dirlen, FILE_SEPARATOR, seplen);
+    memcpy(file + dirlen + seplen, path, pathlen + 1); /* include NUL */
   }
   else
-    file = strdup(path);
+    file = libconfig_strdup(path);
 
   *error = NULL;
 
-  files = (const char **)libconfig_malloc(sizeof(char **) * 2);
+  files = (const char **)libconfig_calloc(2, sizeof(const char *));
   files[0] = file;
   files[1] = NULL;
 
