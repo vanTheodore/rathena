@@ -5,6 +5,9 @@
 #define SOCKET_HPP
 
 #include <ctime>
+#include <cstddef>
+#include <cstring>
+#include <span>
 
 #include <config/core.hpp>
 
@@ -202,6 +205,21 @@ void send_shortlist_do_sends();
 // Reuseable global packet buffer to prevent too many allocations
 // Take socket.cpp::socket_max_client_packet into consideration
 extern int8 packet_buffer[UINT16_MAX];
+
+// Bounded byte-view overload for already-encoded packets. Unlike the legacy
+// variable-length P* overload, the bytes and their capacity are explicit.
+// The core still owns the WFIFOHEAD/WFIFOSET lifecycle and packet limit.
+inline bool socket_send( int32 fd, std::span<const std::byte> packet ){
+	if( !session_isActive( fd ) || packet.size() < 2 || packet.size() > UINT16_MAX ){
+		return false;
+	}
+
+	WFIFOHEAD( fd, packet.size() );
+	std::memcpy( WFIFOP( fd, 0 ), packet.data(), packet.size() );
+	WFIFOSET( fd, packet.size() );
+
+	return true;
+}
 
 template <typename P>
 bool socket_send( int32 fd, P& packet ){

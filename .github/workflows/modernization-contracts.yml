@@ -50,6 +50,7 @@ jobs:
             a2i-check
             byteorder-check
             expected-parse-check
+            packet-bytes-check
             arr-find-check
             arr-move-check
             apply-rate-check
