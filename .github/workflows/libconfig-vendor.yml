@@ -1,0 +1,37 @@
+# Validate the real vendored libconfig 1.8.3 C parser independent of rAthena.
+name: libconfig-vendor
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: libconfig-vendor-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  parser-smoke:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build upstream C sources and exercise real parser
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=gnu11 -O1 -g -DLIBCONFIG_STATIC -D_GNU_SOURCE \
+            -I3rdparty/libconfig \
+            tools/ci/libconfig-smoke.c \
+            3rdparty/libconfig/grammar.c \
+            3rdparty/libconfig/libconfig.c \
+            3rdparty/libconfig/scanctx.c \
+            3rdparty/libconfig/scanner.c \
+            3rdparty/libconfig/strbuf.c \
+            3rdparty/libconfig/strvec.c \
+            3rdparty/libconfig/util.c \
+            3rdparty/libconfig/wincompat.c \
+            -lm -o "${RUNNER_TEMP}/libconfig-smoke"
+          "${RUNNER_TEMP}/libconfig-smoke"

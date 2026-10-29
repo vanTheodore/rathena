@@ -56,7 +56,7 @@ Detalle de auditorías previas (no se repiten aquí): `doc/MODERNIZATION.md`
 - ✅ C++23 estricto en CMake (3.28), Autotools y MSVC vcxproj (`stdcpp23`)
   (commits `2935daa`, `fd59e5b`)
 - ✅ Deps actualizadas: httplib 0.60.0, json 3.12.0, yaml-cpp 0.9.0, rapidyaml 0.16.0,
-  libconfig 1.8.2, zlib 1.3.2, PCRE1→PCRE2 10.49
+  libconfig 1.8.3 (vendor actualizado, CI pendiente), zlib 1.3.2, PCRE1→PCRE2 10.49
 - ✅ MariaDB S1 (detección agnóstica, `479dede`), S2 (versión + suelo, `75cff02`),
   S3 (cliente del sistema/MSI + blobs 6.1.9 fuera, `68f6ebe`) — verificado en local
   (MinGW GCC 16.2: configure + build + boot smoke; Clang `-fsyntax-only`)

@@ -1,6 +1,6 @@
 /* ----------------------------------------------------------------------------
    libconfig - A library for processing structured configuration files
-   Copyright (C) 2005-2025  Mark A Lindner
+   Copyright (C) 2005-2026  Mark A Lindner
 
    This file is part of libconfig.
 
@@ -94,6 +94,48 @@ void *libconfig_realloc(void *ptr, size_t size)
 
 /* ------------------------------------------------------------------------- */
 
+char *libconfig_strdup(const char *str)
+{
+  char *copy = NULL;
+
+  if(str)
+  {
+    copy = strdup(str);
+    if(!copy)
+      libconfig_fatal_error(__libconfig_malloc_failure_message);
+  }
+
+  return(copy);
+}
+
+/* ------------------------------------------------------------------------- */
+
+void *libconfig_reallocarray(void *ptr, size_t nmemb, size_t size)
+{
+  if(size && (nmemb > (SIZE_MAX / size)))
+  {
+    libconfig_fatal_error(__libconfig_malloc_failure_message);
+    return(NULL);
+  }
+
+  return(libconfig_realloc(ptr, nmemb * size));
+}
+
+/* ------------------------------------------------------------------------- */
+
+size_t libconfig_size_add(size_t a, size_t b)
+{
+  if(a > (SIZE_MAX - b))
+  {
+    libconfig_fatal_error(__libconfig_malloc_failure_message);
+    return(SIZE_MAX); /* no allocation of this size can succeed */
+  }
+
+  return(a + b);
+}
+
+/* ------------------------------------------------------------------------- */
+
 /* Returns 1 on success, 0 on failure. Sets is_long to 1 if value is a
    64-bit int, otherwise to 0.
 */
@@ -107,7 +149,9 @@ int libconfig_parse_integer(const char *s, int base, long long *val,
   errno = 0;
   *val = strtoll(s, &endptr, base);
 
-  if((base != 10) && (*val > INT32_MAX) && (*val <= UINT32_MAX))
+  /* Only unsuffixed non-decimal values use 32-bit signed interpretation. */
+  if((base != 10) && (*endptr != 'L')
+     && (*val > INT32_MAX) && (*val <= UINT32_MAX))
     *val = (long long)(int)*val;
 
   *is_long = ((*val < INT32_MIN) || (*val > INT32_MAX));
